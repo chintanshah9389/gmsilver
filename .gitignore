@@ -24,6 +24,7 @@ logs
 # Prisma
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
+backend/.local-postgres/
 
 # React Native
 mobile/android/.gradle/
