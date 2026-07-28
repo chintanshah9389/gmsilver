@@ -1,0 +1,45 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { InvoicesService } from './invoices.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+
+@ApiTags('Invoices')
+@ApiBearerAuth('JWT')
+@UseGuards(JwtAuthGuard)
+@Controller('invoices')
+export class InvoicesController {
+  constructor(private readonly invoicesService: InvoicesService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get my invoices' })
+  getMyInvoices(@CurrentUser('id') userId: string) {
+    return this.invoicesService.getUserInvoices(userId);
+  }
+
+  @Get('order/:orderId')
+  @ApiOperation({ summary: 'Get invoice by order ID' })
+  getInvoiceByOrder(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+  ) {
+    return this.invoicesService.getInvoiceByOrderId(orderId, user.id, user.role);
+  }
+
+  @Post('generate/:orderId')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Generate invoice for an order (Admin/Owner)' })
+  generateInvoice(@Param('orderId') orderId: string) {
+    return this.invoicesService.generateInvoice(orderId);
+  }
+}

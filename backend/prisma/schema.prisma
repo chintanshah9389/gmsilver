@@ -1,0 +1,375 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  OWNER
+  CUSTOMER
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BLOCKED
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum NotificationType {
+  USER_APPROVED
+  ORDER_CREATED
+  ORDER_APPROVED
+  ORDER_REJECTED
+  ORDER_COMPLETED
+  NEW_PRODUCT
+  BROADCAST
+}
+
+// ─────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  phone         String?    @unique
+  password      String
+  mpin          String?
+  name          String
+  role          UserRole   @default(CUSTOMER)
+  status        UserStatus @default(PENDING)
+  fcmToken      String?    @map("fcm_token")
+  deviceDetails Json?      @map("device_details")
+
+  wishlist          Wishlist[]
+  cart              Cart?
+  orders            Order[]
+  refreshTokens     RefreshToken[]
+  mpinTokens        MpinToken[]
+  auditLogs         AuditLog[]
+  notificationLogs  NotificationLog[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// CATEGORIES
+// ─────────────────────────────────────────
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  imageUrl    String?   @map("image_url")
+  storageKey  String?   @map("storage_key")
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
+
+  products Product[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@map("categories")
+}
+
+// ─────────────────────────────────────────
+// PRODUCTS
+// ─────────────────────────────────────────
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  weight      Decimal? @db.Decimal(10, 3)
+  purity      String?
+  sku         String?  @unique
+  imageUrl    String?  @map("image_url")
+  storageKey  String?  @map("storage_key")
+  isAvailable Boolean  @default(true) @map("is_available")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  categoryId String   @map("category_id")
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  images       ProductImage[]
+  wishlistItems Wishlist[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([categoryId])
+  @@index([isAvailable, isActive])
+  @@index([sku])
+  @@map("products")
+}
+
+model ProductImage {
+  id         String  @id @default(uuid())
+  imageUrl   String  @map("image_url")
+  storageKey String  @map("storage_key")
+  isPrimary  Boolean @default(false) @map("is_primary")
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+// ─────────────────────────────────────────
+// WISHLIST
+// ─────────────────────────────────────────
+
+model Wishlist {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("wishlist")
+}
+
+// ─────────────────────────────────────────
+// CART
+// ─────────────────────────────────────────
+
+model Cart {
+  id String @id @default(uuid())
+
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  items CartItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("cart")
+}
+
+model CartItem {
+  id       String @id @default(uuid())
+  quantity Int    @default(1)
+
+  cartId String @map("cart_id")
+  cart   Cart   @relation(fields: [cartId], references: [id])
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// ─────────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────────
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique @map("order_number")
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2) @map("total_amount")
+  gstAmount   Decimal?    @db.Decimal(10, 2) @map("gst_amount")
+  grandTotal  Decimal     @db.Decimal(10, 2) @map("grand_total")
+  notes       String?
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  items   OrderItem[]
+  invoice Invoice?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+model OrderItem {
+  id       String  @id @default(uuid())
+  quantity Int
+  rate     Decimal @db.Decimal(10, 2)
+  amount   Decimal @db.Decimal(10, 2)
+
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────
+// INVOICES
+// ─────────────────────────────────────────
+
+model Invoice {
+  id            String @id @default(uuid())
+  invoiceNumber String @unique @map("invoice_number")
+  pdfUrl        String @map("pdf_url")
+  storageKey    String @map("storage_key")
+
+  orderId String @unique @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────
+
+model Notification {
+  id    String           @id @default(uuid())
+  title String
+  body  String
+  type  NotificationType
+  data  Json?
+
+  logs NotificationLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model NotificationLog {
+  id     String    @id @default(uuid())
+  isRead Boolean   @default(false) @map("is_read")
+  readAt DateTime? @map("read_at")
+
+  notificationId String       @map("notification_id")
+  notification   Notification @relation(fields: [notificationId], references: [id])
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, isRead])
+  @@map("notification_logs")
+}
+
+// ─────────────────────────────────────────
+// AUTH TOKENS
+// ─────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model MpinToken {
+  id        String   @id @default(uuid())
+  deviceId  String   @map("device_id")
+  expiresAt DateTime @map("expires_at")
+  isActive  Boolean  @default(true) @map("is_active")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@map("mpin_tokens")
+}
+
+// ─────────────────────────────────────────
+// AUDIT LOGS
+// ─────────────────────────────────────────
+
+model AuditLog {
+  id            String @id @default(uuid())
+  action        String
+  module        String
+  data          Json?
+  ipAddress     String? @map("ip_address")
+  userAgent     String? @map("user_agent")
+  deviceDetails Json?   @map("device_details")
+
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

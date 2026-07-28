@@ -1,0 +1,44 @@
+import React from 'react';
+import { FlatList, StyleSheet } from 'react-native';
+import { Card, Text } from 'react-native-paper';
+import { useProductsQuery } from '@/store/services/productsApi';
+
+export default function ProductListScreen({ route, navigation }: any) {
+  const categoryId = route.params?.categoryId;
+  const { data } = useProductsQuery({ page: 1, limit: 100, categoryId });
+  const products = data?.data || [];
+
+  return (
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={styles.listContent}
+      data={products}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <Card
+          style={styles.card}
+          onPress={() =>
+            navigation.navigate('ProductDetail', { productId: item.id })
+          }
+        >
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.title}>
+              {item.name}
+            </Text>
+            <Text style={styles.sub}>
+              ₹{Number(item.price).toLocaleString()}
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  listContent: { padding: 12 },
+  card: { backgroundColor: '#151520', marginBottom: 10 },
+  title: { color: '#F2F2F2' },
+  sub: { color: '#AFAFBA', marginTop: 4 },
+});
