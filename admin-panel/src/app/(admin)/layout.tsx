@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Drawer,
@@ -62,12 +62,23 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(true);
+  const [user, setUser] = useState<{ name?: string } | null>(null);
 
-  const userStr = Cookies.get('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  useEffect(() => {
+    const userStr = Cookies.get('user');
+    if (!userStr) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      setUser(JSON.parse(userStr));
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   const handleLogout = () => {
-    const refreshToken = Cookies.get('refreshToken');
     Cookies.remove('accessToken');
     Cookies.remove('refreshToken');
     Cookies.remove('user');
@@ -120,7 +131,7 @@ export default function AdminLayout({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              {user?.name}
+              {user?.name || ''}
             </Typography>
             <Avatar
               sx={{
@@ -132,7 +143,7 @@ export default function AdminLayout({
                 fontWeight: 700,
               }}
             >
-              {user?.name?.[0]?.toUpperCase()}
+              {user?.name?.[0]?.toUpperCase() || ''}
             </Avatar>
             <Tooltip title="Logout">
               <IconButton onClick={handleLogout} sx={{ color: 'text.secondary' }}>
