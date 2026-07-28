@@ -15,7 +15,9 @@ async function bootstrap() {
   const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
   const corsOrigins = configService
     .get<string>('CORS_ORIGINS', 'http://localhost:3000')
-    .split(',');
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   // Security
   app.use(helmet());
