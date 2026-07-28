@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
-import { Card, Text } from 'react-native-paper';
+import { Card, Text, Snackbar } from 'react-native-paper';
 import { useCategoriesQuery } from '@/store/services/productsApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function CategoriesScreen({ navigation }: any) {
-  const { data } = useCategoriesQuery({ page: 1, limit: 100 });
+  const { data, error, isError } = useCategoriesQuery({ page: 1, limit: 100 });
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const categories = data?.data || [];
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(getErrorMessage(error, 'Failed to load categories.'));
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   return (
     <FlatList
@@ -23,6 +33,14 @@ export default function CategoriesScreen({ navigation }: any) {
             })
           }
         >
+
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={() => setSnackbarVisible(false)}
+          duration={4000}
+        >
+          {snackbarMessage}
+        </Snackbar>
           <Card.Content>
             <Text variant="titleMedium" style={styles.title}>
               {item.name}

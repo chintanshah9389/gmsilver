@@ -1,16 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Text, Snackbar } from 'react-native-paper';
 import {
   useOrderByIdQuery,
   useCancelOrderMutation,
 } from '@/store/services/ordersApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function OrderDetailScreen({ route }: any) {
   const { orderId } = route.params;
-  const { data } = useOrderByIdQuery(orderId);
+  const { data, error, isError } = useOrderByIdQuery(orderId);
   const [cancel] = useCancelOrderMutation();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const order = data?.data;
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(getErrorMessage(error, 'Failed to load order details.'));
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   if (!order) {
     return (
@@ -30,7 +40,19 @@ export default function OrderDetailScreen({ route }: any) {
             Total: ₹{Number(order.grandTotal).toLocaleString()}
           </Text>
           {order.status === 'PENDING' ? (
-            <Button mode="outlined" onPress={() => cancel(order.id)}>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  await cancel(order.id).unwrap();
+                } catch (e) {
+                  setSnackbarMessage(
+                    getErrorMessage(e, 'Failed to cancel order.'),
+                  );
+                  setSnackbarVisible(true);
+                }
+              }}
+            >
               Cancel Order
             </Button>
           ) : null}
@@ -51,6 +73,14 @@ export default function OrderDetailScreen({ route }: any) {
           </Card>
         )}
       />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

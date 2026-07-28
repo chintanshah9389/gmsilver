@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Text, TextInput, Card } from 'react-native-paper';
+import { Button, Text, TextInput, Card, Snackbar } from 'react-native-paper';
 import { useLoginMutation } from '@/store/services/authApi';
 import { useAppDispatch } from '@/hooks/redux';
 import { setAuth } from '@/store/slices/authSlice';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [login, { isLoading }] = useLoginMutation();
 
   const onLogin = async () => {
@@ -16,7 +19,8 @@ export default function LoginScreen({ navigation }: any) {
       const res = await login({ email, password }).unwrap();
       dispatch(setAuth(res.data));
     } catch (e) {
-      console.log(e);
+      setSnackbarMessage(getErrorMessage(e, 'Login failed. Please try again.'));
+      setSnackbarVisible(true);
     }
   };
 
@@ -56,6 +60,14 @@ export default function LoginScreen({ navigation }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

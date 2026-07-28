@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text, TextInput, Button } from 'react-native-paper';
+import { Card, Text, TextInput, Button, Snackbar } from 'react-native-paper';
 import { useForgotMpinMutation } from '@/store/services/authApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function ForgotMpinScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [forgotMpin, { isLoading }] = useForgotMpinMutation();
 
   const onSubmit = async () => {
-    const res = await forgotMpin({ email }).unwrap();
-    navigation.navigate('ResetMpin', { email, token: res.data?.resetToken });
+    try {
+      const res = await forgotMpin({ email }).unwrap();
+      navigation.navigate('ResetMpin', { email, token: res.data?.resetToken });
+    } catch (e) {
+      setSnackbarMessage(getErrorMessage(e, 'Failed to send MPIN reset token.'));
+      setSnackbarVisible(true);
+    }
   };
 
   return (
@@ -31,6 +39,14 @@ export default function ForgotMpinScreen({ navigation }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text, TextInput, Button } from 'react-native-paper';
+import { Card, Text, TextInput, Button, Snackbar } from 'react-native-paper';
 import { useCreateMpinMutation } from '@/store/services/authApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function CreateMpinScreen() {
   const [mpin, setMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [createMpin, { isLoading }] = useCreateMpinMutation();
 
   const onSave = async () => {
-    await createMpin({ mpin, confirmMpin }).unwrap();
+    try {
+      await createMpin({ mpin, confirmMpin }).unwrap();
+    } catch (e) {
+      setSnackbarMessage(getErrorMessage(e, 'Failed to create MPIN.'));
+      setSnackbarVisible(true);
+    }
   };
 
   return (
@@ -44,6 +52,14 @@ export default function CreateMpinScreen() {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

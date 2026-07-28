@@ -1,23 +1,31 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text, TextInput, Button } from 'react-native-paper';
+import { Card, Text, TextInput, Button, Snackbar } from 'react-native-paper';
 import { useResetPasswordMutation } from '@/store/services/authApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function ResetPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   const onSubmit = async () => {
-    await resetPassword({
-      email,
-      token,
-      newPassword,
-      confirmPassword,
-    }).unwrap();
-    navigation.navigate('Login');
+    try {
+      await resetPassword({
+        email,
+        token,
+        newPassword,
+        confirmPassword,
+      }).unwrap();
+      navigation.navigate('Login');
+    } catch (e) {
+      setSnackbarMessage(getErrorMessage(e, 'Password reset failed.'));
+      setSnackbarVisible(true);
+    }
   };
 
   return (
@@ -62,6 +70,14 @@ export default function ResetPasswordScreen({ navigation }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

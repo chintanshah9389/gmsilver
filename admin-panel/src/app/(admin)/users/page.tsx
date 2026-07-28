@@ -12,9 +12,16 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   CircularProgress,
-  Alert,
   Button,
+  Select,
+  FormControl,
+  InputLabel,
+  FormHelperText,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import {
@@ -38,11 +45,28 @@ const statusColors: Record<string, any> = {
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [rowCount, setRowCount] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    role: 'CUSTOMER',
+    status: 'APPROVED',
+  });
+  const [createErrors, setCreateErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    role?: string;
+    status?: string;
+  }>({});
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -63,9 +87,78 @@ export default function UsersPage() {
       setUsers(response.data.data);
       setRowCount(response.data.meta.total);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load users');
+      toast.error(err.response?.data?.message || 'Failed to load users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const validateCreateForm = () => {
+    const nextErrors: typeof createErrors = {};
+
+    if (!createForm.name.trim()) {
+      nextErrors.name = 'Name is required';
+    } else if (createForm.name.trim().length < 2) {
+      nextErrors.name = 'Name must be at least 2 characters';
+    }
+
+    if (!createForm.email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email)) {
+      nextErrors.email = 'Enter a valid email address';
+    }
+
+    if (createForm.phone.trim() && createForm.phone.trim().length < 7) {
+      nextErrors.phone = 'Phone number looks too short';
+    }
+
+    if (!createForm.password) {
+      nextErrors.password = 'Password is required';
+    } else if (createForm.password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(createForm.password)) {
+      nextErrors.password = 'Password must include uppercase, lowercase, number and special character';
+    }
+
+    setCreateErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const updateCreateField = (
+    field: keyof typeof createForm,
+    value: string,
+  ) => {
+    setCreateForm((prev) => ({ ...prev, [field]: value }));
+    setCreateErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const handleCreateUser = async () => {
+    if (!validateCreateForm()) {
+      return;
+    }
+
+    try {
+      setCreateLoading(true);
+      await usersApi.create({
+        ...createForm,
+        phone: createForm.phone || undefined,
+      });
+      toast.success('User created successfully');
+      setCreateOpen(false);
+      setCreateForm({
+        name: '',
+        email: '',
+        phone: '',
+        password: '',
+        role: 'CUSTOMER',
+        status: 'APPROVED',
+      });
+      setCreateErrors({});
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create user');
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -174,10 +267,6 @@ export default function UsersPage() {
     },
   ];
 
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
-
   return (
     <Box>
       <Box
@@ -196,6 +285,9 @@ export default function UsersPage() {
             View and manage platform users
           </Typography>
         </Box>
+        <Button variant="contained" onClick={() => setCreateOpen(true)}>
+          Add User
+        </Button>
       </Box>
 
       <Card>
@@ -259,6 +351,81 @@ export default function UsersPage() {
           Delete
         </MenuItem>
       </Menu>
+
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Create User</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ display: 'grid', gap: 2, mt: 1 }}>
+            <TextField
+              label="Name"
+              value={createForm.name}
+              onChange={(e) => updateCreateField('name', e.target.value)}
+              fullWidth
+              error={!!createErrors.name}
+              helperText={createErrors.name}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={createForm.email}
+              onChange={(e) => updateCreateField('email', e.target.value)}
+              fullWidth
+              error={!!createErrors.email}
+              helperText={createErrors.email}
+            />
+            <TextField
+              label="Phone"
+              value={createForm.phone}
+              onChange={(e) => updateCreateField('phone', e.target.value)}
+              fullWidth
+              error={!!createErrors.phone}
+              helperText={createErrors.phone || 'Optional'}
+            />
+            <TextField
+              label="Password"
+              type="password"
+              value={createForm.password}
+              onChange={(e) => updateCreateField('password', e.target.value)}
+              fullWidth
+              error={!!createErrors.password}
+              helperText={createErrors.password || 'Must be at least 8 characters'}
+            />
+            <FormControl fullWidth error={!!createErrors.role}>
+              <InputLabel>Role</InputLabel>
+              <Select
+                label="Role"
+                value={createForm.role}
+                onChange={(e) => updateCreateField('role', e.target.value)}
+              >
+                <MenuItem value="CUSTOMER">CUSTOMER</MenuItem>
+                <MenuItem value="OWNER">OWNER</MenuItem>
+                <MenuItem value="ADMIN">ADMIN</MenuItem>
+              </Select>
+              <FormHelperText>{createErrors.role}</FormHelperText>
+            </FormControl>
+            <FormControl fullWidth error={!!createErrors.status}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                label="Status"
+                value={createForm.status}
+                onChange={(e) => updateCreateField('status', e.target.value)}
+              >
+                <MenuItem value="APPROVED">APPROVED</MenuItem>
+                <MenuItem value="PENDING">PENDING</MenuItem>
+                <MenuItem value="REJECTED">REJECTED</MenuItem>
+                <MenuItem value="BLOCKED">BLOCKED</MenuItem>
+              </Select>
+              <FormHelperText>{createErrors.status}</FormHelperText>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateUser} variant="contained" disabled={createLoading}>
+            {createLoading ? 'Creating...' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
-import { Card, Text, Button } from 'react-native-paper';
+import { Card, Text, Button, Snackbar } from 'react-native-paper';
 import {
   useWishlistQuery,
   useRemoveWishlistMutation,
 } from '@/store/services/wishlistApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function WishlistScreen({ navigation }: any) {
-  const { data } = useWishlistQuery();
+  const { data, error, isError } = useWishlistQuery();
   const [remove] = useRemoveWishlistMutation();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const items = data?.data || [];
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(getErrorMessage(error, 'Failed to load wishlist.'));
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   return (
     <FlatList
@@ -42,6 +52,14 @@ export default function WishlistScreen({ navigation }: any) {
       )}
       ListEmptyComponent={<Text style={styles.empty}>No wishlist items</Text>}
     />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
   );
 }
 

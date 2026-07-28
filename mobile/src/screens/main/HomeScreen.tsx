@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Card, Text, Searchbar } from 'react-native-paper';
+import { Card, Text, Searchbar, Snackbar } from 'react-native-paper';
 import { useProductsQuery } from '@/store/services/productsApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function HomeScreen({ navigation }: any) {
-  const { data } = useProductsQuery({ page: 1, limit: 20 });
+  const { data, error, isError } = useProductsQuery({ page: 1, limit: 20 });
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const products = data?.data || [];
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(getErrorMessage(error, 'Failed to load products.'));
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   return (
     <View style={styles.container}>
@@ -36,6 +46,14 @@ export default function HomeScreen({ navigation }: any) {
           </Card>
         )}
       />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

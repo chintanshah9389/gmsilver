@@ -8,7 +8,6 @@ import {
   CardContent,
   Typography,
   CircularProgress,
-  Alert,
   Chip,
 } from '@mui/material';
 import {
@@ -21,6 +20,8 @@ import {
   TrendingUp,
 } from '@mui/icons-material';
 import { analyticsApi } from '@/lib/api';
+import toast from 'react-hot-toast';
+import { getErrorMessage } from '@/lib/error-message';
 
 interface DashboardData {
   users: { total: number; pending: number };
@@ -86,7 +87,6 @@ const StatCard = ({
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function DashboardPage() {
       const response = await analyticsApi.getDashboard();
       setData(response.data.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
+      toast.error(getErrorMessage(err, 'Failed to load dashboard data'));
     } finally {
       setLoading(false);
     }
@@ -111,10 +111,6 @@ export default function DashboardPage() {
         <CircularProgress />
       </Box>
     );
-  }
-
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
   }
 
   if (!data) return null;

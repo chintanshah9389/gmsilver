@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Text, Snackbar } from 'react-native-paper';
 import {
   useNotificationsQuery,
   useMarkAllReadMutation,
 } from '@/store/services/notificationsApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function NotificationsScreen() {
-  const { data } = useNotificationsQuery({ page: 1, limit: 100 });
+  const { data, error, isError } = useNotificationsQuery({ page: 1, limit: 100 });
   const [markAllRead] = useMarkAllReadMutation();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const rows = data?.notifications || data?.data || [];
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(
+        getErrorMessage(error, 'Failed to load notifications.'),
+      );
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   return (
     <FlatList
@@ -36,6 +48,14 @@ export default function NotificationsScreen() {
       )}
       ListEmptyComponent={<Text style={styles.empty}>No notifications</Text>}
     />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
   );
 }
 

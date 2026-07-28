@@ -4,10 +4,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UserStatus, NotificationType } from '@prisma/client';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UserStatus } from '@prisma/client';
+import { BcryptUtil } from '../../common/utils/bcrypt.util';
 import {
   getPaginationParams,
   createPaginatedResponse,
@@ -18,6 +19,54 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
   ) {}
+
+  async create(dto: CreateUserDto) {
+    const email = dto.email.toLowerCase();
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    if (dto.phone) {
+      const existingPhone = await this.prisma.user.findFirst({
+        where: { phone: dto.phone },
+      });
+
+      if (existingPhone) {
+        throw new ConflictException('Phone number already in use');
+      }
+    }
+
+    const password = await BcryptUtil.hash(dto.password);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name: dto.name,
+        phone: dto.phone || null,
+        password,
+        role: dto.role || 'CUSTOMER',
+        status: dto.status || UserStatus.APPROVED,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      message: 'User created successfully',
+      data: user,
+    };
+  }
 
   async findAll(query: any) {
     const { page, limit, skip } = getPaginationParams(query);

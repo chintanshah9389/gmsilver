@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, Linking, StyleSheet } from 'react-native';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Text, Snackbar } from 'react-native-paper';
 import { useInvoicesQuery } from '@/store/services/ordersApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function InvoicesScreen() {
-  const { data } = useInvoicesQuery();
+  const { data, error, isError } = useInvoicesQuery();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const invoices = data?.data || [];
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(getErrorMessage(error, 'Failed to load invoices.'));
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   return (
     <FlatList
@@ -28,6 +38,14 @@ export default function InvoicesScreen() {
         <Text style={styles.empty}>No invoices available</Text>
       }
     />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
   );
 }
 

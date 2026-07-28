@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
-import { Card, Text, Chip } from 'react-native-paper';
+import { Card, Text, Chip, Snackbar } from 'react-native-paper';
 import { useMyOrdersQuery } from '@/store/services/ordersApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function OrdersScreen({ navigation }: any) {
-  const { data } = useMyOrdersQuery({ page: 1, limit: 100 });
+  const { data, error, isError } = useMyOrdersQuery({ page: 1, limit: 100 });
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const orders = data?.data || [];
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(getErrorMessage(error, 'Failed to load orders.'));
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   return (
     <FlatList
@@ -31,6 +41,14 @@ export default function OrdersScreen({ navigation }: any) {
       )}
       ListEmptyComponent={<Text style={styles.empty}>No orders yet</Text>}
     />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
   );
 }
 

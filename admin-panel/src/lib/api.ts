@@ -86,6 +86,14 @@ export const analyticsApi = {
 };
 
 export const usersApi = {
+  create: (data: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+    role?: string;
+    status?: string;
+  }) => api.post('/users', data),
   getAll: (params?: any) => api.get('/users', { params }),
   getById: (id: string) => api.get(`/users/${id}`),
   updateStatus: (id: string, status: string) =>

@@ -9,7 +9,6 @@ import {
   Paper,
   InputAdornment,
   IconButton,
-  Alert,
   CircularProgress,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
@@ -19,6 +18,8 @@ import * as yup from 'yup';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { authApi } from '@/lib/api';
+import toast from 'react-hot-toast';
+import { getErrorMessage } from '@/lib/error-message';
 
 const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -30,7 +31,6 @@ type FormData = yup.InferType<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
 
   const {
     register,
@@ -40,12 +40,11 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      setError('');
       const response = await authApi.login(data.email, data.password);
       const { accessToken, refreshToken, user } = response.data.data;
 
       if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
-        setError('Access denied. Admin or Owner account required.');
+        toast.error('Access denied. Admin or Owner account required.');
         return;
       }
 
@@ -55,7 +54,7 @@ export default function LoginPage() {
 
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      toast.error(getErrorMessage(err, 'Login failed. Please try again.'));
     }
   };
 
@@ -109,12 +108,6 @@ export default function LoginPage() {
             Sign in to manage your platform
           </Typography>
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <TextField

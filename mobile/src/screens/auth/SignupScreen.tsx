@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Text, TextInput, Card } from 'react-native-paper';
+import { Button, Text, TextInput, Card, Snackbar } from 'react-native-paper';
 import { useSignupMutation } from '@/store/services/authApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function SignupScreen({ navigation }: any) {
   const [signup, { isLoading }] = useSignupMutation();
@@ -9,13 +10,16 @@ export default function SignupScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   const onSignup = async () => {
     try {
       await signup({ name, email, phone, password }).unwrap();
       navigation.navigate('Login');
     } catch (e) {
-      console.log(e);
+      setSnackbarMessage(getErrorMessage(e, 'Signup failed. Please try again.'));
+      setSnackbarVisible(true);
     }
   };
 
@@ -60,6 +64,14 @@ export default function SignupScreen({ navigation }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

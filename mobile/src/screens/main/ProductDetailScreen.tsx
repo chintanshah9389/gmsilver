@@ -1,16 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Text, Snackbar } from 'react-native-paper';
 import { useProductByIdQuery } from '@/store/services/productsApi';
 import { useAddToCartMutation } from '@/store/services/cartApi';
 import { useAddWishlistMutation } from '@/store/services/wishlistApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function ProductDetailScreen({ route }: any) {
   const { productId } = route.params;
-  const { data } = useProductByIdQuery(productId);
+  const { data, error, isError } = useProductByIdQuery(productId);
   const [addToCart] = useAddToCartMutation();
   const [addWishlist] = useAddWishlistMutation();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const product = data?.data;
+
+  useEffect(() => {
+    if (isError && error) {
+      setSnackbarMessage(
+        getErrorMessage(error, 'Failed to load product details.'),
+      );
+      setSnackbarVisible(true);
+    }
+  }, [error, isError]);
 
   if (!product) {
     return (
@@ -46,14 +58,32 @@ export default function ProductDetailScreen({ route }: any) {
           <Button
             mode="contained"
             style={styles.btn}
-            onPress={() => addToCart({ productId, quantity: 1 })}
+            onPress={async () => {
+              try {
+                await addToCart({ productId, quantity: 1 }).unwrap();
+              } catch (e) {
+                setSnackbarMessage(
+                  getErrorMessage(e, 'Failed to add product to cart.'),
+                );
+                setSnackbarVisible(true);
+              }
+            }}
           >
             Add To Cart
           </Button>
           <Button
             mode="outlined"
             style={styles.btn}
-            onPress={() => addWishlist(productId)}
+            onPress={async () => {
+              try {
+                await addWishlist(productId).unwrap();
+              } catch (e) {
+                setSnackbarMessage(
+                  getErrorMessage(e, 'Failed to add product to wishlist.'),
+                );
+                setSnackbarVisible(true);
+              }
+            }}
           >
             Add To Wishlist
           </Button>
@@ -62,6 +92,14 @@ export default function ProductDetailScreen({ route }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

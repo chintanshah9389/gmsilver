@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Card, Text, TextInput } from 'react-native-paper';
+import { Button, Card, Text, TextInput, Snackbar } from 'react-native-paper';
 import { useCreateOrderMutation } from '@/store/services/ordersApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function CheckoutScreen({ navigation }: any) {
   const [notes, setNotes] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [createOrder, { isLoading }] = useCreateOrderMutation();
 
   const onPlaceOrder = async () => {
-    await createOrder({ notes }).unwrap();
-    navigation.navigate('Orders');
+    try {
+      await createOrder({ notes }).unwrap();
+      navigation.navigate('Orders');
+    } catch (e) {
+      setSnackbarMessage(getErrorMessage(e, 'Failed to place order.'));
+      setSnackbarVisible(true);
+    }
   };
 
   return (
@@ -32,6 +40,14 @@ export default function CheckoutScreen({ navigation }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }

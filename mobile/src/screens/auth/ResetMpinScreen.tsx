@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text, TextInput, Button } from 'react-native-paper';
+import { Card, Text, TextInput, Button, Snackbar } from 'react-native-paper';
 import { useResetMpinMutation } from '@/store/services/authApi';
+import { getErrorMessage } from '@/lib/error-message';
 
 export default function ResetMpinScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newMpin, setNewMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const [resetMpin, { isLoading }] = useResetMpinMutation();
 
   const onSubmit = async () => {
-    await resetMpin({ email, token, newMpin, confirmMpin }).unwrap();
-    navigation.navigate('MpinLogin');
+    try {
+      await resetMpin({ email, token, newMpin, confirmMpin }).unwrap();
+      navigation.navigate('MpinLogin');
+    } catch (e) {
+      setSnackbarMessage(getErrorMessage(e, 'MPIN reset failed.'));
+      setSnackbarVisible(true);
+    }
   };
 
   return (
@@ -61,6 +69,14 @@ export default function ResetMpinScreen({ navigation }: any) {
           </Button>
         </Card.Content>
       </Card>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }
