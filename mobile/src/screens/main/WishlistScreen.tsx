@@ -22,36 +22,37 @@ export default function WishlistScreen({ navigation }: any) {
   }, [error, isError]);
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.listContent}
-      data={items}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={styles.title}>{item.product?.name}</Text>
-            <Text style={styles.sub}>
-              ₹{Number(item.product?.price || 0).toLocaleString()}
-            </Text>
-            <Button
-              mode="text"
-              onPress={() =>
-                navigation.navigate('ProductDetail', {
-                  productId: item.productId,
-                })
-              }
-            >
-              View
-            </Button>
-            <Button mode="outlined" onPress={() => remove(item.productId)}>
-              Remove
-            </Button>
-          </Card.Content>
-        </Card>
-      )}
-      ListEmptyComponent={<Text style={styles.empty}>No wishlist items</Text>}
-    />
+    <>
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        data={items}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.title}>{item.product?.name}</Text>
+              <Text style={styles.sub}>
+                ₹{Number(item.product?.price || 0).toLocaleString()}
+              </Text>
+              <Button
+                mode="text"
+                onPress={() =>
+                  navigation.navigate('ProductDetail', {
+                    productId: item.productId,
+                  })
+                }
+              >
+                View
+              </Button>
+              <Button mode="outlined" onPress={() => remove(item.productId)}>
+                Remove
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>No wishlist items</Text>}
+      />
 
       <Snackbar
         visible={snackbarVisible}
@@ -60,6 +61,7 @@ export default function WishlistScreen({ navigation }: any) {
       >
         {snackbarMessage}
       </Snackbar>
+    </>
   );
 }
 

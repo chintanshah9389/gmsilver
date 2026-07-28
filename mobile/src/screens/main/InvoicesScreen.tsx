@@ -18,26 +18,27 @@ export default function InvoicesScreen() {
   }, [error, isError]);
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.listContent}
-      data={invoices}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={styles.title}>{item.invoiceNumber}</Text>
-            <Text style={styles.sub}>{item.order?.orderNumber}</Text>
-            <Button mode="text" onPress={() => Linking.openURL(item.pdfUrl)}>
-              Open PDF
-            </Button>
-          </Card.Content>
-        </Card>
-      )}
-      ListEmptyComponent={
-        <Text style={styles.empty}>No invoices available</Text>
-      }
-    />
+    <>
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        data={invoices}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.title}>{item.invoiceNumber}</Text>
+              <Text style={styles.sub}>{item.order?.orderNumber}</Text>
+              <Button mode="text" onPress={() => Linking.openURL(item.pdfUrl)}>
+                Open PDF
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No invoices available</Text>
+        }
+      />
 
       <Snackbar
         visible={snackbarVisible}
@@ -46,6 +47,7 @@ export default function InvoicesScreen() {
       >
         {snackbarMessage}
       </Snackbar>
+    </>
   );
 }
 

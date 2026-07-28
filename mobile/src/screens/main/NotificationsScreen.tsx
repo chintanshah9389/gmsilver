@@ -24,30 +24,31 @@ export default function NotificationsScreen() {
   }, [error, isError]);
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.listContent}
-      ListHeaderComponent={
-        <Button mode="outlined" onPress={() => markAllRead()}>
-          Mark all as read
-        </Button>
-      }
-      data={rows}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={styles.title}>
-              {item.notification?.title || item.title}
-            </Text>
-            <Text style={styles.sub}>
-              {item.notification?.body || item.body}
-            </Text>
-          </Card.Content>
-        </Card>
-      )}
-      ListEmptyComponent={<Text style={styles.empty}>No notifications</Text>}
-    />
+    <>
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <Button mode="outlined" onPress={() => markAllRead()}>
+            Mark all as read
+          </Button>
+        }
+        data={rows}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.title}>
+                {item.notification?.title || item.title}
+              </Text>
+              <Text style={styles.sub}>
+                {item.notification?.body || item.body}
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>No notifications</Text>}
+      />
 
       <Snackbar
         visible={snackbarVisible}
@@ -56,6 +57,7 @@ export default function NotificationsScreen() {
       >
         {snackbarMessage}
       </Snackbar>
+    </>
   );
 }
 

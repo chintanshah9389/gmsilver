@@ -23,37 +23,39 @@ export default function ProductListScreen({ route, navigation }: any) {
   }, [error, isError]);
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.listContent}
-      data={products}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('ProductDetail', { productId: item.id })
-          }
-        >
+    <>
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        data={products}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate('ProductDetail', { productId: item.id })
+            }
+          >
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.title}>
+                {item.name}
+              </Text>
+              <Text style={styles.sub}>
+                ₹{Number(item.price).toLocaleString()}
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+      />
 
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          duration={4000}
-        >
-          {snackbarMessage}
-        </Snackbar>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.title}>
-              {item.name}
-            </Text>
-            <Text style={styles.sub}>
-              ₹{Number(item.price).toLocaleString()}
-            </Text>
-          </Card.Content>
-        </Card>
-      )}
-    />
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
+    </>
   );
 }
 

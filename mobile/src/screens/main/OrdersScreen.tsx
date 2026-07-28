@@ -18,29 +18,30 @@ export default function OrdersScreen({ navigation }: any) {
   }, [error, isError]);
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.listContent}
-      data={orders}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('OrderDetail', { orderId: item.id })
-          }
-        >
-          <Card.Content>
-            <Text style={styles.title}>{item.orderNumber}</Text>
-            <Text style={styles.sub}>
-              ₹{Number(item.grandTotal).toLocaleString()}
-            </Text>
-            <Chip style={styles.chip}>{item.status}</Chip>
-          </Card.Content>
-        </Card>
-      )}
-      ListEmptyComponent={<Text style={styles.empty}>No orders yet</Text>}
-    />
+    <>
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        data={orders}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate('OrderDetail', { orderId: item.id })
+            }
+          >
+            <Card.Content>
+              <Text style={styles.title}>{item.orderNumber}</Text>
+              <Text style={styles.sub}>
+                ₹{Number(item.grandTotal).toLocaleString()}
+              </Text>
+              <Chip style={styles.chip}>{item.status}</Chip>
+            </Card.Content>
+          </Card>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>No orders yet</Text>}
+      />
 
       <Snackbar
         visible={snackbarVisible}
@@ -49,6 +50,7 @@ export default function OrdersScreen({ navigation }: any) {
       >
         {snackbarMessage}
       </Snackbar>
+    </>
   );
 }
 

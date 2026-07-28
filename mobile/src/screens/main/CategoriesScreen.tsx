@@ -18,37 +18,39 @@ export default function CategoriesScreen({ navigation }: any) {
   }, [error, isError]);
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={styles.listContent}
-      data={categories}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('ProductList', {
-              categoryId: item.id,
-              categoryName: item.name,
-            })
-          }
-        >
+    <>
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.listContent}
+        data={categories}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate('ProductList', {
+                categoryId: item.id,
+                categoryName: item.name,
+              })
+            }
+          >
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.title}>
+                {item.name}
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+      />
 
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          duration={4000}
-        >
-          {snackbarMessage}
-        </Snackbar>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.title}>
-              {item.name}
-            </Text>
-          </Card.Content>
-        </Card>
-      )}
-    />
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+      >
+        {snackbarMessage}
+      </Snackbar>
+    </>
   );
 }
 
