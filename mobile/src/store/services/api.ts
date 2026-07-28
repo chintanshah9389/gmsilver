@@ -1,8 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../index';
 
+const envApiUrl =
+  (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.EXPO_PUBLIC_API_URL;
+
 const baseUrl =
-  process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  envApiUrl ||
+  'https://gmsilver-production.up.railway.app/api/v1';
 
 export const api = createApi({
   reducerPath: 'api',

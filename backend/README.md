@@ -21,7 +21,7 @@ npm run start:dev
 
 ## API Docs
 
-http://localhost:3001/api/docs
+https://gmsilver-production.up.railway.app/api/docs
 
 ## Core Modules
 

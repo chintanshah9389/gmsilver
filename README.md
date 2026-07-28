@@ -125,5 +125,5 @@ cd mobile && npx react-native run-android
 
 - [Architecture](./docs/ARCHITECTURE.md)
 - [ER Diagram](./docs/ER_DIAGRAM.md)
-- [API Documentation](http://localhost:3001/api/docs)
+- [API Documentation](https://gmsilver-production.up.railway.app/api/docs)
 - [Deployment Guide](./docs/DEPLOYMENT.md)
