@@ -407,11 +407,27 @@ export class ProductsService {
   async remove(id: string) {
     const product = await this.prisma.product.findFirst({
       where: { id, deletedAt: null },
+      include: { images: true },
     });
 
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    // Delete all product images from R2
+    const imageDeletePromises = product.images
+      .filter((img) => img.storageKey)
+      .map((img) => this.storageService.deleteFile(img.storageKey));
+
+    // Delete PDF from R2 if present
+    if (product.pdfStorageKey) {
+      imageDeletePromises.push(this.storageService.deleteFile(product.pdfStorageKey));
+    }
+
+    await Promise.all(imageDeletePromises);
+
+    // Delete image records from DB, then soft-delete the product
+    await this.prisma.productImage.deleteMany({ where: { productId: id } });
 
     await this.prisma.product.update({
       where: { id },
