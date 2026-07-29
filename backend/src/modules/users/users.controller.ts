@@ -18,6 +18,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { UpdateUserCredentialsDto } from './dto/update-user-credentials.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -77,6 +78,16 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user status (Admin only)' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateUserStatusDto) {
     return this.usersService.updateStatus(id, dto);
+  }
+
+  @Patch(':id/credentials')
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Update user password/mpin (Admin/Owner)' })
+  updateCredentials(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserCredentialsDto,
+  ) {
+    return this.usersService.updateCredentials(id, dto);
   }
 
   @Patch(':id/fcm-token')

@@ -1,10 +1,12 @@
 import {
   Injectable,
+  BadRequestException,
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { UpdateUserCredentialsDto } from './dto/update-user-credentials.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserStatus } from '@prisma/client';
@@ -185,6 +187,35 @@ export class UsersService {
     });
 
     return { message: `User status updated to ${dto.status}` };
+  }
+
+  async updateCredentials(userId: string, dto: UpdateUserCredentialsDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!dto.password && !dto.mpin) {
+      throw new BadRequestException('Provide password or mpin to update');
+    }
+
+    const data: { password?: string; mpin?: string } = {};
+
+    if (dto.password) {
+      data.password = await BcryptUtil.hash(dto.password);
+    }
+
+    if (dto.mpin) {
+      data.mpin = await BcryptUtil.hashMpin(dto.mpin);
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    return { message: 'User credentials updated successfully' };
   }
 
   async updateFcmToken(userId: string, fcmToken: string) {

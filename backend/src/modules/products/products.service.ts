@@ -113,21 +113,6 @@ export class ProductsService {
   }
 
   async create(dto: CreateProductDto, images?: Express.Multer.File[]) {
-    let imageUrl: string | undefined;
-    let storageKey: string | undefined;
-
-    // Upload primary image (first image)
-    if (images && images.length > 0) {
-      const primaryUpload = await this.storageService.uploadImage(
-        images[0].buffer,
-        images[0].originalname,
-        images[0].mimetype,
-        'products',
-      );
-      imageUrl = primaryUpload.url;
-      storageKey = primaryUpload.storageKey;
-    }
-
     const product = await this.prisma.product.create({
       data: {
         name: dto.name,
@@ -137,19 +122,47 @@ export class ProductsService {
         purity: dto.purity,
         sku: dto.sku,
         categoryId: dto.categoryId,
-        imageUrl,
-        storageKey,
         isAvailable: dto.isAvailable !== 'false',
         isActive: dto.isActive !== 'false',
       },
     });
+
+    const imageFolder = this.buildProductImageFolder(product.sku, product.id);
+
+    let imageUrl: string | undefined;
+    let storageKey: string | undefined;
+
+    // Upload primary image (first image)
+    if (images && images.length > 0) {
+      const primaryUpload = await this.storageService.uploadImage(
+        images[0].buffer,
+        images[0].originalname,
+        images[0].mimetype,
+        imageFolder,
+      );
+      imageUrl = primaryUpload.url;
+      storageKey = primaryUpload.storageKey;
+
+      await this.prisma.product.update({
+        where: { id: product.id },
+        data: {
+          imageUrl,
+          storageKey,
+        },
+      });
+    }
 
     // Upload additional images
     if (images && images.length > 1) {
       const imageUploads = await Promise.all(
         images.slice(1).map((img, index) =>
           this.storageService
-            .uploadImage(img.buffer, img.originalname, img.mimetype, 'products')
+            .uploadImage(
+              img.buffer,
+              img.originalname,
+              img.mimetype,
+              imageFolder,
+            )
             .then((uploaded) => ({
               productId: product.id,
               imageUrl: uploaded.url,
@@ -194,6 +207,8 @@ export class ProductsService {
 
     let imageUrl = product.imageUrl;
     let storageKey = product.storageKey;
+    const effectiveSku = dto.sku || product.sku;
+    const imageFolder = this.buildProductImageFolder(effectiveSku, product.id);
 
     if (image) {
       const uploaded = await this.storageService.replaceFile(
@@ -201,7 +216,7 @@ export class ProductsService {
         image.buffer,
         image.originalname,
         image.mimetype,
-        'products',
+        imageFolder,
       );
       imageUrl = uploaded.url;
       storageKey = uploaded.storageKey;
@@ -246,7 +261,12 @@ export class ProductsService {
     const imageData = await Promise.all(
       images.map((img, index) =>
         this.storageService
-          .uploadImage(img.buffer, img.originalname, img.mimetype, 'products')
+          .uploadImage(
+            img.buffer,
+            img.originalname,
+            img.mimetype,
+            this.buildProductImageFolder(product.sku, product.id),
+          )
           .then((uploaded) => ({
             productId,
             imageUrl: uploaded.url,
@@ -292,5 +312,28 @@ export class ProductsService {
     });
 
     return { message: 'Product deleted successfully' };
+  }
+
+  private buildProductImageFolder(sku?: string | null, productId?: string): string {
+    const skuPart = this.sanitizeFolderPart(sku);
+
+    if (skuPart) {
+      return `products/${skuPart}`;
+    }
+
+    return `products/${productId || 'unknown-product'}`;
+  }
+
+  private sanitizeFolderPart(value?: string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 }

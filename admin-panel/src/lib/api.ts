@@ -98,6 +98,13 @@ export const usersApi = {
   getById: (id: string) => api.get(`/users/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/users/${id}/status`, { status }),
+  updateCredentials: (
+    id: string,
+    data: {
+      password?: string;
+      mpin?: string;
+    },
+  ) => api.patch(`/users/${id}/credentials`, data),
   delete: (id: string) => api.delete(`/users/${id}`),
 };
 

@@ -28,6 +28,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [form, setForm] = useState<any>({
     name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true'
   });
@@ -52,15 +53,33 @@ export default function ProductsPage() {
 
   const resetForm = () => {
     setEditing(null);
+    setImageFiles([]);
     setForm({ name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true' });
   };
 
   const onSave = async () => {
     try {
+      if (!editing && imageFiles.length === 0) {
+        toast.error('Please upload at least one product image');
+        return;
+      }
+
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) fd.append(k, String(v)); });
+
+      if (!editing && imageFiles.length > 0) {
+        imageFiles.forEach((file) => fd.append('images', file));
+      }
+
       if (editing) {
         await productsApi.update(editing.id, fd);
+
+        if (imageFiles.length > 0) {
+          const imageFd = new FormData();
+          imageFiles.forEach((file) => imageFd.append('images', file));
+          await productsApi.addImages(editing.id, imageFd);
+        }
+
         toast.success('Product updated');
       } else {
         await productsApi.create(fd);
@@ -170,6 +189,25 @@ export default function ProductsPage() {
             </TextField>
           </Box>
           <TextField fullWidth multiline minRows={3} label='Description' value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} sx={{ mt:2 }} />
+          <Button
+            component='label'
+            variant='outlined'
+            sx={{ mt: 2 }}
+          >
+            {imageFiles.length > 0 ? `${imageFiles.length} image(s) selected` : 'Upload Product Images'}
+            <input
+              type='file'
+              accept='image/*'
+              multiple
+              hidden
+              onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+            />
+          </Button>
+          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
+            {editing
+              ? 'Selected images will be added to this product.'
+              : 'At least one image is required. Images will be uploaded to storage during product creation.'}
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
