@@ -46,8 +46,12 @@ export class StorageService {
       },
     });
 
-    this.bucket = this.configService.get<string>('r2.bucket');
-    this.publicUrl = this.configService.get<string>('r2.publicUrl')?.replace(/\/+$/, '');
+    this.bucket = this.configService.get<string>('r2.bucket')?.trim();
+    this.publicUrl = this.resolvePublicUrl(
+      this.configService.get<string>('r2.publicUrl')?.trim(),
+      endpoint,
+      this.bucket,
+    );
     this.endpoint = endpoint;
   }
 
@@ -232,21 +236,33 @@ export class StorageService {
   private assertStorageConfigured(): void {
     const accessKeyId = this.configService.get<string>('r2.accessKeyId')?.trim();
     const secretAccessKey = this.configService.get<string>('r2.secretAccessKey')?.trim();
+    const missing: string[] = [];
 
-    if (
-      !this.endpoint ||
-      !this.bucket ||
-      !this.publicUrl ||
-      !accessKeyId ||
-      !secretAccessKey ||
-      this.isPlaceholderValue(this.endpoint) ||
-      this.isPlaceholderValue(this.bucket) ||
-      this.isPlaceholderValue(this.publicUrl) ||
-      this.isPlaceholderValue(accessKeyId) ||
-      this.isPlaceholderValue(secretAccessKey)
-    ) {
+    if (!this.endpoint || this.isPlaceholderValue(this.endpoint)) {
+      missing.push('R2_ACCOUNT_ID or R2_ENDPOINT');
+    }
+
+    if (!this.bucket || this.isPlaceholderValue(this.bucket)) {
+      missing.push('R2_BUCKET');
+    }
+
+    if (!accessKeyId || this.isPlaceholderValue(accessKeyId)) {
+      missing.push('R2_ACCESS_KEY_ID');
+    }
+
+    if (!secretAccessKey || this.isPlaceholderValue(secretAccessKey)) {
+      missing.push('R2_SECRET_ACCESS_KEY');
+    }
+
+    if (missing.length > 0) {
       throw new BadRequestException(
-        'Storage is not configured. Set valid R2_ACCOUNT_ID or R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, and R2_PUBLIC_URL.',
+        `Storage is not configured. Missing/invalid: ${missing.join(', ')}.`,
+      );
+    }
+
+    if (!this.publicUrl) {
+      throw new BadRequestException(
+        'Storage is not configured. Set R2_PUBLIC_URL or ensure R2_ENDPOINT and R2_BUCKET are valid.',
       );
     }
   }
@@ -275,6 +291,26 @@ export class StorageService {
     }
 
     return `https://${accountId}.r2.cloudflarestorage.com`;
+  }
+
+  private resolvePublicUrl(
+    explicitPublicUrl?: string,
+    endpoint?: string,
+    bucket?: string,
+  ): string {
+    if (explicitPublicUrl) {
+      if (explicitPublicUrl.startsWith('http://') || explicitPublicUrl.startsWith('https://')) {
+        return explicitPublicUrl.replace(/\/+$/, '');
+      }
+
+      return `https://${explicitPublicUrl.replace(/\/+$/, '')}`;
+    }
+
+    if (!endpoint || !bucket) {
+      return '';
+    }
+
+    return `${endpoint.replace(/\/+$/, '')}/${bucket}`;
   }
 
   private isPlaceholderValue(value: string): boolean {
