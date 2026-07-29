@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -12,6 +12,8 @@ import {
 
 @Injectable()
 export class ProductsService {
+  private static readonly MAX_PRODUCT_IMAGES = 3;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
@@ -112,7 +114,13 @@ export class ProductsService {
     return { data: product };
   }
 
-  async create(dto: CreateProductDto, images?: Express.Multer.File[]) {
+  async create(
+    dto: CreateProductDto,
+    images: Express.Multer.File[] = [],
+    pdf?: Express.Multer.File,
+  ) {
+    this.ensureValidImageCount(images.length);
+
     const product = await this.prisma.product.create({
       data: {
         name: dto.name,
@@ -128,9 +136,12 @@ export class ProductsService {
     });
 
     const imageFolder = this.buildProductImageFolder(product.sku, product.id);
+  const pdfFolder = this.buildProductPdfFolder(product.sku, product.id);
 
     let imageUrl: string | undefined;
     let storageKey: string | undefined;
+  let pdfUrl: string | undefined;
+  let pdfStorageKey: string | undefined;
 
     // Upload primary image (first image)
     if (images && images.length > 0) {
@@ -176,6 +187,24 @@ export class ProductsService {
       await this.prisma.productImage.createMany({ data: imageUploads });
     }
 
+    if (pdf) {
+      const pdfUpload = await this.storageService.uploadPdf(
+        pdf.buffer,
+        pdf.originalname,
+        pdfFolder,
+      );
+      pdfUrl = pdfUpload.url;
+      pdfStorageKey = pdfUpload.storageKey;
+
+      await this.prisma.product.update({
+        where: { id: product.id },
+        data: {
+          pdfUrl,
+          pdfStorageKey,
+        },
+      });
+    }
+
     // Also create primary image entry
     if (imageUrl && storageKey) {
       await this.prisma.productImage.create({
@@ -196,7 +225,12 @@ export class ProductsService {
     return { message: 'Product created successfully', data: result.data };
   }
 
-  async update(id: string, dto: UpdateProductDto, image?: Express.Multer.File) {
+  async update(
+    id: string,
+    dto: UpdateProductDto,
+    images: Express.Multer.File[] = [],
+    pdf?: Express.Multer.File,
+  ) {
     const product = await this.prisma.product.findFirst({
       where: { id, deletedAt: null },
     });
@@ -207,24 +241,62 @@ export class ProductsService {
 
     let imageUrl = product.imageUrl;
     let storageKey = product.storageKey;
+    let pdfUrl = product.pdfUrl;
+    let pdfStorageKey = product.pdfStorageKey;
     const effectiveSku = dto.sku || product.sku;
     const imageFolder = this.buildProductImageFolder(effectiveSku, product.id);
+    const pdfFolder = this.buildProductPdfFolder(effectiveSku, product.id);
 
-    if (image) {
-      const uploaded = await this.storageService.replaceFile(
+    if (images.length > 1) {
+      throw new BadRequestException('Only one primary image can be updated at a time');
+    }
+
+    if (images[0]) {
+      const uploaded = await this.storageService.replaceImage(
         product.storageKey,
-        image.buffer,
-        image.originalname,
-        image.mimetype,
+        images[0].buffer,
+        images[0].originalname,
+        images[0].mimetype,
         imageFolder,
       );
       imageUrl = uploaded.url;
       storageKey = uploaded.storageKey;
+
+      const primaryImage = await this.prisma.productImage.findFirst({
+        where: { productId: id, isPrimary: true },
+      });
+
+      if (primaryImage) {
+        await this.prisma.productImage.update({
+          where: { id: primaryImage.id },
+          data: { imageUrl, storageKey },
+        });
+      }
+    }
+
+    if (pdf) {
+      const uploadedPdf = pdfStorageKey
+        ? await this.storageService.replacePdf(
+            pdfStorageKey,
+            pdf.buffer,
+            pdf.originalname,
+            pdfFolder,
+          )
+        : await this.storageService.uploadPdf(
+            pdf.buffer,
+            pdf.originalname,
+            pdfFolder,
+          );
+
+      pdfUrl = uploadedPdf.url;
+      pdfStorageKey = uploadedPdf.storageKey;
     }
 
     const updateData: any = {
       imageUrl,
       storageKey,
+      pdfUrl,
+      pdfStorageKey,
     };
 
     if (dto.name) updateData.name = dto.name;
@@ -257,6 +329,12 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    const existingImageCount = await this.prisma.productImage.count({
+      where: { productId },
+    });
+
+    this.ensureValidImageCount(existingImageCount + images.length, existingImageCount);
 
     const imageData = await Promise.all(
       images.map((img, index) =>
@@ -322,6 +400,28 @@ export class ProductsService {
     }
 
     return `products/${productId || 'unknown-product'}`;
+  }
+
+  private buildProductPdfFolder(sku?: string | null, productId?: string): string {
+    return `${this.buildProductImageFolder(sku, productId)}/documents`;
+  }
+
+  private ensureValidImageCount(totalCount: number, existingCount = 0): void {
+    const newCount = totalCount - existingCount;
+
+    if (existingCount === 0 && totalCount === 0) {
+      throw new BadRequestException('At least one product image is required');
+    }
+
+    if (newCount <= 0) {
+      throw new BadRequestException('Please upload at least one product image');
+    }
+
+    if (totalCount > ProductsService.MAX_PRODUCT_IMAGES) {
+      throw new BadRequestException(
+        `You can upload up to ${ProductsService.MAX_PRODUCT_IMAGES} product images`,
+      );
+    }
   }
 
   private sanitizeFolderPart(value?: string | null): string {

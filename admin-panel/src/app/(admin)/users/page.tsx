@@ -53,6 +53,7 @@ export default function UsersPage() {
   const [createLoading, setCreateLoading] = useState(false);
   const [credentialsOpen, setCredentialsOpen] = useState(false);
   const [credentialsLoading, setCredentialsLoading] = useState(false);
+  const [credentialsUserId, setCredentialsUserId] = useState<string | null>(null);
   const [credentialsForm, setCredentialsForm] = useState({
     password: '',
     mpin: '',
@@ -197,6 +198,7 @@ export default function UsersPage() {
 
   const openCredentialsDialog = () => {
     if (!selectedUser) return;
+    setCredentialsUserId(selectedUser.id);
     setCredentialsForm({ password: '', mpin: '' });
     setCredentialsErrors({});
     setCredentialsOpen(true);
@@ -230,17 +232,18 @@ export default function UsersPage() {
   };
 
   const handleUpdateCredentials = async () => {
-    if (!selectedUser) return;
+    if (!credentialsUserId) return;
     if (!validateCredentialsForm()) return;
 
     try {
       setCredentialsLoading(true);
-      await usersApi.updateCredentials(selectedUser.id, {
+      await usersApi.updateCredentials(credentialsUserId, {
         password: credentialsForm.password.trim() || undefined,
         mpin: credentialsForm.mpin.trim() || undefined,
       });
       toast.success('User credentials updated successfully');
       setCredentialsOpen(false);
+      setCredentialsUserId(null);
       setCredentialsForm({ password: '', mpin: '' });
       setCredentialsErrors({});
     } catch (err: any) {
@@ -422,7 +425,10 @@ export default function UsersPage() {
 
       <Dialog
         open={credentialsOpen}
-        onClose={() => setCredentialsOpen(false)}
+        onClose={() => {
+          setCredentialsOpen(false);
+          setCredentialsUserId(null);
+        }}
         fullWidth
         maxWidth="sm"
       >
@@ -462,7 +468,14 @@ export default function UsersPage() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCredentialsOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              setCredentialsOpen(false);
+              setCredentialsUserId(null);
+            }}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleUpdateCredentials}
             variant="contained"

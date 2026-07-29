@@ -19,8 +19,8 @@ export interface UploadResult {
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_PDF_TYPE = ['application/pdf'];
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_IMAGE_SIZE = 500 * 1024; // 500KB
+const MAX_PDF_SIZE = 2 * 1024 * 1024; // 2MB
 
 @Injectable()
 export class StorageService {
@@ -87,7 +87,7 @@ export class StorageService {
     }
 
     if (buffer.length > MAX_IMAGE_SIZE) {
-      throw new BadRequestException('Image size must not exceed 5MB');
+      throw new BadRequestException('Image size must not exceed 500KB');
     }
 
     return this.uploadFile(buffer, originalName, mimeType, folder);
@@ -100,10 +100,45 @@ export class StorageService {
     folder = 'invoices',
   ): Promise<UploadResult> {
     if (buffer.length > MAX_PDF_SIZE) {
-      throw new BadRequestException('PDF size must not exceed 10MB');
+      throw new BadRequestException('PDF size must not exceed 2MB');
     }
 
     return this.uploadFile(buffer, filename, 'application/pdf', folder);
+  }
+
+  async replaceImage(
+    oldStorageKey: string,
+    buffer: Buffer,
+    originalName: string,
+    mimeType: string,
+    folder = 'images',
+  ): Promise<UploadResult> {
+    const result = await this.uploadImage(buffer, originalName, mimeType, folder);
+
+    if (oldStorageKey) {
+      this.deleteFile(oldStorageKey).catch((err) =>
+        console.error('Failed to delete old file:', err),
+      );
+    }
+
+    return result;
+  }
+
+  async replacePdf(
+    oldStorageKey: string,
+    buffer: Buffer,
+    filename: string,
+    folder = 'invoices',
+  ): Promise<UploadResult> {
+    const result = await this.uploadPdf(buffer, filename, folder);
+
+    if (oldStorageKey) {
+      this.deleteFile(oldStorageKey).catch((err) =>
+        console.error('Failed to delete old file:', err),
+      );
+    }
+
+    return result;
   }
 
   // ─── DELETE FILE ───────────────────────────────────────────────────

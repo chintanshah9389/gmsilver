@@ -21,6 +21,10 @@ import { Add, Search, Delete, Edit } from '@mui/icons-material';
 import { productsApi, categoriesApi, excelApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
+const MAX_PRODUCT_IMAGES = 3;
+const MAX_IMAGE_SIZE = 500 * 1024;
+const MAX_PDF_SIZE = 2 * 1024 * 1024;
+
 export default function ProductsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -28,7 +32,9 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<Array<string | null>>([null, null, null]);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [form, setForm] = useState<any>({
     name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true'
   });
@@ -51,15 +57,91 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchData(); }, [search]);
 
+  useEffect(() => {
+    const previewUrls = imageFiles.map((file) => (file ? URL.createObjectURL(file) : null));
+    setImagePreviewUrls(previewUrls);
+
+    return () => {
+      previewUrls.forEach((url) => {
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [imageFiles]);
+
   const resetForm = () => {
     setEditing(null);
-    setImageFiles([]);
+    setImageFiles([null, null, null]);
+    setImagePreviewUrls([null, null, null]);
+    setPdfFile(null);
     setForm({ name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true' });
+  };
+
+  const getSelectedImageFiles = () => imageFiles.filter((file): file is File => file !== null);
+
+  const handleImageSelection = (slotIndex: number, fileList: FileList | null) => {
+    const selectedFile = fileList?.[0] || null;
+    const existingImageCount = editing?.images?.length || 0;
+    const remainingSlots = Math.max(MAX_PRODUCT_IMAGES - existingImageCount, 0);
+    const nextFiles = [...imageFiles];
+    const selectedSlots = nextFiles.filter((file, index) => file !== null && index !== slotIndex).length;
+
+    if (!selectedFile) {
+      nextFiles[slotIndex] = null;
+      setImageFiles(nextFiles);
+      return;
+    }
+
+    if (selectedSlots + 1 > remainingSlots) {
+      toast.error(
+        editing
+          ? `You can add up to ${remainingSlots} more image(s) for this product`
+          : `You can upload up to ${MAX_PRODUCT_IMAGES} images`,
+      );
+      return;
+    }
+
+    if (!selectedFile.type.startsWith('image/')) {
+      toast.error('Only image files are allowed');
+      return;
+    }
+
+    if (selectedFile.size > MAX_IMAGE_SIZE) {
+      toast.error(`Image \"${selectedFile.name}\" exceeds the 500KB limit`);
+      return;
+    }
+
+    nextFiles[slotIndex] = selectedFile;
+    setImageFiles(nextFiles);
+  };
+
+  const handlePdfSelection = (files: FileList | null) => {
+    const selectedFile = files?.[0] || null;
+
+    if (!selectedFile) {
+      setPdfFile(null);
+      return;
+    }
+
+    if (selectedFile.type !== 'application/pdf') {
+      toast.error('Only PDF files are allowed');
+      return;
+    }
+
+    if (selectedFile.size > MAX_PDF_SIZE) {
+      toast.error(`PDF \"${selectedFile.name}\" exceeds the 2MB limit`);
+      return;
+    }
+
+    setPdfFile(selectedFile);
   };
 
   const onSave = async () => {
     try {
-      if (!editing && imageFiles.length === 0) {
+      const selectedImageFiles = getSelectedImageFiles();
+
+      if (!editing && selectedImageFiles.length === 0) {
         toast.error('Please upload at least one product image');
         return;
       }
@@ -67,16 +149,20 @@ export default function ProductsPage() {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) fd.append(k, String(v)); });
 
-      if (!editing && imageFiles.length > 0) {
-        imageFiles.forEach((file) => fd.append('images', file));
+      if (!editing && selectedImageFiles.length > 0) {
+        selectedImageFiles.forEach((file) => fd.append('images', file));
+      }
+
+      if (pdfFile) {
+        fd.append('pdf', pdfFile);
       }
 
       if (editing) {
         await productsApi.update(editing.id, fd);
 
-        if (imageFiles.length > 0) {
+        if (selectedImageFiles.length > 0) {
           const imageFd = new FormData();
-          imageFiles.forEach((file) => imageFd.append('images', file));
+          selectedImageFiles.forEach((file) => imageFd.append('images', file));
           await productsApi.addImages(editing.id, imageFd);
         }
 
@@ -106,6 +192,8 @@ export default function ProductsPage() {
 
   const onEdit = (row: any) => {
     setEditing(row);
+    setImageFiles([null, null, null]);
+    setPdfFile(null);
     setForm({
       name: row.name,
       description: row.description || '',
@@ -189,24 +277,69 @@ export default function ProductsPage() {
             </TextField>
           </Box>
           <TextField fullWidth multiline minRows={3} label='Description' value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} sx={{ mt:2 }} />
+          <Box sx={{ display:'grid', gap:2, gridTemplateColumns:'repeat(3,minmax(0,1fr))', mt: 2 }}>
+            {[0, 1, 2].map((slotIndex) => {
+              const slotLabel = `Image ${slotIndex + 1}`;
+              const selectedFile = imageFiles[slotIndex];
+              const existingImage = editing?.images?.[slotIndex];
+              const previewUrl = imagePreviewUrls[slotIndex] || existingImage?.imageUrl;
+
+              return (
+                <Box key={slotLabel} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+                  <Typography variant='subtitle2' sx={{ mb: 1 }}>{slotLabel}</Typography>
+                  <Box sx={{ height: 140, borderRadius: 1.5, overflow: 'hidden', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                    {previewUrl ? (
+                      <Box component='img' src={previewUrl} alt={slotLabel} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <Typography variant='caption' color='text.secondary'>No image selected</Typography>
+                    )}
+                  </Box>
+                  <Button component='label' variant='outlined' fullWidth>
+                    {selectedFile ? selectedFile.name : existingImage ? 'Replace image' : 'Upload image'}
+                    <input
+                      type='file'
+                      accept='image/*'
+                      hidden
+                      onChange={(e) => {
+                        handleImageSelection(slotIndex, e.target.files);
+                        e.target.value = '';
+                      }}
+                    />
+                  </Button>
+                  {selectedFile && (
+                    <Button fullWidth sx={{ mt: 1 }} onClick={() => handleImageSelection(slotIndex, null)}>
+                      Clear
+                    </Button>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
+            {editing
+              ? `Selected images will be added to this product. ${Math.max(MAX_PRODUCT_IMAGES - (editing.images?.length || 0), 0)} image slot(s) remaining.`
+              : 'At least one image is required. You can upload up to 3 images, 500KB each.'}
+          </Typography>
           <Button
             component='label'
             variant='outlined'
             sx={{ mt: 2 }}
           >
-            {imageFiles.length > 0 ? `${imageFiles.length} image(s) selected` : 'Upload Product Images'}
+            {pdfFile ? pdfFile.name : 'Upload Product PDF'}
             <input
               type='file'
-              accept='image/*'
-              multiple
+              accept='application/pdf'
               hidden
-              onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+              onChange={(e) => {
+                handlePdfSelection(e.target.files);
+                e.target.value = '';
+              }}
             />
           </Button>
           <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
-            {editing
-              ? 'Selected images will be added to this product.'
-              : 'At least one image is required. Images will be uploaded to storage during product creation.'}
+            {editing && editing.pdfUrl
+              ? 'A PDF is already attached. Selecting a new file will replace it. PDF size must be 2MB or less.'
+              : 'One optional PDF can be uploaded per product. PDF size must be 2MB or less.'}
           </Typography>
         </DialogContent>
         <DialogActions>

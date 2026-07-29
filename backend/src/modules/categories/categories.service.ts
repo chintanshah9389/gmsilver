@@ -107,7 +107,7 @@ export class CategoriesService {
     let storageKey = category.storageKey;
 
     if (image) {
-      const uploaded = await this.storageService.replaceFile(
+      const uploaded = await this.storageService.replaceImage(
         category.storageKey,
         image.buffer,
         image.originalname,

@@ -12,7 +12,10 @@ import {
   UploadedFiles,
   UploadedFile,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -34,6 +37,16 @@ import { UserRole } from '@prisma/client';
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  private normalizeProductFiles(files?: {
+    images?: Express.Multer.File[];
+    pdf?: Express.Multer.File[];
+  }) {
+    return {
+      images: files?.images ?? [],
+      pdf: files?.pdf?.[0],
+    };
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all products with filters' })
@@ -63,12 +76,19 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.OWNER)
   @ApiOperation({ summary: 'Create a new product (Admin/Owner)' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'images', maxCount: 3 },
+      { name: 'pdf', maxCount: 1 },
+    ]),
+  )
   create(
     @Body() dto: CreateProductDto,
-    @UploadedFiles() images?: Express.Multer.File[],
+    @UploadedFiles()
+    files?: { images?: Express.Multer.File[]; pdf?: Express.Multer.File[] },
   ) {
-    return this.productsService.create(dto, images);
+    const { images, pdf } = this.normalizeProductFiles(files);
+    return this.productsService.create(dto, images, pdf);
   }
 
   @Put(':id')
@@ -77,13 +97,20 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.OWNER)
   @ApiOperation({ summary: 'Update a product (Admin/Owner)' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'images', maxCount: 3 },
+      { name: 'pdf', maxCount: 1 },
+    ]),
+  )
   update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
-    @UploadedFile() image?: Express.Multer.File,
+    @UploadedFiles()
+    files?: { images?: Express.Multer.File[]; pdf?: Express.Multer.File[] },
   ) {
-    return this.productsService.update(id, dto, image);
+    const { images, pdf } = this.normalizeProductFiles(files);
+    return this.productsService.update(id, dto, images, pdf);
   }
 
   @Post(':id/images')
@@ -92,7 +119,7 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.OWNER)
   @ApiOperation({ summary: 'Add images to a product' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(FilesInterceptor('images', 3))
   addImages(
     @Param('id') id: string,
     @UploadedFiles() images: Express.Multer.File[],
