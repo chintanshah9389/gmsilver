@@ -1,3 +1,4 @@
+import 'multer';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
@@ -132,6 +133,7 @@ export class ProductsService {
         categoryId: dto.categoryId,
         isAvailable: dto.isAvailable !== 'false',
         isActive: dto.isActive !== 'false',
+        quantity: dto.quantity !== undefined ? parseInt(dto.quantity, 10) : 0,
       },
     });
 
@@ -308,6 +310,7 @@ export class ProductsService {
     if (dto.categoryId) updateData.categoryId = dto.categoryId;
     if (dto.isAvailable !== undefined) updateData.isAvailable = dto.isAvailable !== 'false';
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive !== 'false';
+    if (dto.quantity !== undefined) updateData.quantity = parseInt(dto.quantity, 10);
 
     const updated = await this.prisma.product.update({
       where: { id },

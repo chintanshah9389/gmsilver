@@ -119,6 +119,7 @@ model Product {
   storageKey  String?  @map("storage_key")
   pdfUrl      String?  @map("pdf_url")
   pdfStorageKey String? @map("pdf_storage_key")
+  quantity    Int      @default(0)
   isAvailable Boolean  @default(true) @map("is_available")
   isActive    Boolean  @default(true) @map("is_active")
 

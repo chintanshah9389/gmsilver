@@ -43,4 +43,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   isActive?: string;
+
+  @ApiPropertyOptional({ example: '10' })
+  @IsOptional()
+  @IsString()
+  quantity?: string;
 }

@@ -36,7 +36,7 @@ export default function ProductsPage() {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<Array<string | null>>([null, null, null]);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [form, setForm] = useState<any>({
-    name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true'
+    name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0'
   });
 
   const fetchData = async () => {
@@ -75,7 +75,7 @@ export default function ProductsPage() {
     setImageFiles([null, null, null]);
     setImagePreviewUrls([null, null, null]);
     setPdfFile(null);
-    setForm({ name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true' });
+    setForm({ name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0' });
   };
 
   const getSelectedImageFiles = () => imageFiles.filter((file): file is File => file !== null);
@@ -204,6 +204,7 @@ export default function ProductsPage() {
       categoryId: row.categoryId,
       isAvailable: String(row.isAvailable),
       isActive: String(row.isActive),
+      quantity: String(row.quantity ?? 0),
     });
     setOpen(true);
   };
@@ -271,6 +272,7 @@ export default function ProductsPage() {
             <TextField label='Price' value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
             <TextField label='Weight (g)' value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
             <TextField label='Purity' value={form.purity} onChange={(e) => setForm({ ...form, purity: e.target.value })} />
+            <TextField label='Quantity' type='number' inputProps={{ min: 0 }} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
             <TextField select SelectProps={{ native: true }} label='Category' value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
               <option value=''>Select category</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
