@@ -8,7 +8,6 @@ import {
   HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 
 export interface UploadResult {
@@ -65,8 +64,7 @@ export class StorageService {
     this.assertStorageConfigured();
     this.validateFile(buffer, mimeType);
 
-    const ext = path.extname(originalName).toLowerCase();
-    const storageKey = `${folder}/${uuidv4()}${ext}`;
+    const storageKey = await this.buildStorageKey(folder, originalName, mimeType);
 
     const command = new PutObjectCommand({
       Bucket: this.bucket,
@@ -100,6 +98,10 @@ export class StorageService {
       throw new BadRequestException(
         `Invalid image type. Allowed: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
       );
+    }
+
+    if (/\s/.test(originalName)) {
+      throw new BadRequestException('Image filename must not contain spaces.');
     }
 
     if (buffer.length > MAX_IMAGE_SIZE) {
@@ -311,6 +313,48 @@ export class StorageService {
     }
 
     return `${endpoint.replace(/\/+$/, '')}/${bucket}`;
+  }
+
+  private async buildStorageKey(
+    folder: string,
+    originalName: string,
+    mimeType: string,
+  ): Promise<string> {
+    const normalizedFolder = folder.replace(/^\/+|\/+$/g, '');
+    const sanitizedFileName = this.sanitizeFileName(originalName, mimeType);
+    const dotIndex = sanitizedFileName.lastIndexOf('.');
+    const baseName = dotIndex > 0 ? sanitizedFileName.slice(0, dotIndex) : sanitizedFileName;
+    const ext = dotIndex > 0 ? sanitizedFileName.slice(dotIndex) : '';
+
+    let candidateName = sanitizedFileName;
+    let counter = 1;
+
+    while (await this.fileExists(`${normalizedFolder}/${candidateName}`)) {
+      candidateName = `${baseName}-${counter}${ext}`;
+      counter += 1;
+    }
+
+    return `${normalizedFolder}/${candidateName}`;
+  }
+
+  private sanitizeFileName(originalName: string, mimeType: string): string {
+    const parsed = path.parse(originalName || 'file');
+    const ext = parsed.ext || this.mimeTypeToExtension(mimeType);
+    const baseName = (parsed.name || 'file').trim() || 'file';
+
+    return `${baseName}${ext}`;
+  }
+
+  private mimeTypeToExtension(mimeType: string): string {
+    const map: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp',
+      'image/gif': '.gif',
+      'application/pdf': '.pdf',
+    };
+
+    return map[mimeType] || '';
   }
 
   private isPlaceholderValue(value: string): boolean {

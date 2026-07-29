@@ -65,7 +65,9 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return createPaginatedResponse(products, total, page, limit);
+    const normalizedProducts = products.map((product) => this.withResolvedAssetUrls(product));
+
+    return createPaginatedResponse(normalizedProducts, total, page, limit);
   }
 
   async search(query: string, filters: ProductFiltersDto) {
@@ -96,7 +98,9 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return createPaginatedResponse(products, total, page, limit);
+    const normalizedProducts = products.map((product) => this.withResolvedAssetUrls(product));
+
+    return createPaginatedResponse(normalizedProducts, total, page, limit);
   }
 
   async findById(id: string) {
@@ -112,7 +116,7 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    return { data: product };
+    return { data: this.withResolvedAssetUrls(product) };
   }
 
   async create(
@@ -340,7 +344,10 @@ export class ProductsService {
       },
     });
 
-    return { message: 'Product updated successfully', data: updated };
+    return {
+      message: 'Product updated successfully',
+      data: this.withResolvedAssetUrls(updated),
+    };
   }
 
   async addImages(productId: string, images: Express.Multer.File[]) {
@@ -481,5 +488,35 @@ export class ProductsService {
     if (existingProduct) {
       throw new BadRequestException(`SKU \"${sku}\" already exists`);
     }
+  }
+
+  private withResolvedAssetUrls(product: any) {
+    if (!product) {
+      return product;
+    }
+
+    const resolvedProduct = {
+      ...product,
+      imageUrl: product.storageKey
+        ? this.storageService.getPublicUrl(product.storageKey)
+        : product.imageUrl,
+      pdfUrl: product.pdfStorageKey
+        ? this.storageService.getPublicUrl(product.pdfStorageKey)
+        : product.pdfUrl,
+    };
+
+    if (!Array.isArray(product.images)) {
+      return resolvedProduct;
+    }
+
+    return {
+      ...resolvedProduct,
+      images: product.images.map((image: any) => ({
+        ...image,
+        imageUrl: image.storageKey
+          ? this.storageService.getPublicUrl(image.storageKey)
+          : image.imageUrl,
+      })),
+    };
   }
 }
