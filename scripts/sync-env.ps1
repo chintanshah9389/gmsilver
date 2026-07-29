@@ -56,6 +56,7 @@ $backendEnv = @(
   "JWT_ACCESS_EXPIRES_IN=$(Get-EnvValue 'JWT_ACCESS_EXPIRES_IN' '15m')"
   "JWT_REFRESH_EXPIRES_IN=$(Get-EnvValue 'JWT_REFRESH_EXPIRES_IN' '7d')"
   "R2_ACCOUNT_ID=$(Get-EnvValue 'R2_ACCOUNT_ID')"
+  "R2_ENDPOINT=$(Get-EnvValue 'R2_ENDPOINT')"
   "R2_ACCESS_KEY_ID=$(Get-EnvValue 'R2_ACCESS_KEY_ID')"
   "R2_SECRET_ACCESS_KEY=$(Get-EnvValue 'R2_SECRET_ACCESS_KEY')"
   "R2_BUCKET=$(Get-EnvValue 'R2_BUCKET' 'gm-silver')"

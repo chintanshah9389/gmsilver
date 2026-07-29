@@ -121,6 +121,13 @@ export class ProductsService {
     pdf?: Express.Multer.File,
   ) {
     this.ensureValidImageCount(images.length);
+    const normalizedSku = this.normalizeSku(dto.sku);
+    await this.assertSkuUnique(normalizedSku);
+    const parsedQuantity = dto.quantity !== undefined ? Number.parseInt(dto.quantity, 10) : 0;
+
+    if (Number.isNaN(parsedQuantity) || parsedQuantity < 0) {
+      throw new BadRequestException('Quantity must be a non-negative number');
+    }
 
     const product = await this.prisma.product.create({
       data: {
@@ -129,21 +136,21 @@ export class ProductsService {
         price: parseFloat(dto.price),
         weight: dto.weight ? parseFloat(dto.weight) : undefined,
         purity: dto.purity,
-        sku: dto.sku,
+        sku: normalizedSku,
         categoryId: dto.categoryId,
         isAvailable: dto.isAvailable !== 'false',
         isActive: dto.isActive !== 'false',
-        quantity: dto.quantity !== undefined ? parseInt(dto.quantity, 10) : 0,
+        quantity: parsedQuantity,
       },
     });
 
     const imageFolder = this.buildProductImageFolder(product.sku, product.id);
-  const pdfFolder = this.buildProductPdfFolder(product.sku, product.id);
+    const pdfFolder = this.buildProductPdfFolder(product.sku, product.id);
 
     let imageUrl: string | undefined;
     let storageKey: string | undefined;
-  let pdfUrl: string | undefined;
-  let pdfStorageKey: string | undefined;
+    let pdfUrl: string | undefined;
+    let pdfStorageKey: string | undefined;
 
     // Upload primary image (first image)
     if (images && images.length > 0) {
@@ -306,11 +313,23 @@ export class ProductsService {
     if (dto.price) updateData.price = parseFloat(dto.price);
     if (dto.weight) updateData.weight = parseFloat(dto.weight);
     if (dto.purity) updateData.purity = dto.purity;
-    if (dto.sku) updateData.sku = dto.sku;
+    if (dto.sku !== undefined) {
+      const normalizedSku = this.normalizeSku(dto.sku);
+      await this.assertSkuUnique(normalizedSku, id);
+      updateData.sku = normalizedSku;
+    }
     if (dto.categoryId) updateData.categoryId = dto.categoryId;
     if (dto.isAvailable !== undefined) updateData.isAvailable = dto.isAvailable !== 'false';
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive !== 'false';
-    if (dto.quantity !== undefined) updateData.quantity = parseInt(dto.quantity, 10);
+    if (dto.quantity !== undefined) {
+      const parsedQuantity = Number.parseInt(dto.quantity, 10);
+
+      if (Number.isNaN(parsedQuantity) || parsedQuantity < 0) {
+        throw new BadRequestException('Quantity must be a non-negative number');
+      }
+
+      updateData.quantity = parsedQuantity;
+    }
 
     const updated = await this.prisma.product.update({
       where: { id },
@@ -438,5 +457,29 @@ export class ProductsService {
       .replace(/[^a-z0-9-_]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  private normalizeSku(sku?: string): string {
+    const normalized = sku?.trim().toUpperCase();
+
+    if (!normalized) {
+      throw new BadRequestException('SKU is required');
+    }
+
+    return normalized;
+  }
+
+  private async assertSkuUnique(sku: string, excludeProductId?: string): Promise<void> {
+    const existingProduct = await this.prisma.product.findFirst({
+      where: {
+        sku: { equals: sku, mode: 'insensitive' },
+        ...(excludeProductId ? { NOT: { id: excludeProductId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (existingProduct) {
+      throw new BadRequestException(`SKU \"${sku}\" already exists`);
+    }
   }
 }

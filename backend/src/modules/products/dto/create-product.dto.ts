@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNotEmpty, IsNumberString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -25,10 +25,10 @@ export class CreateProductDto {
   @IsString()
   purity?: string;
 
-  @ApiPropertyOptional({ example: 'SC-10G-999' })
-  @IsOptional()
+  @ApiProperty({ example: 'SC-10G-999' })
   @IsString()
-  sku?: string;
+  @IsNotEmpty()
+  sku: string;
 
   @ApiProperty({ example: 'uuid-category-id' })
   @IsUUID()
@@ -46,6 +46,6 @@ export class CreateProductDto {
 
   @ApiPropertyOptional({ example: '10' })
   @IsOptional()
-  @IsString()
+  @IsNumberString()
   quantity?: string;
 }

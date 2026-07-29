@@ -27,13 +27,19 @@ export class StorageService {
   private readonly s3Client: S3Client;
   private readonly bucket: string;
   private readonly publicUrl: string;
+  private readonly endpoint: string;
 
   constructor(private readonly configService: ConfigService) {
-    const accountId = this.configService.get<string>('r2.accountId');
+    const accountId = this.configService.get<string>('r2.accountId')?.trim();
+    const endpoint = this.resolveEndpoint(
+      this.configService.get<string>('r2.endpoint')?.trim(),
+      accountId,
+    );
 
     this.s3Client = new S3Client({
       region: 'auto',
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      endpoint,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: this.configService.get<string>('r2.accessKeyId'),
         secretAccessKey: this.configService.get<string>('r2.secretAccessKey'),
@@ -41,7 +47,8 @@ export class StorageService {
     });
 
     this.bucket = this.configService.get<string>('r2.bucket');
-    this.publicUrl = this.configService.get<string>('r2.publicUrl');
+    this.publicUrl = this.configService.get<string>('r2.publicUrl')?.replace(/\/+$/, '');
+    this.endpoint = endpoint;
   }
 
   // ─── UPLOAD FILE ──────────────────────────────────────────────────
@@ -51,6 +58,7 @@ export class StorageService {
     mimeType: string,
     folder = 'uploads',
   ): Promise<UploadResult> {
+    this.assertStorageConfigured();
     this.validateFile(buffer, mimeType);
 
     const ext = path.extname(originalName).toLowerCase();
@@ -64,7 +72,11 @@ export class StorageService {
       CacheControl: 'public, max-age=31536000',
     });
 
-    await this.s3Client.send(command);
+    try {
+      await this.s3Client.send(command);
+    } catch (error: any) {
+      throw new BadRequestException(this.getStorageErrorMessage(error));
+    }
 
     return {
       url: `${this.publicUrl}/${storageKey}`,
@@ -143,12 +155,17 @@ export class StorageService {
 
   // ─── DELETE FILE ───────────────────────────────────────────────────
   async deleteFile(storageKey: string): Promise<void> {
+    this.assertStorageConfigured();
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
       Key: storageKey,
     });
 
-    await this.s3Client.send(command);
+    try {
+      await this.s3Client.send(command);
+    } catch (error: any) {
+      throw new BadRequestException(this.getStorageErrorMessage(error));
+    }
   }
 
   // ─── REPLACE FILE ──────────────────────────────────────────────────
@@ -174,6 +191,7 @@ export class StorageService {
 
   // ─── GET SIGNED URL ────────────────────────────────────────────────
   async getSignedUrl(storageKey: string, expiresIn = 3600): Promise<string> {
+    this.assertStorageConfigured();
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: storageKey,
@@ -189,6 +207,7 @@ export class StorageService {
 
   // ─── FILE EXISTS ───────────────────────────────────────────────────
   async fileExists(storageKey: string): Promise<boolean> {
+    this.assertStorageConfigured();
     try {
       await this.s3Client.send(
         new HeadObjectCommand({ Bucket: this.bucket, Key: storageKey }),
@@ -208,5 +227,79 @@ export class StorageService {
         `Invalid file type: ${mimeType}. Allowed types: ${allAllowed.join(', ')}`,
       );
     }
+  }
+
+  private assertStorageConfigured(): void {
+    const accessKeyId = this.configService.get<string>('r2.accessKeyId')?.trim();
+    const secretAccessKey = this.configService.get<string>('r2.secretAccessKey')?.trim();
+
+    if (
+      !this.endpoint ||
+      !this.bucket ||
+      !this.publicUrl ||
+      !accessKeyId ||
+      !secretAccessKey ||
+      this.isPlaceholderValue(this.endpoint) ||
+      this.isPlaceholderValue(this.bucket) ||
+      this.isPlaceholderValue(this.publicUrl) ||
+      this.isPlaceholderValue(accessKeyId) ||
+      this.isPlaceholderValue(secretAccessKey)
+    ) {
+      throw new BadRequestException(
+        'Storage is not configured. Set valid R2_ACCOUNT_ID or R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, and R2_PUBLIC_URL.',
+      );
+    }
+  }
+
+  private resolveEndpoint(explicitEndpoint?: string, accountId?: string): string {
+    if (explicitEndpoint) {
+      if (explicitEndpoint.startsWith('http://') || explicitEndpoint.startsWith('https://')) {
+        return explicitEndpoint.replace(/\/+$/, '');
+      }
+
+      if (explicitEndpoint.includes('.')) {
+        return `https://${explicitEndpoint.replace(/\/+$/, '')}`;
+      }
+    }
+
+    if (!accountId) {
+      return '';
+    }
+
+    if (accountId.startsWith('http://') || accountId.startsWith('https://')) {
+      return accountId.replace(/\/+$/, '');
+    }
+
+    if (accountId.includes('.r2.cloudflarestorage.com')) {
+      return `https://${accountId.replace(/\/+$/, '')}`;
+    }
+
+    return `https://${accountId}.r2.cloudflarestorage.com`;
+  }
+
+  private isPlaceholderValue(value: string): boolean {
+    const normalized = value.toLowerCase();
+    return (
+      normalized.includes('your_') ||
+      normalized.includes('your-') ||
+      normalized.includes('xxxx')
+    );
+  }
+
+  private getStorageErrorMessage(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    const normalized = message.toLowerCase();
+
+    if (
+      normalized.includes('ssl') ||
+      normalized.includes('tls') ||
+      normalized.includes('eproto') ||
+      normalized.includes('handshake') ||
+      normalized.includes('certificate')
+    ) {
+      return 'File upload failed due to storage SSL/endpoint configuration. Verify R2_ENDPOINT (or R2_ACCOUNT_ID), keys, bucket, and public URL in environment variables.';
+    }
+
+    return `File upload failed: ${message}`;
   }
 }

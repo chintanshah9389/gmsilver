@@ -141,6 +141,11 @@ export default function ProductsPage() {
     try {
       const selectedImageFiles = getSelectedImageFiles();
 
+      if (!form.sku?.trim()) {
+        toast.error('SKU is required');
+        return;
+      }
+
       if (!editing && selectedImageFiles.length === 0) {
         toast.error('Please upload at least one product image');
         return;
@@ -268,7 +273,7 @@ export default function ProductsPage() {
         <DialogContent>
           <Box sx={{ display:'grid', gap:2, gridTemplateColumns:'repeat(2,minmax(0,1fr))', mt:1 }}>
             <TextField label='Name' value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <TextField label='SKU' value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+            <TextField required label='SKU' value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })} />
             <TextField label='Price' value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
             <TextField label='Weight (g)' value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
             <TextField label='Purity' value={form.purity} onChange={(e) => setForm({ ...form, purity: e.target.value })} />
