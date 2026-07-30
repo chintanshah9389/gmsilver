@@ -262,9 +262,9 @@ export class StorageService {
       );
     }
 
-    if (!this.publicUrl) {
+    if (!this.publicUrl || this.isPlaceholderValue(this.publicUrl)) {
       throw new BadRequestException(
-        'Storage is not configured. Set R2_PUBLIC_URL or ensure R2_ENDPOINT and R2_BUCKET are valid.',
+        'Storage is not configured. Set R2_PUBLIC_URL to your actual Cloudflare R2 public URL (e.g. https://pub-d2cf444026fd43efb28227dcb9671430.r2.dev).',
       );
     }
   }
@@ -362,7 +362,8 @@ export class StorageService {
     return (
       normalized.includes('your_') ||
       normalized.includes('your-') ||
-      normalized.includes('xxxx')
+      normalized.includes('xxxx') ||
+      normalized.includes('pub-xxxx')
     );
   }
 

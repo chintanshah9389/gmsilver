@@ -17,7 +17,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
-import { Add, Search, Delete, Edit } from '@mui/icons-material';
+import { Add, Search, Delete, Edit, PictureAsPdf } from '@mui/icons-material';
 import { productsApi, categoriesApi, excelApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -284,6 +284,11 @@ export default function ProductsPage() {
     { field: 'purity', headerName: 'Purity', width: 100 },
     { field: 'sku', headerName: 'SKU', width: 130 },
     { field: 'isAvailable', headerName: 'Availability', width: 130, renderCell: (p) => <Chip size='small' label={p.value ? 'Available' : 'Out'} color={p.value ? 'success' : 'warning'} /> },
+    { field: 'pdfUrl', headerName: 'PDF', width: 70, sortable: false, renderCell: (p) => p.row.pdfUrl ? (
+      <IconButton size='small' color='error' title='View PDF' onClick={() => window.open(p.row.pdfUrl, '_blank')}>
+        <PictureAsPdf fontSize='small' />
+      </IconButton>
+    ) : null },
     { field: 'actions', headerName: 'Actions', width: 120, sortable: false, renderCell: (p) => (
       <Box>
         <IconButton size='small' onClick={() => onEdit(p.row)}><Edit fontSize='small' /></IconButton>
@@ -398,24 +403,36 @@ export default function ProductsPage() {
               ? `Selected images will be added to this product. ${Math.max(MAX_PRODUCT_IMAGES - (editing.images?.length || 0), 0)} image slot(s) remaining.`
               : 'At least one image is required. You can upload up to 3 images, 500KB each.'}
           </Typography>
-          <Button
-            component='label'
-            variant='outlined'
-            sx={{ mt: 2 }}
-          >
-            {pdfFile ? pdfFile.name : 'Upload Product PDF'}
-            <input
-              type='file'
-              accept='application/pdf'
-              hidden
-              onChange={(e) => {
-                handlePdfSelection(e.target.files);
-                e.target.value = '';
-              }}
-            />
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 2, flexWrap: 'wrap' }}>
+            <Button
+              component='label'
+              variant='outlined'
+              startIcon={<PictureAsPdf />}
+            >
+              {pdfFile ? pdfFile.name : editing?.pdfUrl ? 'Replace PDF' : 'Upload Product PDF'}
+              <input
+                type='file'
+                accept='application/pdf'
+                hidden
+                onChange={(e) => {
+                  handlePdfSelection(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </Button>
+            {editing?.pdfUrl && (
+              <Button
+                variant='text'
+                color='error'
+                startIcon={<PictureAsPdf />}
+                onClick={() => window.open(editing.pdfUrl, '_blank')}
+              >
+                View Current PDF
+              </Button>
+            )}
+          </Box>
           <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
-            {editing && editing.pdfUrl
+            {editing?.pdfUrl
               ? 'A PDF is already attached. Selecting a new file will replace it. PDF size must be 2MB or less.'
               : 'One optional PDF can be uploaded per product. PDF size must be 2MB or less.'}
           </Typography>
