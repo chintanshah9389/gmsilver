@@ -5,11 +5,18 @@ describe('ProductsService.remove', () => {
   const prisma = {
     product: {
       findFirst: jest.fn(),
-      update: jest.fn(),
+      delete: jest.fn(),
     },
-    productImage: {
+    wishlist: {
       deleteMany: jest.fn(),
     },
+    cartItem: {
+      deleteMany: jest.fn(),
+    },
+    orderItem: {
+      deleteMany: jest.fn(),
+    },
+    $transaction: jest.fn(),
   } as any;
 
   const storageService = {
@@ -20,24 +27,31 @@ describe('ProductsService.remove', () => {
     broadcastNewProduct: jest.fn(),
   } as any;
 
-  const service = new ProductsService(prisma, storageService, notificationsService);
+  const storageDeleteCleanupService = {
+    queueFailedDeletes: jest.fn(),
+  } as any;
+
+  const service = new ProductsService(
+    prisma,
+    storageService,
+    notificationsService,
+    storageDeleteCleanupService,
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deletes all storage files and then updates DB', async () => {
+  it('deletes product relations and product record, then attempts storage cleanup', async () => {
     prisma.product.findFirst.mockResolvedValue({
       id: 'p1',
+      image1StorageKey: 'products/sku-1/one.jpg',
+      image2StorageKey: 'products/sku-1/two.jpg',
+      image3StorageKey: null,
       pdfStorageKey: 'products/sku-1/documents/spec.pdf',
-      images: [
-        { id: 'i1', storageKey: 'products/sku-1/one.jpg' },
-        { id: 'i2', storageKey: 'products/sku-1/two.jpg' },
-      ],
     });
     storageService.deleteFile.mockResolvedValue(undefined);
-    prisma.productImage.deleteMany.mockResolvedValue({ count: 2 });
-    prisma.product.update.mockResolvedValue({ id: 'p1' });
+    prisma.$transaction.mockResolvedValue([]);
 
     const result = await service.remove('p1');
 
@@ -49,26 +63,34 @@ describe('ProductsService.remove', () => {
       'products/sku-1/documents/spec.pdf',
     );
 
-    expect(prisma.productImage.deleteMany).toHaveBeenCalledWith({ where: { productId: 'p1' } });
-    expect(prisma.product.update).toHaveBeenCalledWith({
-      where: { id: 'p1' },
-      data: { deletedAt: expect.any(Date) },
-    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(storageDeleteCleanupService.queueFailedDeletes).not.toHaveBeenCalled();
 
     expect(result).toEqual({ message: 'Product deleted successfully' });
   });
 
-  it('throws and skips DB updates when any storage delete fails', async () => {
+  it('queues failed storage deletes and still succeeds', async () => {
     prisma.product.findFirst.mockResolvedValue({
       id: 'p1',
+      image1StorageKey: 'products/sku-1/one.jpg',
+      image2StorageKey: null,
+      image3StorageKey: null,
       pdfStorageKey: null,
-      images: [{ id: 'i1', storageKey: 'products/sku-1/one.jpg' }],
     });
+    prisma.$transaction.mockResolvedValue([]);
     storageService.deleteFile.mockRejectedValue(new Error('R2 delete failed'));
+    storageDeleteCleanupService.queueFailedDeletes.mockResolvedValue(undefined);
 
-    await expect(service.remove('p1')).rejects.toThrow('R2 delete failed');
-    expect(prisma.productImage.deleteMany).not.toHaveBeenCalled();
-    expect(prisma.product.update).not.toHaveBeenCalled();
+    const result = await service.remove('p1');
+
+    expect(storageDeleteCleanupService.queueFailedDeletes).toHaveBeenCalledWith([
+      {
+        storageKey: 'products/sku-1/one.jpg',
+        productId: 'p1',
+        reason: 'R2 delete failed',
+      },
+    ]);
+    expect(result).toEqual({ message: 'Product deleted successfully' });
   });
 
   it('throws NotFoundException when product does not exist', async () => {
@@ -76,7 +98,6 @@ describe('ProductsService.remove', () => {
 
     await expect(service.remove('missing')).rejects.toBeInstanceOf(NotFoundException);
     expect(storageService.deleteFile).not.toHaveBeenCalled();
-    expect(prisma.productImage.deleteMany).not.toHaveBeenCalled();
-    expect(prisma.product.update).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });

@@ -93,10 +93,15 @@ export class AnalyticsService {
 
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, name: true, imageUrl: true, price: true },
+      select: { id: true, name: true, image1Url: true, price: true },
     });
 
-    return { data: products };
+    return {
+      data: products.map((product) => ({
+        ...product,
+        imageUrl: product.image1Url,
+      })),
+    };
   }
 
   async getMostSearchedKeywords(limit = 10) {
@@ -128,12 +133,13 @@ export class AnalyticsService {
     const productIds = results.map((r) => r.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, name: true, imageUrl: true, price: true },
+      select: { id: true, name: true, image1Url: true, price: true },
     });
 
     return {
       data: products.map((p) => ({
         ...p,
+        imageUrl: p.image1Url,
         totalOrdered:
           results.find((r) => r.productId === p.id)?._sum.quantity || 0,
       })),

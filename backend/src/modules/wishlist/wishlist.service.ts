@@ -10,16 +10,71 @@ export class WishlistService {
       where: { userId },
       include: {
         product: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            weight: true,
+            purity: true,
+            sku: true,
+            image1Url: true,
+            image1StorageKey: true,
+            image2Url: true,
+            image2StorageKey: true,
+            image3Url: true,
+            image3StorageKey: true,
+            pdfUrl: true,
+            pdfStorageKey: true,
+            quantity: true,
+            isAvailable: true,
+            isActive: true,
+            categoryId: true,
+            createdAt: true,
+            updatedAt: true,
+            deletedAt: true,
             category: { select: { id: true, name: true } },
-            images: { orderBy: [{ isPrimary: 'desc' }], take: 1 },
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return { data: items };
+    const normalizedItems = items.map((item) => ({
+      ...item,
+      product: {
+        ...item.product,
+        imageUrl: item.product.image1Url,
+        images: [
+          item.product.image1Url
+            ? {
+                imageUrl: item.product.image1Url,
+                storageKey: item.product.image1StorageKey,
+                isPrimary: true,
+                sortOrder: 0,
+              }
+            : null,
+          item.product.image2Url
+            ? {
+                imageUrl: item.product.image2Url,
+                storageKey: item.product.image2StorageKey,
+                isPrimary: false,
+                sortOrder: 1,
+              }
+            : null,
+          item.product.image3Url
+            ? {
+                imageUrl: item.product.image3Url,
+                storageKey: item.product.image3StorageKey,
+                isPrimary: false,
+                sortOrder: 2,
+              }
+            : null,
+        ].filter(Boolean),
+      },
+    }));
+
+    return { data: normalizedItems };
   }
 
   async addToWishlist(userId: string, productId: string) {

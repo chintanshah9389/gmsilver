@@ -10,11 +10,9 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
-  UploadedFile,
 } from '@nestjs/common';
 import {
   FileFieldsInterceptor,
-  FilesInterceptor,
 } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -112,32 +110,6 @@ export class ProductsController {
   ) {
     const { images, pdf } = this.normalizeProductFiles(files);
     return this.productsService.update(id, dto, images, pdf);
-  }
-
-  @Post(':id/images')
-  @ApiBearerAuth('JWT')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.OWNER)
-  @ApiOperation({ summary: 'Add images to a product' })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FilesInterceptor('images', 3))
-  addImages(
-    @Param('id') id: string,
-    @UploadedFiles() images: Express.Multer.File[],
-  ) {
-    return this.productsService.addImages(id, images);
-  }
-
-  @Delete(':id/images/:imageId')
-  @ApiBearerAuth('JWT')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.OWNER)
-  @ApiOperation({ summary: 'Delete a product image' })
-  removeImage(
-    @Param('id') productId: string,
-    @Param('imageId') imageId: string,
-  ) {
-    return this.productsService.removeImage(productId, imageId);
   }
 
   @Delete('bulk')

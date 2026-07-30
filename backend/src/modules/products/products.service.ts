@@ -3,6 +3,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { StorageDeleteCleanupService } from './storage-delete-cleanup.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFiltersDto } from './dto/product-filters.dto';
@@ -19,6 +20,7 @@ export class ProductsService {
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
     private readonly notificationsService: NotificationsService,
+    private readonly storageDeleteCleanupService: StorageDeleteCleanupService,
   ) {}
 
   async findAll(filters: ProductFiltersDto) {
@@ -57,9 +59,6 @@ export class ProductsService {
         orderBy,
         include: {
           category: { select: { id: true, name: true } },
-          images: {
-            orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
-          },
         },
       }),
       this.prisma.product.count({ where }),
@@ -92,7 +91,6 @@ export class ProductsService {
         orderBy: { createdAt: 'desc' },
         include: {
           category: { select: { id: true, name: true } },
-          images: { orderBy: [{ isPrimary: 'desc' }], take: 1 },
         },
       }),
       this.prisma.product.count({ where }),
@@ -108,7 +106,6 @@ export class ProductsService {
       where: { id, deletedAt: null },
       include: {
         category: { select: { id: true, name: true, imageUrl: true } },
-        images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
       },
     });
 
@@ -124,7 +121,16 @@ export class ProductsService {
     images: Express.Multer.File[] = [],
     pdf?: Express.Multer.File,
   ) {
-    this.ensureValidImageCount(images.length);
+    if (images.length === 0) {
+      throw new BadRequestException('At least one product image is required');
+    }
+
+    if (images.length > ProductsService.MAX_PRODUCT_IMAGES) {
+      throw new BadRequestException(
+        `You can upload up to ${ProductsService.MAX_PRODUCT_IMAGES} product images`,
+      );
+    }
+
     const normalizedSku = this.normalizeSku(dto.sku);
     await this.assertSkuUnique(normalizedSku);
     const parsedQuantity = dto.quantity !== undefined ? Number.parseInt(dto.quantity, 10) : 0;
@@ -133,6 +139,7 @@ export class ProductsService {
       throw new BadRequestException('Quantity must be a non-negative number');
     }
 
+    // Create product first to get ID for folder naming
     const product = await this.prisma.product.create({
       data: {
         name: dto.name,
@@ -151,87 +158,32 @@ export class ProductsService {
     const imageFolder = this.buildProductImageFolder(product.sku, product.id);
     const pdfFolder = this.buildProductPdfFolder(product.sku, product.id);
 
-    let imageUrl: string | undefined;
-    let storageKey: string | undefined;
-    let pdfUrl: string | undefined;
-    let pdfStorageKey: string | undefined;
+    // Upload all images in parallel
+    const imageUploads = await Promise.all(
+      images.map((img) =>
+        this.storageService.uploadImage(img.buffer, img.originalname, img.mimetype, imageFolder),
+      ),
+    );
 
-    // Upload primary image (first image)
-    if (images && images.length > 0) {
-      const primaryUpload = await this.storageService.uploadImage(
-        images[0].buffer,
-        images[0].originalname,
-        images[0].mimetype,
-        imageFolder,
-      );
-      imageUrl = primaryUpload.url;
-      storageKey = primaryUpload.storageKey;
-
-      await this.prisma.product.update({
-        where: { id: product.id },
-        data: {
-          imageUrl,
-          storageKey,
-        },
-      });
-    }
-
-    // Upload additional images
-    if (images && images.length > 1) {
-      const imageUploads = await Promise.all(
-        images.slice(1).map((img, index) =>
-          this.storageService
-            .uploadImage(
-              img.buffer,
-              img.originalname,
-              img.mimetype,
-              imageFolder,
-            )
-            .then((uploaded) => ({
-              productId: product.id,
-              imageUrl: uploaded.url,
-              storageKey: uploaded.storageKey,
-              isPrimary: false,
-              sortOrder: index + 1,
-            })),
-        ),
-      );
-
-      await this.prisma.productImage.createMany({ data: imageUploads });
-    }
-
+    let pdfUpload: { url: string; storageKey: string } | undefined;
     if (pdf) {
-      const pdfUpload = await this.storageService.uploadPdf(
-        pdf.buffer,
-        pdf.originalname,
-        pdfFolder,
-      );
-      pdfUrl = pdfUpload.url;
-      pdfStorageKey = pdfUpload.storageKey;
-
-      await this.prisma.product.update({
-        where: { id: product.id },
-        data: {
-          pdfUrl,
-          pdfStorageKey,
-        },
-      });
+      pdfUpload = await this.storageService.uploadPdf(pdf.buffer, pdf.originalname, pdfFolder);
     }
 
-    // Also create primary image entry
-    if (imageUrl && storageKey) {
-      await this.prisma.productImage.create({
-        data: {
-          productId: product.id,
-          imageUrl,
-          storageKey,
-          isPrimary: true,
-          sortOrder: 0,
-        },
-      });
-    }
+    await this.prisma.product.update({
+      where: { id: product.id },
+      data: {
+        image1Url: imageUploads[0]?.url,
+        image1StorageKey: imageUploads[0]?.storageKey,
+        image2Url: imageUploads[1]?.url ?? null,
+        image2StorageKey: imageUploads[1]?.storageKey ?? null,
+        image3Url: imageUploads[2]?.url ?? null,
+        image3StorageKey: imageUploads[2]?.storageKey ?? null,
+        pdfUrl: pdfUpload?.url ?? null,
+        pdfStorageKey: pdfUpload?.storageKey ?? null,
+      },
+    });
 
-    // Notify users about new product
     await this.notificationsService.broadcastNewProduct(product.id, product.name);
 
     const result = await this.findById(product.id);
@@ -252,65 +204,77 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    let imageUrl = product.imageUrl;
-    let storageKey = product.storageKey;
-    let pdfUrl = product.pdfUrl;
-    let pdfStorageKey = product.pdfStorageKey;
-    const effectiveSku = dto.sku || product.sku;
-    const imageFolder = this.buildProductImageFolder(effectiveSku, product.id);
-    const pdfFolder = this.buildProductPdfFolder(effectiveSku, product.id);
-
-    if (images.length > 1) {
-      throw new BadRequestException('Only one primary image can be updated at a time');
+    if (images.length > ProductsService.MAX_PRODUCT_IMAGES) {
+      throw new BadRequestException(
+        `You can upload up to ${ProductsService.MAX_PRODUCT_IMAGES} product images`,
+      );
     }
 
-    if (images[0]) {
-      const uploaded = await this.storageService.replaceImage(
-        product.storageKey,
-        images[0].buffer,
-        images[0].originalname,
-        images[0].mimetype,
-        imageFolder,
+    const effectiveSku = dto.sku ? this.normalizeSku(dto.sku) : product.sku;
+    const imageFolder = this.buildProductImageFolder(effectiveSku, product.id);
+    const pdfFolder = this.buildProductPdfFolder(effectiveSku, product.id);
+    const productWithAssets = product as any;
+
+    const updateData: any = {};
+
+    // Replace image slots starting from slot 1 for each provided image
+    if (images.length > 0) {
+      const slots = [
+        {
+          urlKey: 'image1Url',
+          keyKey: 'image1StorageKey',
+          existingKey: productWithAssets.image1StorageKey,
+        },
+        {
+          urlKey: 'image2Url',
+          keyKey: 'image2StorageKey',
+          existingKey: productWithAssets.image2StorageKey,
+        },
+        {
+          urlKey: 'image3Url',
+          keyKey: 'image3StorageKey',
+          existingKey: productWithAssets.image3StorageKey,
+        },
+      ];
+
+      const imageUploads = await Promise.all(
+        images.map((img, i) => {
+          const existingKey = slots[i]?.existingKey;
+          return existingKey
+            ? this.storageService.replaceImage(
+                existingKey,
+                img.buffer,
+                img.originalname,
+                img.mimetype,
+                imageFolder,
+              )
+            : this.storageService.uploadImage(
+                img.buffer,
+                img.originalname,
+                img.mimetype,
+                imageFolder,
+              );
+        }),
       );
-      imageUrl = uploaded.url;
-      storageKey = uploaded.storageKey;
 
-      const primaryImage = await this.prisma.productImage.findFirst({
-        where: { productId: id, isPrimary: true },
+      imageUploads.forEach((upload, i) => {
+        updateData[slots[i].urlKey] = upload.url;
+        updateData[slots[i].keyKey] = upload.storageKey;
       });
-
-      if (primaryImage) {
-        await this.prisma.productImage.update({
-          where: { id: primaryImage.id },
-          data: { imageUrl, storageKey },
-        });
-      }
     }
 
     if (pdf) {
-      const uploadedPdf = pdfStorageKey
+      const pdfResult = product.pdfStorageKey
         ? await this.storageService.replacePdf(
-            pdfStorageKey,
+            product.pdfStorageKey,
             pdf.buffer,
             pdf.originalname,
             pdfFolder,
           )
-        : await this.storageService.uploadPdf(
-            pdf.buffer,
-            pdf.originalname,
-            pdfFolder,
-          );
-
-      pdfUrl = uploadedPdf.url;
-      pdfStorageKey = uploadedPdf.storageKey;
+        : await this.storageService.uploadPdf(pdf.buffer, pdf.originalname, pdfFolder);
+      updateData.pdfUrl = pdfResult.url;
+      updateData.pdfStorageKey = pdfResult.storageKey;
     }
-
-    const updateData: any = {
-      imageUrl,
-      storageKey,
-      pdfUrl,
-      pdfStorageKey,
-    };
 
     if (dto.name) updateData.name = dto.name;
     if (dto.description !== undefined) updateData.description = dto.description;
@@ -340,7 +304,6 @@ export class ProductsService {
       data: updateData,
       include: {
         category: { select: { id: true, name: true } },
-        images: { orderBy: [{ isPrimary: 'desc' }] },
       },
     });
 
@@ -350,76 +313,24 @@ export class ProductsService {
     };
   }
 
-  async addImages(productId: string, images: Express.Multer.File[]) {
-    const product = await this.prisma.product.findFirst({
-      where: { id: productId, deletedAt: null },
-    });
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    const existingImageCount = await this.prisma.productImage.count({
-      where: { productId },
-    });
-
-    this.ensureValidImageCount(existingImageCount + images.length, existingImageCount);
-
-    const imageData = await Promise.all(
-      images.map((img, index) =>
-        this.storageService
-          .uploadImage(
-            img.buffer,
-            img.originalname,
-            img.mimetype,
-            this.buildProductImageFolder(product.sku, product.id),
-          )
-          .then((uploaded) => ({
-            productId,
-            imageUrl: uploaded.url,
-            storageKey: uploaded.storageKey,
-            isPrimary: false,
-            sortOrder: index,
-          })),
-      ),
-    );
-
-    await this.prisma.productImage.createMany({ data: imageData });
-
-    return { message: 'Images added successfully' };
-  }
-
-  async removeImage(productId: string, imageId: string) {
-    const image = await this.prisma.productImage.findFirst({
-      where: { id: imageId, productId },
-    });
-
-    if (!image) {
-      throw new NotFoundException('Image not found');
-    }
-
-    await this.storageService.deleteFile(image.storageKey);
-    await this.prisma.productImage.delete({ where: { id: imageId } });
-
-    return { message: 'Image removed successfully' };
-  }
-
   async remove(id: string) {
     const product = await this.prisma.product.findFirst({
       where: { id },
-      include: { images: true },
     });
 
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    const productWithAssets = product as any;
 
     const storageKeys = Array.from(
       new Set(
         [
-          product.storageKey,
-          product.pdfStorageKey,
-          ...product.images.map((img) => img.storageKey),
+          productWithAssets.image1StorageKey,
+          productWithAssets.image2StorageKey,
+          productWithAssets.image3StorageKey,
+          productWithAssets.pdfStorageKey,
         ].filter((key): key is string => Boolean(key)),
       ),
     );
@@ -428,11 +339,30 @@ export class ProductsService {
       this.prisma.wishlist.deleteMany({ where: { productId: id } }),
       this.prisma.cartItem.deleteMany({ where: { productId: id } }),
       this.prisma.orderItem.deleteMany({ where: { productId: id } }),
-      this.prisma.productImage.deleteMany({ where: { productId: id } }),
       this.prisma.product.delete({ where: { id } }),
     ]);
 
-    await Promise.allSettled(storageKeys.map((key) => this.storageService.deleteFile(key)));
+    const deleteResults = await Promise.allSettled(
+      storageKeys.map((key) => this.storageService.deleteFile(key)),
+    );
+
+    const failedDeletes = deleteResults.flatMap((result, index) => {
+      if (result.status === 'rejected') {
+        return [
+          {
+            storageKey: storageKeys[index],
+            productId: id,
+            reason: this.getErrorMessage(result.reason),
+          },
+        ];
+      }
+
+      return [];
+    });
+
+    if (failedDeletes.length > 0) {
+      await this.storageDeleteCleanupService.queueFailedDeletes(failedDeletes);
+    }
 
     return { message: 'Product deleted successfully' };
   }
@@ -478,24 +408,6 @@ export class ProductsService {
     return `${this.buildProductImageFolder(sku, productId)}/documents`;
   }
 
-  private ensureValidImageCount(totalCount: number, existingCount = 0): void {
-    const newCount = totalCount - existingCount;
-
-    if (existingCount === 0 && totalCount === 0) {
-      throw new BadRequestException('At least one product image is required');
-    }
-
-    if (newCount <= 0) {
-      throw new BadRequestException('Please upload at least one product image');
-    }
-
-    if (totalCount > ProductsService.MAX_PRODUCT_IMAGES) {
-      throw new BadRequestException(
-        `You can upload up to ${ProductsService.MAX_PRODUCT_IMAGES} product images`,
-      );
-    }
-  }
-
   private sanitizeFolderPart(value?: string | null): string {
     if (!value) {
       return '';
@@ -529,7 +441,7 @@ export class ProductsService {
     });
 
     if (existingProduct) {
-      throw new BadRequestException(`SKU \"${sku}\" already exists`);
+      throw new BadRequestException(`SKU "${sku}" already exists`);
     }
   }
 
@@ -538,28 +450,36 @@ export class ProductsService {
       return product;
     }
 
-    const resolvedProduct = {
-      ...product,
-      imageUrl: product.storageKey
-        ? this.storageService.getPublicUrl(product.storageKey)
-        : product.imageUrl,
-      pdfUrl: product.pdfStorageKey
-        ? this.storageService.getPublicUrl(product.pdfStorageKey)
-        : product.pdfUrl,
-    };
+    const resolveUrl = (storageKey?: string | null, fallbackUrl?: string | null) =>
+      storageKey ? this.storageService.getPublicUrl(storageKey) : (fallbackUrl ?? null);
 
-    if (!Array.isArray(product.images)) {
-      return resolvedProduct;
-    }
+    const image1Url = resolveUrl(product.image1StorageKey, product.image1Url);
+    const image2Url = resolveUrl(product.image2StorageKey, product.image2Url);
+    const image3Url = resolveUrl(product.image3StorageKey, product.image3Url);
+    const pdfUrl = resolveUrl(product.pdfStorageKey, product.pdfUrl);
+
+    // Build images array for client convenience
+    const images = [
+      image1Url ? { slot: 1, url: image1Url } : null,
+      image2Url ? { slot: 2, url: image2Url } : null,
+      image3Url ? { slot: 3, url: image3Url } : null,
+    ].filter(Boolean);
 
     return {
-      ...resolvedProduct,
-      images: product.images.map((image: any) => ({
-        ...image,
-        imageUrl: image.storageKey
-          ? this.storageService.getPublicUrl(image.storageKey)
-          : image.imageUrl,
-      })),
+      ...product,
+      image1Url,
+      image2Url,
+      image3Url,
+      pdfUrl,
+      images,
     };
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return String(error);
   }
 }
