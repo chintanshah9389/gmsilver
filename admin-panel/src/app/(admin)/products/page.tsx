@@ -86,11 +86,29 @@ export default function ProductsPage() {
     setForm({ name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0' });
   };
 
+  const getExistingImages = (product: any): Array<{ imageUrl: string }> => {
+    if (!product) return [];
+
+    // Backward/forward compatible normalization for edit modal preview.
+    const fromArray = Array.isArray(product.images)
+      ? product.images
+          .map((img: any) => img?.imageUrl || img?.url)
+          .filter((url: any): url is string => Boolean(url))
+      : [];
+
+    const fromSlots = [product.image1Url, product.image2Url, product.image3Url].filter(
+      (url: any): url is string => Boolean(url),
+    );
+
+    const ordered = fromArray.length > 0 ? fromArray : fromSlots;
+    return ordered.slice(0, MAX_PRODUCT_IMAGES).map((imageUrl: string) => ({ imageUrl }));
+  };
+
   const getSelectedImageFiles = () => imageFiles.filter((file): file is File => file !== null);
 
   const handleImageSelection = (slotIndex: number, fileList: FileList | null) => {
     const selectedFile = fileList?.[0] || null;
-    const existingImageCount = editing?.images?.length || 0;
+    const existingImageCount = getExistingImages(editing).length;
     const remainingSlots = Math.max(MAX_PRODUCT_IMAGES - existingImageCount, 0);
     const nextFiles = [...imageFiles];
     const selectedSlots = nextFiles.filter((file, index) => file !== null && index !== slotIndex).length;
@@ -162,7 +180,7 @@ export default function ProductsPage() {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) fd.append(k, String(v)); });
 
-      if (!editing && selectedImageFiles.length > 0) {
+      if (selectedImageFiles.length > 0) {
         selectedImageFiles.forEach((file) => fd.append('images', file));
       }
 
@@ -172,12 +190,6 @@ export default function ProductsPage() {
 
       if (editing) {
         await productsApi.update(editing.id, fd);
-
-        if (selectedImageFiles.length > 0) {
-          const imageFd = new FormData();
-          selectedImageFiles.forEach((file) => imageFd.append('images', file));
-          await productsApi.addImages(editing.id, imageFd);
-        }
 
         toast.success('Product updated');
       } else {
@@ -364,7 +376,7 @@ export default function ProductsPage() {
             {[0, 1, 2].map((slotIndex) => {
               const slotLabel = `Image ${slotIndex + 1}`;
               const selectedFile = imageFiles[slotIndex];
-              const existingImage = editing?.images?.[slotIndex];
+              const existingImage = getExistingImages(editing)[slotIndex];
               const previewUrl = imagePreviewUrls[slotIndex] || existingImage?.imageUrl;
 
               return (
@@ -400,7 +412,7 @@ export default function ProductsPage() {
           </Box>
           <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 1 }}>
             {editing
-              ? `Selected images will be added to this product. ${Math.max(MAX_PRODUCT_IMAGES - (editing.images?.length || 0), 0)} image slot(s) remaining.`
+              ? `Selected images will replace image slots from left to right. ${Math.max(MAX_PRODUCT_IMAGES - getExistingImages(editing).length, 0)} empty slot(s) currently available.`
               : 'At least one image is required. You can upload up to 3 images, 500KB each.'}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 2, flexWrap: 'wrap' }}>
