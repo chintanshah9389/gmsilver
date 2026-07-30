@@ -20,6 +20,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExcelModule } from './modules/excel/excel.module';
+import { BannersModule } from './modules/banners/banners.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ExcelModule } from './modules/excel/excel.module';
     AuditLogsModule,
     AnalyticsModule,
     ExcelModule,
+    BannersModule,
   ],
   providers: [
     {

@@ -178,6 +178,20 @@ export const excelApi = {
     api.get('/excel/export/orders', { params, responseType: 'blob' }),
 };
 
+export const bannersApi = {
+  getAll: (params?: any) => api.get('/banners', { params }),
+  getById: (id: string) => api.get(`/banners/${id}`),
+  create: (data: FormData) =>
+    api.post('/banners', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  update: (id: string, data: FormData) =>
+    api.put(`/banners/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  delete: (id: string) => api.delete(`/banners/${id}`),
+};
+
 export const auditLogsApi = {
   getAll: (params?: any) => api.get('/audit-logs', { params }),
   getSummary: (startDate?: string, endDate?: string) =>

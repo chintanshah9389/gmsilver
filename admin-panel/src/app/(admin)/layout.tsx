@@ -34,6 +34,7 @@ import {
   Logout,
   ExpandLess,
   ExpandMore,
+  ViewCarousel,
 } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
@@ -46,6 +47,7 @@ const navItems = [
   { label: 'Users', icon: <People />, href: '/users' },
   { label: 'Categories', icon: <Category />, href: '/categories' },
   { label: 'Products', icon: <Inventory />, href: '/products' },
+  { label: 'Banners', icon: <ViewCarousel />, href: '/banners' },
   { label: 'Orders', icon: <ShoppingCart />, href: '/orders' },
   { label: 'Invoices', icon: <Receipt />, href: '/invoices' },
   { label: 'Notifications', icon: <Notifications />, href: '/notifications' },

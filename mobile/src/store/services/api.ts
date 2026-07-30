@@ -29,6 +29,7 @@ export const api = createApi({
     'Cart',
     'Order',
     'Notification',
+    'Banner',
   ],
   endpoints: () => ({}),
 });

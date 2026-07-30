@@ -46,6 +46,19 @@ enum NotificationType {
   BROADCAST
 }
 
+enum BannerType {
+  NEW
+  SALE
+  MARKETING
+  FEATURED
+}
+
+enum BannerLinkType {
+  PRODUCT
+  CATEGORY
+  NONE
+}
+
 // ─────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────
@@ -380,4 +393,28 @@ model StorageDeleteFailure {
   @@index([processedAt, nextRetryAt])
   @@index([productId])
   @@map("storage_delete_failures")
+}
+
+// ─────────────────────────────────────────
+// BANNERS
+// ─────────────────────────────────────────
+
+model Banner {
+  id              String         @id @default(uuid())
+  title           String
+  subtitle        String?
+  badgeLabel      BannerType     @default(NEW) @map("badge_label")
+  imageUrl        String?        @map("image_url")
+  imageStorageKey String?        @map("image_storage_key")
+  linkType        BannerLinkType @default(NONE) @map("link_type")
+  linkId          String?        @map("link_id")
+  isActive        Boolean        @default(true) @map("is_active")
+  sortOrder       Int            @default(0) @map("sort_order")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@map("banners")
 }
