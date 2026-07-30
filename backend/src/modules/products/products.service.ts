@@ -406,7 +406,7 @@ export class ProductsService {
 
   async remove(id: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id, deletedAt: null },
+      where: { id },
       include: { images: true },
     });
 
@@ -414,27 +414,54 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    // Delete all product images from R2
-    const imageDeletePromises = product.images
-      .filter((img) => img.storageKey)
-      .map((img) => this.storageService.deleteFile(img.storageKey));
+    const storageKeys = Array.from(
+      new Set(
+        [
+          product.storageKey,
+          product.pdfStorageKey,
+          ...product.images.map((img) => img.storageKey),
+        ].filter((key): key is string => Boolean(key)),
+      ),
+    );
 
-    // Delete PDF from R2 if present
-    if (product.pdfStorageKey) {
-      imageDeletePromises.push(this.storageService.deleteFile(product.pdfStorageKey));
-    }
+    await this.prisma.$transaction([
+      this.prisma.wishlist.deleteMany({ where: { productId: id } }),
+      this.prisma.cartItem.deleteMany({ where: { productId: id } }),
+      this.prisma.orderItem.deleteMany({ where: { productId: id } }),
+      this.prisma.productImage.deleteMany({ where: { productId: id } }),
+      this.prisma.product.delete({ where: { id } }),
+    ]);
 
-    await Promise.all(imageDeletePromises);
-
-    // Delete image records from DB, then soft-delete the product
-    await this.prisma.productImage.deleteMany({ where: { productId: id } });
-
-    await this.prisma.product.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    await Promise.allSettled(storageKeys.map((key) => this.storageService.deleteFile(key)));
 
     return { message: 'Product deleted successfully' };
+  }
+
+  async removeMany(ids: string[]) {
+    const uniqueIds = Array.from(new Set(ids));
+    const deletedIds: string[] = [];
+    const failed: Array<{ id: string; reason: string }> = [];
+
+    for (const id of uniqueIds) {
+      try {
+        await this.remove(id);
+        deletedIds.push(id);
+      } catch (error: any) {
+        failed.push({
+          id,
+          reason: error?.message || 'Failed to delete product',
+        });
+      }
+    }
+
+    return {
+      message: 'Bulk product delete processed',
+      requested: uniqueIds.length,
+      deletedCount: deletedIds.length,
+      failedCount: failed.length,
+      deletedIds,
+      failed,
+    };
   }
 
   private buildProductImageFolder(sku?: string | null, productId?: string): string {

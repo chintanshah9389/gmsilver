@@ -134,6 +134,7 @@ export const productsApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   delete: (id: string) => api.delete(`/products/${id}`),
+  bulkDelete: (ids: string[]) => api.delete('/products/bulk', { data: { ids } }),
   addImages: (id: string, data: FormData) =>
     api.post(`/products/${id}/images`, data, {
       headers: { 'Content-Type': 'multipart/form-data' },

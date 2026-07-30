@@ -27,6 +27,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductFiltersDto } from './dto/product-filters.dto';
+import { BulkDeleteProductsDto } from './dto/bulk-delete-products.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -137,6 +138,15 @@ export class ProductsController {
     @Param('imageId') imageId: string,
   ) {
     return this.productsService.removeImage(productId, imageId);
+  }
+
+  @Delete('bulk')
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Bulk delete products (Admin only)' })
+  removeMany(@Body() dto: BulkDeleteProductsDto) {
+    return this.productsService.removeMany(dto.ids);
   }
 
   @Delete(':id')

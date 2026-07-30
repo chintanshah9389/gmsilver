@@ -16,7 +16,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { Add, Search, Delete, Edit } from '@mui/icons-material';
 import { productsApi, categoriesApi, excelApi } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -32,6 +32,10 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteFailed, setBulkDeleteFailed] = useState<Array<{ id: string; reason: string }>>([]);
+  const [openBulkDeleteFailed, setOpenBulkDeleteFailed] = useState(false);
   const [imageFiles, setImageFiles] = useState<Array<File | null>>([null, null, null]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<Array<string | null>>([null, null, null]);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -56,6 +60,10 @@ export default function ProductsPage() {
   };
 
   useEffect(() => { fetchData(); }, [search]);
+
+  useEffect(() => {
+    setSelectedIds((prev) => prev.filter((id) => rows.some((row) => row.id === id)));
+  }, [rows]);
 
   useEffect(() => {
     const previewUrls = imageFiles.map((file) => (file ? URL.createObjectURL(file) : null));
@@ -195,6 +203,51 @@ export default function ProductsPage() {
     }
   };
 
+  const onDeleteSelected = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('Select at least one product');
+      return;
+    }
+
+    if (!confirm(`Delete ${selectedIds.length} selected product(s)?`)) return;
+
+    try {
+      setBulkDeleting(true);
+      const ids = selectedIds.map((id) => String(id));
+      const res = await productsApi.bulkDelete(ids);
+      const result = res.data?.data || res.data;
+      const deletedCount = Number(result?.deletedCount || 0);
+      const failedCount = Number(result?.failedCount || 0);
+      const failedItems = Array.isArray(result?.failed) ? result.failed : [];
+
+      if (deletedCount > 0) {
+        toast.success(`${deletedCount} product(s) deleted`);
+      }
+
+      if (failedCount > 0) {
+        toast.error(`${failedCount} product(s) failed to delete`);
+        setBulkDeleteFailed(
+          failedItems.map((item: any) => ({
+            id: String(item?.id || ''),
+            reason: String(item?.reason || 'Failed to delete product'),
+          })),
+        );
+        setOpenBulkDeleteFailed(true);
+      }
+
+      if (deletedCount === 0 && failedCount === 0) {
+        toast('No products were deleted');
+      }
+
+      setSelectedIds([]);
+      fetchData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Bulk delete failed');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const onEdit = (row: any) => {
     setEditing(row);
     setImageFiles([null, null, null]);
@@ -247,6 +300,15 @@ export default function ProductsPage() {
           <Typography variant='body2' color='text.secondary'>Catalog management and inventory visibility</Typography>
         </Box>
         <Box sx={{ display:'flex', gap:1 }}>
+          <Button
+            variant='outlined'
+            color='error'
+            startIcon={<Delete />}
+            disabled={selectedIds.length === 0 || bulkDeleting}
+            onClick={onDeleteSelected}
+          >
+            {bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.length})`}
+          </Button>
           <Button variant='outlined' onClick={exportProducts}>Export Excel</Button>
           <Button startIcon={<Add />} variant='contained' onClick={() => { resetForm(); setOpen(true); }}>Add Product</Button>
         </Box>
@@ -263,7 +325,16 @@ export default function ProductsPage() {
             InputProps={{ startAdornment: <InputAdornment position='start'><Search fontSize='small' /></InputAdornment> }}
           />
           <Box sx={{ height: 620 }}>
-            <DataGrid rows={rows} columns={columns} loading={loading} getRowId={(r) => r.id} />
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              loading={loading}
+              getRowId={(r) => r.id}
+              checkboxSelection
+              disableRowSelectionOnClick
+              rowSelectionModel={selectedIds}
+              onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+            />
           </Box>
         </CardContent>
       </Card>
@@ -352,6 +423,48 @@ export default function ProductsPage() {
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button variant='contained' onClick={onSave}>{editing ? 'Update' : 'Create'}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openBulkDeleteFailed}
+        onClose={() => setOpenBulkDeleteFailed(false)}
+        fullWidth
+        maxWidth='md'
+      >
+        <DialogTitle>Some Products Could Not Be Deleted</DialogTitle>
+        <DialogContent>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+            These selected products were not deleted. Check the reason for each record.
+          </Typography>
+          <Box sx={{ display: 'grid', gap: 1 }}>
+            {bulkDeleteFailed.map((item) => (
+              <Box
+                key={`${item.id}-${item.reason}`}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1.5,
+                  p: 1.5,
+                }}
+              >
+                <Typography variant='subtitle2'>{item.id}</Typography>
+                <Typography variant='body2' color='text.secondary'>
+                  {item.reason}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setOpenBulkDeleteFailed(false);
+              setBulkDeleteFailed([]);
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
