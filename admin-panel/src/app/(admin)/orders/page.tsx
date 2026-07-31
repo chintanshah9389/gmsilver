@@ -73,9 +73,15 @@ export default function OrdersPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' fontWeight={700}>Orders</Typography>
-        <Typography variant='body2' color='text.secondary'>Approve, reject, complete, and invoice orders</Typography>
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.08) 0%, rgba(12,12,18,0) 60%)',
+        border: '1px solid rgba(192,192,192,0.08)', borderRadius: 3, p: 3, mb: 3,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2,
+      }}>
+        <Box>
+          <Typography variant='h5' fontWeight={700}>Orders</Typography>
+          <Typography variant='body2' color='text.secondary'>Approve, reject, complete, and invoice orders</Typography>
+        </Box>
       </Box>
       <Card>
         <CardContent>

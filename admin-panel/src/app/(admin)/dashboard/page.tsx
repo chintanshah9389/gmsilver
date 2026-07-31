@@ -115,113 +115,68 @@ export default function DashboardPage() {
 
   if (!data) return null;
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Welcome to GM Silver Admin Panel
-        </Typography>
+      {/* Premium Welcome Banner */}
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.12) 0%, rgba(255,215,0,0.04) 50%, rgba(10,10,15,0) 100%)',
+        border: '1px solid rgba(192,192,192,0.1)',
+        borderRadius: 3, p: 3, mb: 3,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2,
+      }}>
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ letterSpacing: 1, mb: 0.5 }}>
+            {greeting.toUpperCase()}
+          </Typography>
+          <Typography variant="h4" fontWeight={800} sx={{
+            background: 'linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>
+            GM Silver Admin
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Chip label={`${data.users.pending} Users Pending`} color="warning" size="small" />
+          <Chip label={`${data.orders.pending} Orders Pending`} color="warning" size="small" />
+          <Chip
+            label={`${data.revenue.growth >= 0 ? '+' : ''}${data.revenue.growth.toFixed(1)}% Growth`}
+            color={data.revenue.growth >= 0 ? 'success' : 'error'} size="small"
+          />
+        </Box>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2.5}>
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Total Products"
-            value={data.products.total}
-            subtitle={`${data.products.active} active`}
-            icon={<Inventory />}
-            color="#C0C0C0"
-          />
+          <StatCard title="Total Products" value={data.products.total} subtitle={`${data.products.active} active`} icon={<Inventory />} color="#C0C0C0" />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Total Categories"
-            value={data.categories}
-            icon={<Category />}
-            color="#FFD700"
-          />
+          <StatCard title="Categories" value={data.categories} icon={<Category />} color="#FFD700" />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Total Users"
-            value={data.users.total}
-            subtitle={`${data.users.pending} pending approval`}
-            icon={<People />}
-            color="#64B5F6"
-          />
+          <StatCard title="Total Users" value={data.users.total} subtitle={`${data.users.pending} pending`} icon={<People />} color="#64B5F6" />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Total Orders"
-            value={data.orders.total}
-            subtitle={`${data.orders.pending} pending`}
-            icon={<ShoppingCart />}
-            color="#4CAF50"
-          />
+          <StatCard title="This Month Revenue" value={`₹${data.revenue.thisMonth.toLocaleString()}`} subtitle={`vs ₹${data.revenue.lastMonth.toLocaleString()} last month`} icon={<CurrencyRupee />} color={data.revenue.growth >= 0 ? '#4CAF50' : '#FF4C4C'} />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Pending Orders"
-            value={data.orders.pending}
-            icon={<Pending />}
-            color="#FFB347"
-          />
+          <StatCard title="Total Orders" value={data.orders.total} icon={<ShoppingCart />} color="#4CAF50" />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Approved Orders"
-            value={data.orders.approved}
-            icon={<TrendingUp />}
-            color="#64B5F6"
-          />
+          <StatCard title="Pending Orders" value={data.orders.pending} icon={<Pending />} color="#FFB347" />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Completed Orders"
-            value={data.orders.completed}
-            icon={<ShoppingCart />}
-            color="#4CAF50"
-          />
+          <StatCard title="Approved Orders" value={data.orders.approved} icon={<TrendingUp />} color="#64B5F6" />
         </Grid>
-
         <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard
-            title="Revenue (This Month)"
-            value={`₹${data.revenue.thisMonth.toLocaleString()}`}
-            subtitle={`${data.revenue.growth >= 0 ? '+' : ''}${data.revenue.growth}% vs last month`}
-            icon={<CurrencyRupee />}
-            color={data.revenue.growth >= 0 ? '#4CAF50' : '#FF4C4C'}
-          />
+          <StatCard title="Completed Orders" value={data.orders.completed} icon={<ShoppingCart />} color="#4CAF50" />
         </Grid>
       </Grid>
-
-      <Box sx={{ mt: 4 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Quick Insights
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 2 }}>
-              <Chip label={`Users Pending: ${data.users.pending}`} color="warning" />
-              <Chip label={`Orders Pending: ${data.orders.pending}`} color="warning" />
-              <Chip label={`Active Products: ${data.products.active}`} color="success" />
-              <Chip
-                label={`Monthly Growth: ${data.revenue.growth.toFixed(2)}%`}
-                color={data.revenue.growth >= 0 ? 'success' : 'error'}
-              />
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
     </Box>
   );
 }

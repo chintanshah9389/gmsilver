@@ -216,18 +216,16 @@ export default function BannersPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.08) 0%, rgba(12,12,18,0) 60%)',
+        border: '1px solid rgba(192,192,192,0.08)', borderRadius: 3, p: 3, mb: 3,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2,
+      }}>
         <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Banners
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage carousel banners shown on the mobile home screen
-          </Typography>
+          <Typography variant="h5" fontWeight={700}>Banners</Typography>
+          <Typography variant="body2" color="text.secondary">Manage carousel banners shown on the mobile home screen</Typography>
         </Box>
-        <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
-          Add Banner
-        </Button>
+        <Button variant="contained" startIcon={<Add />} onClick={openCreate} sx={{ borderRadius: 2 }}>Add Banner</Button>
       </Box>
 
       <Card sx={{ backgroundColor: '#0F0F1A', border: '1px solid #1E1E2E' }}>

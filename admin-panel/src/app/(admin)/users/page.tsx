@@ -337,25 +337,16 @@ export default function UsersPage() {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.08) 0%, rgba(12,12,18,0) 60%)',
+        border: '1px solid rgba(192,192,192,0.08)', borderRadius: 3, p: 3, mb: 3,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2,
+      }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            User Management
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            View and manage platform users
-          </Typography>
+          <Typography variant='h5' fontWeight={700}>User Management</Typography>
+          <Typography variant='body2' color='text.secondary'>View and manage platform users</Typography>
         </Box>
-        <Button variant="contained" onClick={() => setCreateOpen(true)}>
-          Add User
-        </Button>
+        <Button variant='contained' onClick={() => setCreateOpen(true)} sx={{ borderRadius: 2 }}>Add User</Button>
       </Box>
 
       <Card>

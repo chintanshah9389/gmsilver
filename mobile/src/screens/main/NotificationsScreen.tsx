@@ -1,71 +1,84 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
-import { Button, Card, Text, Snackbar } from 'react-native-paper';
-import {
-  useNotificationsQuery,
-  useMarkAllReadMutation,
-} from '@/store/services/notificationsApi';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
+import { Snackbar } from 'react-native-paper';
+import { useNotificationsQuery, useMarkAllReadMutation } from '@/store/services/notificationsApi';
 import { getErrorMessage } from '@/lib/error-message';
+import { C } from '@/theme/colors';
+import PremiumBackground from '@/components/PremiumBackground';
+import { E } from '@/theme/effects';
+import MotionReveal from '@/components/MotionReveal';
+import ScalePressable from '@/components/ScalePressable';
 
 export default function NotificationsScreen() {
   const { data, error, isError } = useNotificationsQuery({ page: 1, limit: 100 });
   const [markAllRead] = useMarkAllReadMutation();
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const rows = data?.notifications || data?.data || [];
+  const [snackMsg, setSnackMsg] = useState('');
+  const [snackVisible, setSnackVisible] = useState(false);
+  const rows: any[] = data?.notifications || data?.data || [];
 
   useEffect(() => {
-    if (isError && error) {
-      setSnackbarMessage(
-        getErrorMessage(error, 'Failed to load notifications.'),
-      );
-      setSnackbarVisible(true);
-    }
+    if (isError && error) { setSnackMsg(getErrorMessage(error, 'Failed.')); setSnackVisible(true); }
   }, [error, isError]);
 
   return (
-    <>
+    <View style={s.root}>
+      <PremiumBackground />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <MotionReveal delay={30} duration={420} distance={18}>
+        <View style={s.header}>
+          <Text style={s.headerTitle}>Notifications</Text>
+          <ScalePressable style={s.markBtn} scaleTo={0.97} onPress={() => markAllRead()}>
+            <Text style={s.markBtnText}>Mark all read</Text>
+          </ScalePressable>
+        </View>
+      </MotionReveal>
       <FlatList
-        style={styles.container}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <Button mode="outlined" onPress={() => markAllRead()}>
-            Mark all as read
-          </Button>
-        }
         data={rows}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.title}>
-                {item.notification?.title || item.title}
-              </Text>
-              <Text style={styles.sub}>
-                {item.notification?.body || item.body}
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-        ListEmptyComponent={<Text style={styles.empty}>No notifications</Text>}
+        keyExtractor={item => item.id}
+        contentContainerStyle={s.list}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => {
+          const title = item.notification?.title || item.title;
+          const body  = item.notification?.body  || item.body;
+          const isRead = item.isRead;
+          return (
+            <MotionReveal delay={Math.min(index * 26, 220)} duration={240} distance={9}>
+              <View style={[s.card, !isRead && s.cardUnread]}>
+                {!isRead && <View style={s.unreadDot} />}
+                <View style={{ flex: 1 }}>
+                  <Text style={s.notifTitle}>{title}</Text>
+                  {body ? <Text style={s.notifBody} numberOfLines={3}>{body}</Text> : null}
+                </View>
+              </View>
+            </MotionReveal>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={s.emptyWrap}>
+            <Text style={s.emptyIcon}>🔔</Text>
+            <Text style={s.emptyText}>No notifications</Text>
+          </View>
+        }
       />
-
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={4000}
-      >
-        {snackbarMessage}
-      </Snackbar>
-    </>
+      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>{snackMsg}</Snackbar>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
-  listContent: { padding: 12 },
-  card: { backgroundColor: '#151520', marginTop: 10 },
-  title: { color: '#F2F2F2' },
-  sub: { color: '#AFAFBA', marginTop: 4 },
-  empty: { color: '#AFAFBA', textAlign: 'center', marginTop: 24 },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  headerTitle: { color: C.text, fontSize: 26, fontWeight: '800', letterSpacing: 0.2 },
+  markBtn: { backgroundColor: C.surface2, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: C.border, ...E.softShadow },
+  markBtnText: { color: C.silver, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  card: { backgroundColor: C.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: C.border, flexDirection: 'row', gap: 10, ...E.softShadow },
+  cardUnread: { borderColor: 'rgba(192,192,192,0.3)', backgroundColor: C.surface2 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.silver, marginTop: 5 },
+  notifTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  notifBody: { color: C.textSub, fontSize: 13, lineHeight: 18 },
+  emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 8 },
+  emptyIcon: { fontSize: 36, color: C.textMuted },
+  emptyText: { color: C.textSub, fontSize: 15 },
 });
+

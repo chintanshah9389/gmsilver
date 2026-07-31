@@ -37,8 +37,11 @@ export default function InvoicesPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' fontWeight={700}>Invoices</Typography>
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.08) 0%, rgba(12,12,18,0) 60%)',
+        border: '1px solid rgba(192,192,192,0.08)', borderRadius: 3, p: 3, mb: 3,
+      }}>
+        <Typography variant='h5' fontWeight={700}>Invoices</Typography>
         <Typography variant='body2' color='text.secondary'>Invoice records and PDF links</Typography>
       </Box>
       <Card><CardContent><Box sx={{ height: 640 }}><DataGrid rows={rows} columns={columns} loading={loading} getRowId={(r) => r.id} /></Box></CardContent></Card>

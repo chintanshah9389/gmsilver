@@ -311,23 +311,28 @@ export default function ProductsPage() {
 
   return (
     <Box>
-      <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:3 }}>
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.08) 0%, rgba(12,12,18,0) 60%)',
+        border: '1px solid rgba(192,192,192,0.08)', borderRadius: 3, p: 3, mb: 3,
+        display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap: 'wrap', gap: 2,
+      }}>
         <Box>
-          <Typography variant='h4' fontWeight={700}>Products</Typography>
+          <Typography variant='h5' fontWeight={700}>Products</Typography>
           <Typography variant='body2' color='text.secondary'>Catalog management and inventory visibility</Typography>
         </Box>
-        <Box sx={{ display:'flex', gap:1 }}>
+        <Box sx={{ display:'flex', gap:1, flexWrap: 'wrap' }}>
           <Button
             variant='outlined'
             color='error'
             startIcon={<Delete />}
             disabled={selectedIds.length === 0 || bulkDeleting}
             onClick={onDeleteSelected}
+            sx={{ borderRadius: 2 }}
           >
-            {bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.length})`}
+            {bulkDeleting ? 'Deleting...' : `Delete (${selectedIds.length})`}
           </Button>
-          <Button variant='outlined' onClick={exportProducts}>Export Excel</Button>
-          <Button startIcon={<Add />} variant='contained' onClick={() => { resetForm(); setOpen(true); }}>Add Product</Button>
+          <Button variant='outlined' onClick={exportProducts} sx={{ borderRadius: 2 }}>Export</Button>
+          <Button startIcon={<Add />} variant='contained' onClick={() => { resetForm(); setOpen(true); }} sx={{ borderRadius: 2 }}>Add Product</Button>
         </Box>
       </Box>
 

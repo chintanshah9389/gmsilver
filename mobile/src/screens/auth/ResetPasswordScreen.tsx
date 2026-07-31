@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Card, Text, TextInput, Button, Snackbar } from 'react-native-paper';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import { useResetPasswordMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
+import { C } from '@/theme/colors';
+import PremiumBackground from '@/components/PremiumBackground';
 
 export default function ResetPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackVisible, setSnackVisible] = useState(false);
+  const [snackMsg, setSnackMsg] = useState('');
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   const onSubmit = async () => {
@@ -23,73 +36,91 @@ export default function ResetPasswordScreen({ navigation }: any) {
       }).unwrap();
       navigation.navigate('Login');
     } catch (e) {
-      setSnackbarMessage(getErrorMessage(e, 'Password reset failed.'));
-      setSnackbarVisible(true);
+      setSnackMsg(getErrorMessage(e, 'Password reset failed.'));
+      setSnackVisible(true);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
-            Reset Password
-          </Text>
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <PremiumBackground />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <View style={s.logoWrap}>
+          <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
+          <Text style={s.brand}>RESET PASSWORD</Text>
+        </View>
+
+        <View style={s.card}>
+          <Text style={s.heading}>Set New Password</Text>
+          <Text style={s.subheading}>Use the reset token sent to your email</Text>
+
+          <Text style={s.fieldLabel}>Email Address</Text>
           <TextInput
-            mode="outlined"
-            label="Email"
+            style={s.input}
+            placeholder="you@example.com"
+            placeholderTextColor={C.textMuted}
             value={email}
             onChangeText={setEmail}
-            style={styles.input}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            selectionColor={C.silver}
           />
+          <Text style={s.fieldLabel}>Reset Token</Text>
           <TextInput
-            mode="outlined"
-            label="Reset Token"
+            style={s.input}
+            placeholder="Enter reset token"
+            placeholderTextColor={C.textMuted}
             value={token}
             onChangeText={setToken}
-            style={styles.input}
+            selectionColor={C.silver}
           />
+          <Text style={s.fieldLabel}>New Password</Text>
           <TextInput
-            mode="outlined"
+            style={s.input}
+            placeholder="Create a password"
+            placeholderTextColor={C.textMuted}
             secureTextEntry
-            label="New Password"
             value={newPassword}
             onChangeText={setNewPassword}
-            style={styles.input}
+            selectionColor={C.silver}
           />
+          <Text style={s.fieldLabel}>Confirm Password</Text>
           <TextInput
-            mode="outlined"
+            style={s.input}
+            placeholder="Repeat password"
+            placeholderTextColor={C.textMuted}
             secureTextEntry
-            label="Confirm Password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            style={styles.input}
+            selectionColor={C.silver}
           />
-          <Button mode="contained" onPress={onSubmit} loading={isLoading}>
-            Reset Password
-          </Button>
-        </Card.Content>
-      </Card>
+          <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onSubmit} disabled={isLoading} activeOpacity={0.85}>
+            {isLoading ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={s.btnPrimaryText}>Reset Password</Text>}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={4000}
-      >
-        {snackbarMessage}
+      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
+        {snackMsg}
       </Snackbar>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A0A0F',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  card: { backgroundColor: '#151520' },
-  title: { color: '#F2F2F2', marginBottom: 16 },
-  input: { marginBottom: 12 },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
+  logoWrap: { alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
+  logoBox: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: C.silver, backgroundColor: 'rgba(192,192,192,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  logoText: { color: C.silverLt, fontSize: 20, fontWeight: '800', letterSpacing: 1 },
+  brand: { color: C.silverLt, fontSize: 13, fontWeight: '800', letterSpacing: 4 },
+  card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
+  heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
+  subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },
+  fieldLabel: { color: C.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
+  input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14, marginBottom: 14 },
+  btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnPrimary: { backgroundColor: C.silver },
+  btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 });

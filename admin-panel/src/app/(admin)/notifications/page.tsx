@@ -26,8 +26,11 @@ export default function NotificationsPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h4' fontWeight={700}>Notifications</Typography>
+      <Box sx={{
+        background: 'linear-gradient(135deg, rgba(192,192,192,0.08) 0%, rgba(12,12,18,0) 60%)',
+        border: '1px solid rgba(192,192,192,0.08)', borderRadius: 3, p: 3, mb: 3,
+      }}>
+        <Typography variant='h5' fontWeight={700}>Notifications</Typography>
         <Typography variant='body2' color='text.secondary'>Send broadcast notifications to all active users</Typography>
       </Box>
       <Card sx={{ maxWidth: 760 }}>

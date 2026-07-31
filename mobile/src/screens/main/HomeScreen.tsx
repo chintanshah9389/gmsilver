@@ -5,13 +5,17 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { Card, Searchbar, Snackbar, Text } from 'react-native-paper';
 import { useProductsQuery } from '@/store/services/productsApi';
 import { useBannersQuery } from '@/store/services/bannersApi';
 import { getErrorMessage } from '@/lib/error-message';
+import PremiumBackground from '@/components/PremiumBackground';
+import { C } from '@/theme/colors';
+import { E } from '@/theme/effects';
+import MotionReveal from '@/components/MotionReveal';
+import ScalePressable from '@/components/ScalePressable';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 180;
@@ -68,9 +72,9 @@ function BannerCarousel({ navigation }: { navigation: any }) {
         }}
       >
         {banners.map((banner) => (
-          <TouchableOpacity
+          <ScalePressable
             key={banner.id}
-            activeOpacity={banner.linkType !== 'NONE' ? 0.85 : 1}
+            scaleTo={banner.linkType !== 'NONE' ? 0.985 : 1}
             onPress={() => handleBannerPress(banner)}
             style={styles.slide}
           >
@@ -101,7 +105,7 @@ function BannerCarousel({ navigation }: { navigation: any }) {
                 </Text>
               ) : null}
             </View>
-          </TouchableOpacity>
+          </ScalePressable>
         ))}
       </ScrollView>
 
@@ -131,34 +135,52 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <Searchbar
-        placeholder="Search silver products"
-        value=""
-        onChangeText={() => {}}
-        style={styles.search}
-      />
+      <PremiumBackground />
 
-      <BannerCarousel navigation={navigation} />
+      <MotionReveal delay={30} duration={450} distance={20}>
+        <View style={styles.heroTop}>
+          <Text style={styles.heroEyebrow}>SILVER CATALOG</Text>
+          <Text style={styles.heroTitle}>Discover New Arrivals</Text>
+        </View>
+      </MotionReveal>
+
+      <MotionReveal delay={80} duration={380} distance={14}>
+        <Searchbar
+          placeholder="Search silver products"
+          value=""
+          onChangeText={() => {}}
+          style={styles.search}
+        />
+      </MotionReveal>
+
+      <MotionReveal delay={120} duration={420} distance={16}>
+        <BannerCarousel navigation={navigation} />
+      </MotionReveal>
 
       <FlatList
         data={products}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card
-            style={styles.card}
-            onPress={() =>
-              navigation.navigate('ProductDetail', { productId: item.id })
-            }
-          >
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.title}>
-                {item.name}
-              </Text>
-              <Text style={styles.sub}>
-                ₹{Number(item.price).toLocaleString()}
-              </Text>
-            </Card.Content>
-          </Card>
+        renderItem={({ item, index }) => (
+          <MotionReveal delay={Math.min(index * 24, 200)} duration={240} distance={9}>
+            <ScalePressable
+              style={styles.card}
+              scaleTo={0.985}
+              onPress={() =>
+                navigation.navigate('ProductDetail', { productId: item.id })
+              }
+            >
+              <Card style={styles.cardInner}>
+                <Card.Content>
+                  <Text variant="titleMedium" style={styles.title}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.sub}>
+                    ₹{Number(item.price).toLocaleString()}
+                  </Text>
+                </Card.Content>
+              </Card>
+            </ScalePressable>
+          </MotionReveal>
         )}
       />
 
@@ -174,19 +196,25 @@ export default function HomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F', padding: 12 },
-  search: { marginBottom: 12 },
+  container: { flex: 1, backgroundColor: C.bg, padding: 12 },
+  heroTop: { paddingTop: 14, paddingBottom: 10, paddingHorizontal: 2 },
+  heroEyebrow: { color: C.silver, fontSize: 10, fontWeight: '700', letterSpacing: 2.6, marginBottom: 4 },
+  heroTitle: { color: C.text, fontSize: 24, fontWeight: '800', letterSpacing: 0.3 },
+  search: { marginBottom: 14, backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 14 },
 
   carouselWrapper: { marginBottom: 14 },
   slide: {
     width: SCREEN_WIDTH - 24,
     height: CAROUSEL_HEIGHT,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#151520',
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    ...E.cardShadow,
   },
   slideImage: { width: '100%', height: '100%', position: 'absolute' },
-  slidePlaceholder: { width: '100%', height: '100%', backgroundColor: '#1E1E30' },
+  slidePlaceholder: { width: '100%', height: '100%', backgroundColor: C.surface2 },
   slideOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.40)',
@@ -199,20 +227,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  badgeText: { color: C.text, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   slideTextBox: { position: 'absolute', bottom: 14, left: 14, right: 14 },
-  slideTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  slideSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 2 },
+  slideTitle: { color: C.text, fontSize: 16, fontWeight: '700' },
+  slideSubtitle: { color: C.textSub, fontSize: 13, marginTop: 2 },
   dotsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 8,
     gap: 5,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#3A3A55' },
-  dotActive: { width: 18, backgroundColor: '#C9A84C' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.textMuted },
+  dotActive: { width: 18, backgroundColor: C.gold },
 
-  card: { backgroundColor: '#151520', marginBottom: 10 },
-  title: { color: '#F2F2F2' },
-  sub: { color: '#AFAFBA', marginTop: 4 },
+  card: { marginBottom: 12 },
+  cardInner: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 16, ...E.softShadow },
+  title: { color: C.text, fontWeight: '700' },
+  sub: { color: C.silver, marginTop: 4, fontWeight: '700', letterSpacing: 0.2 },
 });
