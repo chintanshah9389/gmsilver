@@ -13,7 +13,7 @@ export default function CheckoutScreen({ navigation }: any) {
   const onPlaceOrder = async () => {
     try {
       await createOrder({ notes }).unwrap();
-      navigation.navigate('Orders');
+      navigation.navigate('Order', { screen: 'Orders' });
     } catch (e) {
       setSnackbarMessage(getErrorMessage(e, 'Failed to place order.'));
       setSnackbarVisible(true);

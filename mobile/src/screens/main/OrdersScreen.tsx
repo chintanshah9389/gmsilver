@@ -38,6 +38,7 @@ export default function OrdersScreen({ navigation }: any) {
         </View>
       </MotionReveal>
       <FlatList
+        style={s.listFlex}
         data={orders}
         keyExtractor={item => item.id}
         contentContainerStyle={s.list}
@@ -76,7 +77,8 @@ export default function OrdersScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  header: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
+  listFlex: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
   headerTitle: { color: C.text, fontSize: 26, fontWeight: '800', letterSpacing: 0.2 },
   headerSub: { color: C.textSub, fontSize: 11, marginTop: 3, letterSpacing: 1, textTransform: 'uppercase' },
   list: { paddingHorizontal: 16, paddingBottom: 24 },

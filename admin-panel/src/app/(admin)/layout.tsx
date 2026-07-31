@@ -53,6 +53,7 @@ const navGroups = [
       { label: 'Categories',  icon: <Category />,     href: '/categories' },
       { label: 'Products',    icon: <Inventory />,    href: '/products' },
       { label: 'Banners',     icon: <ViewCarousel />, href: '/banners' },
+      { label: 'Home Widgets', icon: <ViewCarousel />, href: '/home-widgets' },
     ],
   },
   {
@@ -192,7 +193,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       {/* AppBar */}
       <AppBar
         position="fixed"
@@ -252,12 +253,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         component="main"
         sx={{
           flex: 1,
-          ml: drawerOpen ? `${DRAWER_WIDTH}px` : 0,
-          transition: 'margin 0.2s ease',
           mt: '56px',
-          minHeight: 'calc(100vh - 56px)',
+          height: 'calc(100vh - 56px)',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           background: '#0A0A0F',
           p: 3,
+          '&::-webkit-scrollbar': { width: 5 },
+          '&::-webkit-scrollbar-track': { background: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(192,192,192,0.14)', borderRadius: 4 },
         }}
       >
         {children}

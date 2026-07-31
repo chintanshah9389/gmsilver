@@ -418,3 +418,19 @@ model Banner {
   @@index([isActive])
   @@map("banners")
 }
+
+model HomeWidget {
+  id       String         @id @default(uuid())
+  key      String         @unique
+  title    String
+  linkType BannerLinkType @default(NONE) @map("link_type")
+  linkId   String?        @map("link_id")
+  isActive Boolean        @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([key, isActive])
+  @@map("home_widgets")
+}

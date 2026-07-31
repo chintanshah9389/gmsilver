@@ -3,11 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
 import HomeScreen from '@/screens/main/HomeScreen';
-import CategoriesScreen from '@/screens/main/CategoriesScreen';
-import WishlistScreen from '@/screens/main/WishlistScreen';
-import CartScreen from '@/screens/main/CartScreen';
-import ProfileScreen from '@/screens/main/ProfileScreen';
+import { CategoriesTabStack, OrdersTabStack, ProductsTabStack } from './TabStacks';
 import { C } from '@/theme/colors';
+import AppLogoHeader from '@/components/AppLogoHeader';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -35,16 +33,25 @@ const tabStyles = StyleSheet.create({
 });
 
 const ICONS: Record<string, string> = {
-  Home: '⌂', Categories: '◈', Wishlist: '♡', Cart: '◉', Profile: '◎',
+  Home: 'H', Products: 'P', Categories: 'C', Order: 'O',
+};
+
+const LABELS: Record<string, string> = {
+  Home: 'Home',
+  Products: 'Product',
+  Categories: 'Category',
+  Order: 'Order',
 };
 
 export default function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,
+        headerShown: true,
+        header: () => <AppLogoHeader />,
         tabBarShowLabel: false,
         tabBarStyle: {
+          display: route.name === 'Home' ? 'none' : 'flex',
           backgroundColor: 'rgba(27,22,33,0.95)',
           borderTopColor: C.borderHi,
           borderTopWidth: 1,
@@ -56,16 +63,15 @@ export default function MainTabs() {
           <TabIcon
             symbol={ICONS[route.name] ?? '●'}
             focused={focused}
-            label={route.name}
+            label={LABELS[route.name] ?? route.name}
           />
         ),
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Categories" component={CategoriesScreen} />
-      <Tab.Screen name="Wishlist" component={WishlistScreen} />
-      <Tab.Screen name="Cart" component={CartScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Products" component={ProductsTabStack} />
+      <Tab.Screen name="Categories" component={CategoriesTabStack} />
+      <Tab.Screen name="Order" component={OrdersTabStack} />
     </Tab.Navigator>
   );
 }

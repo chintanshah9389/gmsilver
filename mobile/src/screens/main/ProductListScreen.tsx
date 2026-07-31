@@ -20,6 +20,7 @@ const CARD_W = (SW - PAD * 2 - GAP) / 2;
 export default function ProductListScreen({ route, navigation }: any) {
   const categoryId   = route.params?.categoryId;
   const categoryName = route.params?.categoryName ?? 'Products';
+  const showInlineHeader = !!categoryId && navigation.canGoBack?.();
   const [search, setSearch] = useState('');
   const { data, error, isError, isLoading } = useProductsQuery({ page: 1, limit: 100, categoryId });
   const [snackMsg, setSnackMsg] = useState('');
@@ -61,18 +62,19 @@ export default function ProductListScreen({ route, navigation }: any) {
       <PremiumBackground />
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
-      {/* Header */}
-      <MotionReveal delay={30} duration={420} distance={18}>
-        <View style={s.header}>
-          <ScalePressable style={s.backBtn} scaleTo={0.95} onPress={() => navigation.goBack()}>
-            <Text style={s.backText}>‹</Text>
-          </ScalePressable>
-          <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle} numberOfLines={1}>{categoryName}</Text>
-            <Text style={s.headerSub}>{allProducts.length} products</Text>
+      {showInlineHeader ? (
+        <MotionReveal delay={30} duration={420} distance={18}>
+          <View style={s.header}>
+            <ScalePressable style={s.backBtn} scaleTo={0.95} onPress={() => navigation.goBack()}>
+              <Text style={s.backText}>‹</Text>
+            </ScalePressable>
+            <View style={{ flex: 1 }}>
+              <Text style={s.headerTitle} numberOfLines={1}>{categoryName}</Text>
+              <Text style={s.headerSub}>{allProducts.length} products</Text>
+            </View>
           </View>
-        </View>
-      </MotionReveal>
+        </MotionReveal>
+      ) : null}
 
       {/* Search */}
       <MotionReveal delay={80} duration={360} distance={14}>
@@ -93,6 +95,7 @@ export default function ProductListScreen({ route, navigation }: any) {
         <View style={s.loader}><ActivityIndicator color={C.silver} /></View>
       ) : (
         <FlatList
+          style={s.listFlex}
           data={products}
           keyExtractor={item => item.id}
           numColumns={2}
@@ -111,8 +114,9 @@ export default function ProductListScreen({ route, navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  listFlex: { flex: 1 },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: PAD, paddingTop: 52, paddingBottom: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: PAD, paddingTop: 10, paddingBottom: 12 },
   backBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: C.surface2 },
   backText: { color: C.silver, fontSize: 22, lineHeight: 28 },
   headerTitle: { color: C.text, fontSize: 22, fontWeight: '800' },

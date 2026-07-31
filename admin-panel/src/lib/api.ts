@@ -192,6 +192,11 @@ export const bannersApi = {
   delete: (id: string) => api.delete(`/banners/${id}`),
 };
 
+export const homeWidgetsApi = {
+  getTopProducts: () => api.get('/home-widgets/top-products'),
+  updateTopProducts: (data: any) => api.put('/home-widgets/top-products', data),
+};
+
 export const auditLogsApi = {
   getAll: (params?: any) => api.get('/audit-logs', { params }),
   getSummary: (startDate?: string, endDate?: string) =>

@@ -21,6 +21,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExcelModule } from './modules/excel/excel.module';
 import { BannersModule } from './modules/banners/banners.module';
+import { HomeWidgetsModule } from './modules/home-widgets/home-widgets.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { BannersModule } from './modules/banners/banners.module';
     AnalyticsModule,
     ExcelModule,
     BannersModule,
+    HomeWidgetsModule,
   ],
   providers: [
     {

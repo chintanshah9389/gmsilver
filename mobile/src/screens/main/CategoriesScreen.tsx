@@ -118,9 +118,8 @@ export default function CategoriesScreen({ navigation }: any) {
     <View style={styles.root}>
       <PremiumBackground />
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
-      <MotionReveal delay={30} duration={420} distance={18}>
-        <View>
       <FlatList
+        style={styles.listFlex}
         data={categories}
         keyExtractor={(item) => item.id}
         numColumns={COLS}
@@ -130,8 +129,6 @@ export default function CategoriesScreen({ navigation }: any) {
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
       />
-        </View>
-      </MotionReveal>
       <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
         {snackMsg}
       </Snackbar>
@@ -141,6 +138,7 @@ export default function CategoriesScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  listFlex: { flex: 1 },
   loader: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loaderText: { color: C.textSub, fontSize: 13, letterSpacing: 1 },
 

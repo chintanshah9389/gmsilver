@@ -7,9 +7,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Card, Searchbar, Snackbar, Text } from 'react-native-paper';
+import { Card, Snackbar, Text } from 'react-native-paper';
 import { useProductsQuery } from '@/store/services/productsApi';
 import { useBannersQuery } from '@/store/services/bannersApi';
+import { useTopProductsWidgetQuery } from '@/store/services/homeWidgetsApi';
 import { getErrorMessage } from '@/lib/error-message';
 import PremiumBackground from '@/components/PremiumBackground';
 import { C } from '@/theme/colors';
@@ -52,9 +53,15 @@ function BannerCarousel({ navigation }: { navigation: any }) {
 
   const handleBannerPress = (banner: any) => {
     if (banner.linkType === 'PRODUCT' && banner.linkId) {
-      navigation.navigate('ProductDetail', { productId: banner.linkId });
+      navigation.navigate('Products', {
+        screen: 'ProductDetail',
+        params: { productId: banner.linkId },
+      });
     } else if (banner.linkType === 'CATEGORY' && banner.linkId) {
-      navigation.navigate('ProductList', { categoryId: banner.linkId });
+      navigation.navigate('Categories', {
+        screen: 'ProductList',
+        params: { categoryId: banner.linkId },
+      });
     }
   };
 
@@ -121,10 +128,13 @@ function BannerCarousel({ navigation }: { navigation: any }) {
 }
 
 export default function HomeScreen({ navigation }: any) {
-  const { data, error, isError } = useProductsQuery({ page: 1, limit: 20 });
+  const { data, error, isError } = useProductsQuery({ page: 1, limit: 5 });
+  const { data: widgetData } = useTopProductsWidgetQuery();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const products = data?.data || [];
+  const topProductsWidget = widgetData?.data;
+  const sectionTitle = topProductsWidget?.title || 'Top Products';
 
   useEffect(() => {
     if (isError && error) {
@@ -133,10 +143,31 @@ export default function HomeScreen({ navigation }: any) {
     }
   }, [error, isError]);
 
-  return (
-    <View style={styles.container}>
-      <PremiumBackground />
+  const handleViewMore = () => {
+    if (topProductsWidget?.linkType === 'PRODUCT' && topProductsWidget?.linkId) {
+      navigation.navigate('Products', {
+        screen: 'ProductDetail',
+        params: { productId: topProductsWidget.linkId },
+      });
+      return;
+    }
 
+    if (topProductsWidget?.linkType === 'CATEGORY' && topProductsWidget?.linkId) {
+      navigation.navigate('Categories', {
+        screen: 'ProductList',
+        params: {
+          categoryId: topProductsWidget.linkId,
+          categoryName: sectionTitle,
+        },
+      });
+      return;
+    }
+
+    navigation.navigate('Products');
+  };
+
+  const ListHeader = () => (
+    <>
       <MotionReveal delay={30} duration={450} distance={20}>
         <View style={styles.heroTop}>
           <Text style={styles.heroEyebrow}>SILVER CATALOG</Text>
@@ -144,29 +175,42 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </MotionReveal>
 
-      <MotionReveal delay={80} duration={380} distance={14}>
-        <Searchbar
-          placeholder="Search silver products"
-          value=""
-          onChangeText={() => {}}
-          style={styles.search}
-        />
-      </MotionReveal>
-
       <MotionReveal delay={120} duration={420} distance={16}>
         <BannerCarousel navigation={navigation} />
       </MotionReveal>
 
+      <MotionReveal delay={180} duration={320} distance={10}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+          <ScalePressable style={styles.viewMoreBtn} scaleTo={0.98} onPress={handleViewMore}>
+            <Text style={styles.viewMoreText}>View More</Text>
+          </ScalePressable>
+        </View>
+      </MotionReveal>
+    </>
+  );
+
+  return (
+    <View style={styles.container}>
+      <PremiumBackground />
+
       <FlatList
+        style={styles.listFlex}
         data={products}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={ListHeader}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
           <MotionReveal delay={Math.min(index * 24, 200)} duration={240} distance={9}>
             <ScalePressable
               style={styles.card}
               scaleTo={0.985}
               onPress={() =>
-                navigation.navigate('ProductDetail', { productId: item.id })
+                navigation.navigate('Products', {
+                  screen: 'ProductDetail',
+                  params: { productId: item.id },
+                })
               }
             >
               <Card style={styles.cardInner}>
@@ -197,12 +241,41 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 12 },
+  listFlex: { flex: 1 },
+  listContent: { paddingBottom: 22 },
   heroTop: { paddingTop: 14, paddingBottom: 10, paddingHorizontal: 2 },
   heroEyebrow: { color: C.silver, fontSize: 10, fontWeight: '700', letterSpacing: 2.6, marginBottom: 4 },
   heroTitle: { color: C.text, fontSize: 24, fontWeight: '800', letterSpacing: 0.3 },
-  search: { marginBottom: 14, backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 14 },
 
   carouselWrapper: { marginBottom: 14 },
+  sectionHeader: {
+    marginTop: 4,
+    paddingTop: 6,
+    paddingBottom: 12,
+  },
+  sectionTitle: {
+    color: C.text,
+    fontSize: 21,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
+  viewMoreBtn: {
+    alignSelf: 'flex-start',
+    minWidth: 136,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: C.surface2,
+    borderWidth: 1,
+    borderColor: C.borderHi,
+  },
+  viewMoreText: {
+    color: C.silverLt,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 0.4,
+  },
   slide: {
     width: SCREEN_WIDTH - 24,
     height: CAROUSEL_HEIGHT,
