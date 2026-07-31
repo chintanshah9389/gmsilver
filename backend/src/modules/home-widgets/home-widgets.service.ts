@@ -18,12 +18,22 @@ type HomeWidgetRow = {
   deletedAt: Date | null;
 };
 
+type TopProductsWidgetView = {
+  id: string | null;
+  key: string;
+  title: string;
+  linkType: BannerLinkType;
+  linkId: string | null;
+  isActive: boolean;
+};
+
 @Injectable()
 export class HomeWidgetsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private getDefaultTopProductsWidget() {
+  private getDefaultTopProductsWidget(): TopProductsWidgetView {
     return {
+      id: null,
       key: TOP_PRODUCTS_KEY,
       title: 'Top Products',
       linkType: BannerLinkType.NONE,
@@ -51,7 +61,7 @@ export class HomeWidgetsService {
       LIMIT 1
     `;
 
-    return { data: rows[0] ?? this.getDefaultTopProductsWidget() };
+    return { data: (rows[0] as TopProductsWidgetView | undefined) ?? this.getDefaultTopProductsWidget() };
   }
 
   async updateTopProductsWidget(dto: UpdateTopProductsWidgetDto) {
