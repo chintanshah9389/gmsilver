@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { useMyOrdersQuery } from '@/store/services/ordersApi';
@@ -30,7 +30,7 @@ export default function OrdersScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <MotionReveal delay={30} duration={420} distance={18}>
         <View style={s.header}>
           <Text style={s.headerTitle}>My Orders</Text>
@@ -57,7 +57,7 @@ export default function OrdersScreen({ navigation }: any) {
                 </View>
               </View>
               <View style={s.cardBottom}>
-                <Text style={s.orderTotal}>₹{Number(item.grandTotal).toLocaleString()}</Text>
+                <Text style={s.orderTotal}>Rs. {Number(item.grandTotal).toLocaleString()}</Text>
                 <Text style={s.orderDate}>{new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
               </View>
             </ScalePressable>
@@ -65,7 +65,7 @@ export default function OrdersScreen({ navigation }: any) {
         )}
         ListEmptyComponent={
           <View style={s.emptyWrap}>
-            <Text style={s.emptyIcon}>◉</Text>
+            <Text style={s.emptyIcon}>O</Text>
             <Text style={s.emptyText}>No orders yet</Text>
           </View>
         }
@@ -94,4 +94,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, color: C.textMuted },
   emptyText: { color: C.textSub, fontSize: 15 },
 });
+
 

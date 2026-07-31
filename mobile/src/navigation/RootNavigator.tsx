@@ -1,9 +1,22 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
+import { C } from '@/theme/colors';
+
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: C.bg,
+    card: C.bg,
+    text: C.text,
+    border: C.border,
+    primary: '#87A9D9',
+  },
+};
 
 export default function RootNavigator() {
   const isAuthenticated = useSelector(
@@ -11,7 +24,7 @@ export default function RootNavigator() {
   );
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

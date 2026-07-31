@@ -3,6 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Card, Text, TextInput, Snackbar } from 'react-native-paper';
 import { useCreateOrderMutation } from '@/store/services/ordersApi';
 import { getErrorMessage } from '@/lib/error-message';
+import PremiumBackground from '@/components/PremiumBackground';
+import { C } from '@/theme/colors';
+import { E } from '@/theme/effects';
 
 export default function CheckoutScreen({ navigation }: any) {
   const [notes, setNotes] = useState('');
@@ -22,6 +25,7 @@ export default function CheckoutScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <PremiumBackground />
       <Card style={styles.card}>
         <Card.Content>
           <Text variant="headlineSmall" style={styles.title}>
@@ -53,8 +57,8 @@ export default function CheckoutScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F', padding: 12 },
-  card: { backgroundColor: '#151520' },
-  title: { color: '#F2F2F2', marginBottom: 12 },
+  container: { flex: 1, backgroundColor: C.bg, padding: 12 },
+  card: { backgroundColor: 'rgba(255,255,255,0.8)', borderColor: C.border, borderWidth: 1, ...E.softShadow },
+  title: { color: C.text, marginBottom: 12 },
   input: { marginBottom: 12 },
 });

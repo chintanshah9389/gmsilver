@@ -41,6 +41,7 @@ export default function ProductListScreen({ route, navigation }: any) {
         scaleTo={0.985}
         onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
       >
+        <View style={s.cardShine} />
         {item.image1Url ? (
           <Image source={{ uri: item.image1Url }} style={s.cardImg} resizeMode="cover" />
         ) : (
@@ -60,17 +61,32 @@ export default function ProductListScreen({ route, navigation }: any) {
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       {showInlineHeader ? (
         <MotionReveal delay={30} duration={420} distance={18}>
-          <View style={s.header}>
-            <ScalePressable style={s.backBtn} scaleTo={0.95} onPress={() => navigation.goBack()}>
-              <Text style={s.backText}>‹</Text>
-            </ScalePressable>
-            <View style={{ flex: 1 }}>
-              <Text style={s.headerTitle} numberOfLines={1}>{categoryName}</Text>
-              <Text style={s.headerSub}>{allProducts.length} products</Text>
+          <View style={s.headerWrap}>
+            <View style={s.header}>
+              <ScalePressable style={s.backBtn} scaleTo={0.95} onPress={() => navigation.goBack()}>
+                <Text style={s.backText}>‹</Text>
+              </ScalePressable>
+              <View style={{ flex: 1 }}>
+                <Text style={s.headerTitle} numberOfLines={1}>{categoryName}</Text>
+                <Text style={s.headerSub}>{allProducts.length} products</Text>
+              </View>
+            </View>
+          </View>
+        </MotionReveal>
+      ) : null}
+
+      {!showInlineHeader ? (
+        <MotionReveal delay={30} duration={420} distance={18}>
+          <View style={s.headerWrap}>
+            <View style={[s.header, s.headerNoBack]}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.headerTitle} numberOfLines={1}>All Products</Text>
+                <Text style={s.headerSub}>{allProducts.length} products</Text>
+              </View>
             </View>
           </View>
         </MotionReveal>
@@ -116,19 +132,53 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   listFlex: { flex: 1 },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: PAD, paddingTop: 10, paddingBottom: 12 },
+  headerWrap: { paddingHorizontal: PAD, paddingTop: 10, paddingBottom: 12 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.74)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.borderHi,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    ...E.softShadow,
+  },
+  headerNoBack: { paddingLeft: 14 },
   backBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: C.surface2 },
-  backText: { color: C.silver, fontSize: 22, lineHeight: 28 },
+  backText: { color: C.textSub, fontSize: 22, lineHeight: 28 },
   headerTitle: { color: C.text, fontSize: 22, fontWeight: '800' },
   headerSub: { color: C.textSub, fontSize: 11, marginTop: 2, letterSpacing: 0.8, textTransform: 'uppercase' },
-  searchWrap: { flexDirection: 'row', alignItems: 'center', marginHorizontal: PAD, marginBottom: 14, backgroundColor: C.surfaceSoft, borderRadius: 14, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12 },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: PAD,
+    marginBottom: 14,
+    backgroundColor: 'rgba(255,255,255,0.76)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 12,
+    ...E.softShadow,
+  },
   searchIcon: { color: C.textMuted, fontSize: 18, marginRight: 8 },
   searchInput: { flex: 1, color: C.text, fontSize: 14, paddingVertical: 11 },
   list: { paddingHorizontal: PAD, paddingBottom: 24 },
   row: { gap: GAP, marginBottom: GAP },
   card: { width: CARD_W, backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: C.border, ...E.softShadow },
+  cardShine: {
+    position: 'absolute',
+    top: -20,
+    left: -10,
+    width: CARD_W * 0.64,
+    height: 40,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.24)',
+    transform: [{ rotate: '-10deg' }],
+    zIndex: 1,
+  },
   cardImg: { width: CARD_W, height: CARD_W * 0.85 },
-  cardImgPlaceholder: { width: CARD_W, height: CARD_W * 0.85, backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center' },
+  cardImgPlaceholder: { width: CARD_W, height: CARD_W * 0.85, backgroundColor: C.surface3, alignItems: 'center', justifyContent: 'center' },
   cardImgInitial: { color: C.textMuted, fontSize: CARD_W * 0.25, fontWeight: '700' },
   cardBody: { padding: 10 },
   cardName: { color: C.text, fontSize: 12, fontWeight: '700', lineHeight: 16 },

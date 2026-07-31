@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -43,8 +43,8 @@ export default function ResetPasswordScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <PremiumBackground variant="auth" />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         <View style={s.logoWrap}>
           <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
@@ -124,3 +124,4 @@ const s = StyleSheet.create({
   btnPrimary: { backgroundColor: C.silver },
   btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 });
+

@@ -25,7 +25,7 @@ export default function AppLogoHeader() {
           style={s.actionBtn}
           onPress={() => navigation.navigate('Products', { screen: 'Wishlist' })}
         >
-          <Icon source="heart-outline" size={16} color={C.silverLt} />
+          <Icon source="heart-outline" size={16} color={C.textSub} />
           <Text style={s.actionLabel}>Wish</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -33,7 +33,7 @@ export default function AppLogoHeader() {
           style={s.actionBtn}
           onPress={() => navigation.navigate('Products', { screen: 'Cart' })}
         >
-          <Icon source="cart-outline" size={16} color={C.silverLt} />
+          <Icon source="cart-outline" size={16} color={C.textSub} />
           <Text style={s.actionLabel}>Cart</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -41,7 +41,7 @@ export default function AppLogoHeader() {
           style={s.actionBtn}
           onPress={() => navigation.navigate('Order', { screen: 'Profile' })}
         >
-          <Icon source="account-outline" size={16} color={C.silverLt} />
+          <Icon source="account-outline" size={16} color={C.textSub} />
           <Text style={s.actionLabel}>Me</Text>
         </TouchableOpacity>
       </View>
@@ -58,7 +58,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: C.bg,
     borderBottomWidth: 1,
-    borderBottomColor: C.border,
+    borderBottomColor: C.borderHi,
   },
   brandWrap: {
     flexDirection: 'row',
@@ -71,19 +71,19 @@ const s = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: C.silver,
-    backgroundColor: 'rgba(192,192,192,0.12)',
+    borderColor: C.goldDim,
+    backgroundColor: 'rgba(255,255,255,0.78)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoText: {
-    color: C.silverLt,
+    color: C.text,
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
   brand: {
-    color: C.silverLt,
+    color: C.text,
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 2.2,
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: C.border,
-    backgroundColor: C.surface2,
+    backgroundColor: 'rgba(255,255,255,0.74)',
     paddingHorizontal: 6,
   },
   actionLabel: {

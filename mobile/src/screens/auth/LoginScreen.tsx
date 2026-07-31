@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
@@ -33,8 +33,8 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <PremiumBackground variant="auth" shimmer />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       {/* Background decoration */}
       <View style={s.bgCircle1} />
@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }: any) {
           <View style={s.pwWrap}>
             <TextInput
               style={[s.input, { flex: 1, marginBottom: 0 }]}
-              placeholder="••••••••"
+              placeholder="********"
               placeholderTextColor={C.textMuted}
               value={password}
               onChangeText={setPassword}
@@ -79,7 +79,7 @@ export default function LoginScreen({ navigation }: any) {
               selectionColor={C.silver}
             />
             <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw(v => !v)}>
-              <Text style={s.eyeText}>{showPw ? '🙈' : '👁'}</Text>
+              <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -166,5 +166,6 @@ const s = StyleSheet.create({
   footerText: { color: C.textSub, fontSize: 13 },
   footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
 });
+
 
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View, Text, StatusBar } from 'react-native';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
@@ -21,8 +21,8 @@ export default function SplashScreen({ navigation }: any) {
 
   return (
     <View style={s.root}>
-      <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <PremiumBackground variant="auth" shimmer />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       {/* Background rings */}
       <View style={[s.ring, s.ring1]} />
@@ -87,5 +87,6 @@ const s = StyleSheet.create({
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.textMuted },
   dotActive: { width: 18, backgroundColor: C.silver },
 });
+
 
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions, Image, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View, StatusBar, ActivityIndicator,
@@ -34,7 +34,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const showSnack = (msg: string) => { setSnackMsg(msg); setSnackVisible(true); };
 
   if (isLoading) return (
-    <View style={s.loader}><StatusBar barStyle="light-content" /><ActivityIndicator color={C.silver} size="large" /></View>
+    <View style={s.loader}><StatusBar barStyle="dark-content" /><ActivityIndicator color={C.silver} size="large" /></View>
   );
 
   if (!product) return (
@@ -44,21 +44,21 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const images = [product.image1Url, product.image2Url, product.image3Url].filter(Boolean);
 
   const onShare = async () => {
-    await Share.share({ message: `${product.name} – ₹${Number(product.price).toLocaleString()}\nGM Silver Catalog` });
+    await Share.share({ message: `${product.name} - Rs. ${Number(product.price).toLocaleString()}\nGM Silver Catalog` });
   };
 
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       {/* Header overlay */}
       <View style={s.headerOverlay}>
         <ScalePressable style={s.headerBtn} scaleTo={0.95} onPress={() => navigation.goBack()}>
-          <Text style={s.headerBtnText}>‹</Text>
+          <Text style={s.headerBtnText}>{'<'}</Text>
         </ScalePressable>
         <ScalePressable style={s.headerBtn} scaleTo={0.95} onPress={onShare}>
-          <Text style={s.headerBtnText}>⬆</Text>
+          <Text style={s.headerBtnText}>^</Text>
         </ScalePressable>
       </View>
 
@@ -94,7 +94,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           {/* Name + price */}
           <View style={s.namePriceRow}>
             <Text style={s.productName}>{product.name}</Text>
-            <Text style={s.productPrice}>₹{Number(product.price).toLocaleString()}</Text>
+            <Text style={s.productPrice}>Rs. {Number(product.price).toLocaleString()}</Text>
           </View>
 
           {/* SKU badge */}
@@ -132,7 +132,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               catch (e) { showSnack(getErrorMessage(e, 'Failed.')); }
             }}
           >
-            <Text style={s.wishIcon}>♡</Text>
+            <Text style={s.wishIcon}>{'<3'}</Text>
           </ScalePressable>
           <ScalePressable
             style={s.cartBtn}
@@ -189,5 +189,6 @@ const s = StyleSheet.create({
   cartBtn: { flex: 1, height: 52, borderRadius: 14, backgroundColor: C.silver, alignItems: 'center', justifyContent: 'center', ...E.buttonShadow },
   cartBtnText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 });
+
 
 

@@ -25,11 +25,11 @@ const tabStyles = StyleSheet.create({
     width: 38, height: 26, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center',
   },
-  iconBoxActive: { backgroundColor: 'rgba(192,192,192,0.14)' },
+  iconBoxActive: { backgroundColor: 'rgba(255,255,255,0.82)' },
   symbol: { fontSize: 18, color: C.textMuted },
-  symbolActive: { color: C.silver },
+  symbolActive: { color: C.text },
   label: { fontSize: 10, color: C.textMuted, marginTop: 2, fontWeight: '500' },
-  labelActive: { color: C.silver, fontWeight: '700' },
+  labelActive: { color: C.text, fontWeight: '700' },
 });
 
 const ICONS: Record<string, string> = {
@@ -52,7 +52,7 @@ export default function MainTabs() {
         tabBarShowLabel: false,
         tabBarStyle: {
           display: route.name === 'Home' ? 'none' : 'flex',
-          backgroundColor: 'rgba(27,22,33,0.95)',
+          backgroundColor: 'rgba(248,247,244,0.96)',
           borderTopColor: C.borderHi,
           borderTopWidth: 1,
           height: 68,

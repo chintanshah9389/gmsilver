@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
@@ -31,8 +31,8 @@ export default function MpinLoginScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <PremiumBackground variant="auth" />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         <View style={s.logoWrap}>
           <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
@@ -55,7 +55,7 @@ export default function MpinLoginScreen({ navigation }: any) {
           <Text style={s.fieldLabel}>6-Digit MPIN</Text>
           <TextInput
             style={s.input}
-            placeholder="• • • • • •"
+            placeholder="* * * * * *"
             placeholderTextColor={C.textMuted}
             value={mpin}
             onChangeText={setMpin}
@@ -103,3 +103,4 @@ const s = StyleSheet.create({
   footerText: { color: C.textSub, fontSize: 13 },
   footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
 });
+

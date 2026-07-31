@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Linking, StyleSheet } from 'react-native';
+import { FlatList, Linking, StyleSheet, View } from 'react-native';
 import { Button, Card, Text, Snackbar } from 'react-native-paper';
 import { useInvoicesQuery } from '@/store/services/ordersApi';
 import { getErrorMessage } from '@/lib/error-message';
+import PremiumBackground from '@/components/PremiumBackground';
+import { C } from '@/theme/colors';
+import { E } from '@/theme/effects';
 
 export default function InvoicesScreen() {
   const { data, error, isError } = useInvoicesQuery();
@@ -18,7 +21,8 @@ export default function InvoicesScreen() {
   }, [error, isError]);
 
   return (
-    <>
+    <View style={styles.root}>
+      <PremiumBackground />
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.listContent}
@@ -47,15 +51,22 @@ export default function InvoicesScreen() {
       >
         {snackbarMessage}
       </Snackbar>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  root: { flex: 1, backgroundColor: C.bg },
+  container: { flex: 1, backgroundColor: 'transparent' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#151520', marginBottom: 10 },
-  title: { color: '#F2F2F2' },
-  sub: { color: '#AFAFBA', marginTop: 4 },
-  empty: { color: '#AFAFBA', textAlign: 'center', marginTop: 24 },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderColor: C.border,
+    borderWidth: 1,
+    marginBottom: 10,
+    ...E.softShadow,
+  },
+  title: { color: C.text },
+  sub: { color: C.textSub, marginTop: 4 },
+  empty: { color: C.textSub, textAlign: 'center', marginTop: 24 },
 });

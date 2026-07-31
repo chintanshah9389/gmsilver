@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   FlatList, StyleSheet, Text, TouchableOpacity, View, Image, StatusBar,
 } from 'react-native';
@@ -36,13 +36,13 @@ export default function CartScreen({ navigation }: any) {
         }
         <View style={s.itemInfo}>
           <Text style={s.itemName} numberOfLines={2}>{item.product?.name}</Text>
-          <Text style={s.itemPrice}>₹{Number(item.product?.price || 0).toLocaleString()}</Text>
+          <Text style={s.itemPrice}>Rs. {Number(item.product?.price || 0).toLocaleString()}</Text>
           <View style={s.qtyRow}>
             <TouchableOpacity style={s.qtyBtn} onPress={async () => {
               try { await updateQty({ productId: item.productId, quantity: Math.max(1, item.quantity - 1) }).unwrap(); }
               catch (e) { showSnack(getErrorMessage(e, 'Failed.')); }
             }}>
-              <Text style={s.qtyBtnText}>−</Text>
+              <Text style={s.qtyBtnText}>-</Text>
             </TouchableOpacity>
             <Text style={s.qtyVal}>{item.quantity}</Text>
             <TouchableOpacity style={s.qtyBtn} onPress={async () => {
@@ -55,7 +55,7 @@ export default function CartScreen({ navigation }: any) {
               try { await removeItem(item.productId).unwrap(); }
               catch (e) { showSnack(getErrorMessage(e, 'Failed.')); }
             }}>
-              <Text style={s.removeText}>✕</Text>
+              <Text style={s.removeText}>X</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -66,7 +66,7 @@ export default function CartScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <MotionReveal delay={30} duration={420} distance={18}>
         <View style={s.header}>
           <Text style={s.headerTitle}>My Cart</Text>
@@ -81,7 +81,7 @@ export default function CartScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={s.emptyWrap}>
-            <Text style={s.emptyIcon}>◉</Text>
+            <Text style={s.emptyIcon}>O</Text>
             <Text style={s.emptyText}>Your cart is empty</Text>
             <Text style={s.emptySub}>Browse categories to find products</Text>
           </View>
@@ -92,7 +92,7 @@ export default function CartScreen({ navigation }: any) {
           <View style={s.footer}>
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Subtotal</Text>
-              <Text style={s.totalValue}>₹{Number(cart?.subtotal || 0).toLocaleString()}</Text>
+              <Text style={s.totalValue}>Rs. {Number(cart?.subtotal || 0).toLocaleString()}</Text>
             </View>
             <ScalePressable style={s.checkoutBtn} scaleTo={0.97} onPress={() => navigation.navigate('Checkout')}>
               <Text style={s.checkoutBtnText}>Proceed to Checkout</Text>
@@ -138,5 +138,6 @@ const s = StyleSheet.create({
   checkoutBtn: { backgroundColor: C.silver, borderRadius: 14, paddingVertical: 14, alignItems: 'center', ...E.buttonShadow },
   checkoutBtnText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 });
+
 
 

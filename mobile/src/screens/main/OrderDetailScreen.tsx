@@ -6,6 +6,9 @@ import {
   useCancelOrderMutation,
 } from '@/store/services/ordersApi';
 import { getErrorMessage } from '@/lib/error-message';
+import PremiumBackground from '@/components/PremiumBackground';
+import { C } from '@/theme/colors';
+import { E } from '@/theme/effects';
 
 export default function OrderDetailScreen({ route }: any) {
   const { orderId } = route.params;
@@ -25,6 +28,7 @@ export default function OrderDetailScreen({ route }: any) {
   if (!order) {
     return (
       <View style={styles.container}>
+        <PremiumBackground />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -32,6 +36,7 @@ export default function OrderDetailScreen({ route }: any) {
 
   return (
     <View style={styles.container}>
+      <PremiumBackground />
       <Card style={styles.card}>
         <Card.Content>
           <Text style={styles.title}>{order.orderNumber}</Text>
@@ -86,10 +91,16 @@ export default function OrderDetailScreen({ route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F', padding: 12 },
-  loadingText: { color: '#fff' },
+  container: { flex: 1, backgroundColor: C.bg, padding: 12 },
+  loadingText: { color: C.text },
   listContent: { paddingTop: 8 },
-  card: { backgroundColor: '#151520', marginBottom: 10 },
-  title: { color: '#F2F2F2' },
-  sub: { color: '#AFAFBA', marginTop: 4 },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderColor: C.border,
+    borderWidth: 1,
+    marginBottom: 10,
+    ...E.softShadow,
+  },
+  title: { color: C.text },
+  sub: { color: C.textSub, marginTop: 4 },
 });

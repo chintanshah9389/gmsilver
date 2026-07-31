@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
@@ -31,8 +31,8 @@ export default function SignupScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <PremiumBackground variant="auth" />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <View style={s.bgCircle} />
 
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
@@ -77,7 +77,7 @@ export default function SignupScreen({ navigation }: any) {
               selectionColor={C.silver}
             />
             <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw(v => !v)}>
-              <Text style={s.eyeText}>{showPw ? '🙈' : '👁'}</Text>
+              <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -132,5 +132,6 @@ const s = StyleSheet.create({
   footerText: { color: C.textSub, fontSize: 13 },
   footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
 });
+
 
 

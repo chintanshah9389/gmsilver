@@ -17,6 +17,7 @@ import SettingsScreen from '@/screens/main/SettingsScreen';
 import WishlistScreen from '@/screens/main/WishlistScreen';
 import CartScreen from '@/screens/main/CartScreen';
 import ProfileScreen from '@/screens/main/ProfileScreen';
+import { C } from '@/theme/colors';
 
 const ProductStack = createNativeStackNavigator<ProductStackParamList>();
 const CategoriesStack = createNativeStackNavigator<CategoriesStackParamList>();
@@ -24,7 +25,7 @@ const OrdersStack = createNativeStackNavigator<OrdersStackParamList>();
 
 export function ProductsTabStack() {
   return (
-    <ProductStack.Navigator screenOptions={{ headerShown: false }}>
+    <ProductStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
       <ProductStack.Screen
         name="ProductList"
         component={ProductListScreen}
@@ -40,7 +41,7 @@ export function ProductsTabStack() {
 
 export function CategoriesTabStack() {
   return (
-    <CategoriesStack.Navigator screenOptions={{ headerShown: false }}>
+    <CategoriesStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
       <CategoriesStack.Screen name="Categories" component={CategoriesScreen} />
       <CategoriesStack.Screen name="ProductList" component={ProductListScreen} />
       <CategoriesStack.Screen name="ProductDetail" component={ProductDetailScreen} />
@@ -51,7 +52,7 @@ export function CategoriesTabStack() {
 
 export function OrdersTabStack() {
   return (
-    <OrdersStack.Navigator screenOptions={{ headerShown: false }}>
+    <OrdersStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
       <OrdersStack.Screen name="Orders" component={OrdersScreen} />
       <OrdersStack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <OrdersStack.Screen name="Invoices" component={InvoicesScreen} />

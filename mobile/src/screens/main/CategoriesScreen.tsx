@@ -26,14 +26,14 @@ const CARD_W = (SW - PAD * 2 - GAP) / COLS;
 const CARD_H = CARD_W * 1.25;
 
 const PALETTE = [
-  { bg: '#1C1528', accent: '#9B8EC4' },
-  { bg: '#12201A', accent: '#6BAF82' },
-  { bg: '#1F1415', accent: '#BF7070' },
-  { bg: '#121820', accent: '#6699BB' },
-  { bg: '#1E1720', accent: '#A87BB0' },
-  { bg: '#1A1D12', accent: '#8FA860' },
-  { bg: '#201A12', accent: '#B89060' },
-  { bg: '#121A1F', accent: '#5FA0B5' },
+  { bg: '#EEF1F7', accent: '#8C78B8' },
+  { bg: '#E9F3F2', accent: '#4EA8A1' },
+  { bg: '#F5EEF1', accent: '#C97D8A' },
+  { bg: '#EAF2FA', accent: '#87A9D9' },
+  { bg: '#F0ECF8', accent: '#9B8EC4' },
+  { bg: '#F4F3E9', accent: '#B79B6A' },
+  { bg: '#F8F0E6', accent: '#D9A86C' },
+  { bg: '#E9F5F7', accent: '#5FA0B5' },
 ];
 
 export default function CategoriesScreen({ navigation }: any) {
@@ -75,6 +75,7 @@ export default function CategoriesScreen({ navigation }: any) {
           )}
 
           {/* Scrim layers for gradient effect */}
+          <View style={styles.cardShine} />
           <View style={styles.scrim1} />
           <View style={styles.scrim2} />
           <View style={styles.scrim3} />
@@ -97,9 +98,12 @@ export default function CategoriesScreen({ navigation }: any) {
   };
 
   const ListHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.headerSub}>COLLECTIONS</Text>
-      <Text style={styles.headerTitle}>Shop by Category</Text>
+    <View style={styles.headerWrap}>
+      <View style={styles.headerGlass}>
+        <Text style={styles.headerSub}>COLLECTIONS</Text>
+        <Text style={styles.headerTitle}>Shop by Category</Text>
+        <Text style={styles.headerCaption}>Curated silver ranges with premium finishing</Text>
+      </View>
     </View>
   );
 
@@ -107,7 +111,7 @@ export default function CategoriesScreen({ navigation }: any) {
     return (
       <View style={styles.loader}>
         <PremiumBackground />
-        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+        <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
         <ActivityIndicator size="large" color={C.silver} />
         <Text style={styles.loaderText}>Loading collections…</Text>
       </View>
@@ -117,7 +121,7 @@ export default function CategoriesScreen({ navigation }: any) {
   return (
     <View style={styles.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <FlatList
         style={styles.listFlex}
         data={categories}
@@ -142,9 +146,19 @@ const styles = StyleSheet.create({
   loader: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loaderText: { color: C.textSub, fontSize: 13, letterSpacing: 1 },
 
-  header: { paddingHorizontal: PAD, paddingTop: 22, paddingBottom: 16 },
+  headerWrap: { paddingHorizontal: PAD, paddingTop: 18, paddingBottom: 18 },
+  headerGlass: {
+    backgroundColor: 'rgba(255,255,255,0.74)',
+    borderWidth: 1,
+    borderColor: C.borderHi,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    ...E.softShadow,
+  },
   headerSub: { color: C.silver, fontSize: 10, fontWeight: '700', letterSpacing: 3.2, marginBottom: 6 },
   headerTitle: { color: C.text, fontSize: 26, fontWeight: '800', letterSpacing: 0.2 },
+  headerCaption: { color: C.textSub, fontSize: 12, marginTop: 4, letterSpacing: 0.2 },
 
   list: { paddingHorizontal: PAD, paddingBottom: 32 },
   row: { gap: GAP, marginBottom: GAP },
@@ -158,6 +172,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     ...E.cardShadow,
+  },
+  cardShine: {
+    position: 'absolute',
+    top: -26,
+    left: -8,
+    width: CARD_W * 0.64,
+    height: 56,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.24)',
+    transform: [{ rotate: '-12deg' }],
   },
 
   placeholder: {
@@ -177,33 +201,33 @@ const styles = StyleSheet.create({
   // Multi-layer scrim
   scrim1: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   scrim2: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
     height: CARD_H * 0.65,
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    backgroundColor: 'rgba(248,249,252,0.26)',
   },
   scrim3: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
     height: CARD_H * 0.42,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(31,39,51,0.18)',
   },
 
   badge: {
     position: 'absolute',
     top: 10,
     right: 10,
-    backgroundColor: 'rgba(192,192,192,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.62)',
     borderWidth: 1,
     borderColor: C.borderHi,
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  badgeText: { color: C.silverLt, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  badgeText: { color: C.textSub, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
 
   footer: {
     position: 'absolute',

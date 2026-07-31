@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { useNotificationsQuery, useMarkAllReadMutation } from '@/store/services/notificationsApi';
@@ -23,7 +23,7 @@ export default function NotificationsScreen() {
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <MotionReveal delay={30} duration={420} distance={18}>
         <View style={s.header}>
           <Text style={s.headerTitle}>Notifications</Text>
@@ -55,7 +55,7 @@ export default function NotificationsScreen() {
         }}
         ListEmptyComponent={
           <View style={s.emptyWrap}>
-            <Text style={s.emptyIcon}>🔔</Text>
+            <Text style={s.emptyIcon}>*</Text>
             <Text style={s.emptyText}>No notifications</Text>
           </View>
         }
@@ -81,4 +81,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, color: C.textMuted },
   emptyText: { color: C.textSub, fontSize: 15 },
 });
+
 

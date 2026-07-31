@@ -1,16 +1,23 @@
-import { MD3DarkTheme, configureFonts } from 'react-native-paper';
+import { MD3LightTheme, configureFonts } from 'react-native-paper';
+import { C } from './colors';
 
 export const theme = {
-  ...MD3DarkTheme,
+  ...MD3LightTheme,
   colors: {
-    ...MD3DarkTheme.colors,
-    primary: '#C0C0C0',
-    secondary: '#FFD700',
-    background: '#0A0A0F',
-    surface: '#14141D',
-    onSurface: '#F2F2F2',
+    ...MD3LightTheme.colors,
+    primary: '#87A9D9',
+    secondary: '#4EA8A1',
+    tertiary: '#8C78B8',
+    background: C.bg,
+    surface: C.surface,
+    surfaceVariant: C.surface2,
+    outline: C.borderHi,
+    onBackground: C.text,
+    onSurface: C.text,
+    onSurfaceVariant: C.textSub,
+    error: C.error,
   },
-  roundness: 12,
+  roundness: 14,
   fonts: configureFonts({
     config: {
       fontFamily: 'System',

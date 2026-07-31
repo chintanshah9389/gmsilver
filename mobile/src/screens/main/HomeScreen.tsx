@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   ScrollView,
+  StatusBar,
   StyleSheet,
   View,
 } from 'react-native';
@@ -23,10 +24,10 @@ const CAROUSEL_HEIGHT = 180;
 const AUTO_SCROLL_MS = 3500;
 
 const BADGE_COLORS: Record<string, string> = {
-  NEW: '#22C55E',
-  SALE: '#EF4444',
-  MARKETING: '#A855F7',
-  FEATURED: '#F59E0B',
+  NEW: '#66B7A3',
+  SALE: '#C97D8A',
+  MARKETING: '#8C78B8',
+  FEATURED: '#D8C29A',
 };
 
 function BannerCarousel({ navigation }: { navigation: any }) {
@@ -169,9 +170,12 @@ export default function HomeScreen({ navigation }: any) {
   const ListHeader = () => (
     <>
       <MotionReveal delay={30} duration={450} distance={20}>
-        <View style={styles.heroTop}>
-          <Text style={styles.heroEyebrow}>SILVER CATALOG</Text>
-          <Text style={styles.heroTitle}>Discover New Arrivals</Text>
+        <View style={styles.heroWrap}>
+          <View style={styles.heroTop}>
+            <Text style={styles.heroEyebrow}>SILVER CATALOG</Text>
+            <Text style={styles.heroTitle}>Discover New Arrivals</Text>
+            <Text style={styles.heroCaption}>Handpicked collections with refined craftsmanship</Text>
+          </View>
         </View>
       </MotionReveal>
 
@@ -181,7 +185,10 @@ export default function HomeScreen({ navigation }: any) {
 
       <MotionReveal delay={180} duration={320} distance={10}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+          <View>
+            <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+            <Text style={styles.sectionSubtitle}>Trending pieces and fast-moving inventory</Text>
+          </View>
           <ScalePressable style={styles.viewMoreBtn} scaleTo={0.98} onPress={handleViewMore}>
             <Text style={styles.viewMoreText}>View More</Text>
           </ScalePressable>
@@ -193,6 +200,7 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <PremiumBackground />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       <FlatList
         style={styles.listFlex}
@@ -214,6 +222,7 @@ export default function HomeScreen({ navigation }: any) {
               }
             >
               <Card style={styles.cardInner}>
+                <View style={styles.cardShine} />
                 <Card.Content>
                   <Text variant="titleMedium" style={styles.title}>
                     {item.name}
@@ -243,34 +252,52 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, padding: 12 },
   listFlex: { flex: 1 },
   listContent: { paddingBottom: 22 },
-  heroTop: { paddingTop: 14, paddingBottom: 10, paddingHorizontal: 2 },
+  heroWrap: { paddingTop: 14, paddingBottom: 10, paddingHorizontal: 2 },
+  heroTop: {
+    backgroundColor: 'rgba(255,255,255,0.74)',
+    borderWidth: 1,
+    borderColor: C.borderHi,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    ...E.softShadow,
+  },
   heroEyebrow: { color: C.silver, fontSize: 10, fontWeight: '700', letterSpacing: 2.6, marginBottom: 4 },
   heroTitle: { color: C.text, fontSize: 24, fontWeight: '800', letterSpacing: 0.3 },
+  heroCaption: { color: C.textSub, fontSize: 12, marginTop: 4, letterSpacing: 0.2 },
 
   carouselWrapper: { marginBottom: 14 },
   sectionHeader: {
     marginTop: 4,
-    paddingTop: 6,
+    paddingTop: 10,
     paddingBottom: 12,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    borderWidth: 1,
+    borderColor: C.border,
+    ...E.softShadow,
   },
   sectionTitle: {
     color: C.text,
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: '800',
-    marginBottom: 12,
+    marginBottom: 2,
   },
+  sectionSubtitle: { color: C.textSub, fontSize: 12, marginBottom: 12 },
   viewMoreBtn: {
     alignSelf: 'flex-start',
     minWidth: 136,
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 14,
-    backgroundColor: C.surface2,
+    backgroundColor: 'rgba(255,255,255,0.72)',
     borderWidth: 1,
     borderColor: C.borderHi,
+    ...E.buttonShadow,
   },
   viewMoreText: {
-    color: C.silverLt,
+    color: C.text,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
@@ -290,7 +317,7 @@ const styles = StyleSheet.create({
   slidePlaceholder: { width: '100%', height: '100%', backgroundColor: C.surface2 },
   slideOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.40)',
+    backgroundColor: 'rgba(21,29,40,0.24)',
   },
   badge: {
     position: 'absolute',
@@ -300,21 +327,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  badgeText: { color: C.text, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   slideTextBox: { position: 'absolute', bottom: 14, left: 14, right: 14 },
-  slideTitle: { color: C.text, fontSize: 16, fontWeight: '700' },
-  slideSubtitle: { color: C.textSub, fontSize: 13, marginTop: 2 },
+  slideTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  slideSubtitle: { color: 'rgba(255,255,255,0.86)', fontSize: 13, marginTop: 2 },
   dotsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 8,
     gap: 5,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.textMuted },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#B2BCC8' },
   dotActive: { width: 18, backgroundColor: C.gold },
 
   card: { marginBottom: 12 },
-  cardInner: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 16, ...E.softShadow },
+  cardInner: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...E.softShadow,
+  },
+  cardShine: {
+    position: 'absolute',
+    top: -22,
+    left: -10,
+    width: 160,
+    height: 46,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.26)',
+    transform: [{ rotate: '-12deg' }],
+  },
   title: { color: C.text, fontWeight: '700' },
   sub: { color: C.silver, marginTop: 4, fontWeight: '700', letterSpacing: 0.2 },
 });

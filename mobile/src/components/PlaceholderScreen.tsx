@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, Card } from 'react-native-paper';
 import ScreenContainer from './ScreenContainer';
+import { C } from '@/theme/colors';
+import { E } from '@/theme/effects';
 
 export default function PlaceholderScreen({
   title,
@@ -28,7 +30,12 @@ export default function PlaceholderScreen({
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#151520' },
-  title: { color: '#F2F2F2', marginBottom: 8 },
-  subtitle: { color: '#AFAFBA' },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderColor: C.border,
+    borderWidth: 1,
+    ...E.softShadow,
+  },
+  title: { color: C.text, marginBottom: 8 },
+  subtitle: { color: C.textSub },
 });

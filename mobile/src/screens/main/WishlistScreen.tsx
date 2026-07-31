@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { useWishlistQuery, useRemoveWishlistMutation } from '@/store/services/wishlistApi';
@@ -23,7 +23,7 @@ export default function WishlistScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <MotionReveal delay={30} duration={420} distance={18}>
         <View style={s.header}>
           <Text style={s.headerTitle}>Wishlist</Text>
@@ -50,19 +50,19 @@ export default function WishlistScreen({ navigation }: any) {
                   }
                   <View style={s.info}>
                     <Text style={s.name} numberOfLines={2}>{item.product?.name}</Text>
-                    <Text style={s.price}>₹{Number(item.product?.price || 0).toLocaleString()}</Text>
+                    <Text style={s.price}>Rs. {Number(item.product?.price || 0).toLocaleString()}</Text>
                   </View>
                 </View>
               </ScalePressable>
               <TouchableOpacity style={s.removeBtn} onPress={() => remove(item.productId)}>
-                <Text style={s.removeText}>✕</Text>
+                <Text style={s.removeText}>X</Text>
               </TouchableOpacity>
             </View>
           </MotionReveal>
         )}
         ListEmptyComponent={
           <View style={s.emptyWrap}>
-            <Text style={s.emptyIcon}>♡</Text>
+            <Text style={s.emptyIcon}>{'<3'}</Text>
             <Text style={s.emptyText}>No saved items</Text>
           </View>
         }
@@ -93,4 +93,5 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 40, color: C.textMuted },
   emptyText: { color: C.textSub, fontSize: 15 },
 });
+
 

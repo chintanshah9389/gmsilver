@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { logout } from '@/store/slices/authSlice';
@@ -15,7 +15,7 @@ const MenuItem = ({ icon, label, sub, onPress, danger }: any) => (
       <Text style={[s.menuLabel, danger && s.menuLabelDanger]}>{label}</Text>
       {sub ? <Text style={s.menuSub}>{sub}</Text> : null}
     </View>
-    <Text style={s.menuChevron}>›</Text>
+    <Text style={s.menuChevron}>{'>'}</Text>
   </TouchableOpacity>
 );
 
@@ -26,7 +26,7 @@ export default function ProfileScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <PremiumBackground />
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.headerBg}>
@@ -40,24 +40,24 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={s.section}>
           <Text style={s.sectionLabel}>ACCOUNT</Text>
           <View style={s.menuCard}>
-            <MenuItem icon="◉" label="My Orders" sub="Track your orders" onPress={() => navigation.navigate('Orders')} />
+            <MenuItem icon="O" label="My Orders" sub="Track your orders" onPress={() => navigation.navigate('Orders')} />
             <View style={s.menuDivider} />
-            <MenuItem icon="📄" label="My Invoices" sub="Download invoices" onPress={() => navigation.navigate('Invoices')} />
+            <MenuItem icon="[PDF]" label="My Invoices" sub="Download invoices" onPress={() => navigation.navigate('Invoices')} />
             <View style={s.menuDivider} />
-            <MenuItem icon="🔔" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
+            <MenuItem icon="*" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
           </View>
         </View>
 
         <View style={s.section}>
           <Text style={s.sectionLabel}>PREFERENCES</Text>
           <View style={s.menuCard}>
-            <MenuItem icon="⚙" label="Settings" sub="MPIN, password & more" onPress={() => navigation.navigate('Settings')} />
+            <MenuItem icon="[SET]" label="Settings" sub="MPIN, password & more" onPress={() => navigation.navigate('Settings')} />
           </View>
         </View>
 
         <View style={s.section}>
           <View style={s.menuCard}>
-            <MenuItem icon="⬅" label="Sign Out" onPress={() => dispatch(logout())} danger />
+            <MenuItem icon="<-" label="Sign Out" onPress={() => dispatch(logout())} danger />
           </View>
         </View>
 
@@ -88,4 +88,5 @@ const s = StyleSheet.create({
   menuChevron: { color: C.textMuted, fontSize: 18 },
   menuDivider: { height: 1, backgroundColor: C.border, marginLeft: 64 },
 });
+
 
