@@ -11,6 +11,7 @@ import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
+import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -23,8 +24,16 @@ export default function LoginScreen({ navigation }: any) {
 
   const onLogin = async () => {
     try {
-      const res = await login({ email, password }).unwrap();
+      const fcmToken = await getFcmToken();
+      const res = await login({
+        email,
+        password,
+        ...(fcmToken ? { fcmToken } : {}),
+      }).unwrap();
       dispatch(setAuth(res.data));
+      if (res.data?.user?.id) {
+        void registerDeviceForPush(res.data.user.id);
+      }
     } catch (e) {
       setSnackMsg(getErrorMessage(e, 'Login failed. Please try again.'));
       setSnackVisible(true);

@@ -44,5 +44,5 @@ export type MainTabParamList = {
 };
 
 export type AppStackParamList = {
-  Tabs: undefined;
+  Tabs: NavigatorScreenParams<MainTabParamList> | undefined;
 };

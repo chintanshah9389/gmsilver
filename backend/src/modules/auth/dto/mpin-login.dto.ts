@@ -1,5 +1,5 @@
-import { IsEmail, IsString, Length } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class MpinLoginDto {
   @ApiProperty({ example: 'john@example.com' })
@@ -10,4 +10,9 @@ export class MpinLoginDto {
   @IsString()
   @Length(6, 6)
   mpin: string;
+
+  @ApiPropertyOptional({ example: 'fcm_token_here' })
+  @IsOptional()
+  @IsString()
+  fcmToken?: string;
 }

@@ -248,7 +248,13 @@ export class NotificationsService implements OnModuleInit {
         token,
         notification: { title, body },
         data: data || {},
-        android: { priority: 'high' },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'gmsilver_default',
+            sound: 'default',
+          },
+        },
         apns: { payload: { aps: { sound: 'default', badge: 1 } } },
       });
     } catch (err) {
@@ -271,6 +277,13 @@ export class NotificationsService implements OnModuleInit {
           tokens: batch,
           notification: { title, body },
           data: data || {},
+          android: {
+            priority: 'high',
+            notification: {
+              channelId: 'gmsilver_default',
+              sound: 'default',
+            },
+          },
         });
       }
     } catch (err) {

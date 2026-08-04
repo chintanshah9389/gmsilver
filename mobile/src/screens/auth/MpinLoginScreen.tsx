@@ -10,6 +10,7 @@ import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
+import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
 
 export default function MpinLoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -21,8 +22,16 @@ export default function MpinLoginScreen({ navigation }: any) {
 
   const onSubmit = async () => {
     try {
-      const res = await loginWithMpin({ email, mpin }).unwrap();
+      const fcmToken = await getFcmToken();
+      const res = await loginWithMpin({
+        email,
+        mpin,
+        ...(fcmToken ? { fcmToken } : {}),
+      }).unwrap();
       dispatch(setAuth(res.data));
+      if (res.data?.user?.id) {
+        void registerDeviceForPush(res.data.user.id);
+      }
     } catch (e) {
       setSnackMsg(getErrorMessage(e, 'MPIN login failed.'));
       setSnackVisible(true);

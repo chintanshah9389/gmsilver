@@ -63,21 +63,49 @@ npm run prisma:seed
 
 ## 6. Firebase FCM Setup
 
+App IDs (must match Firebase and `mobile/app.config.ts`):
+
+- Android package: `com.gmsilver.app`
+- iOS bundle ID: `com.gmsilver.app`
+
+### Backend (Firebase Admin)
+
 1. Create Firebase project.
 2. Enable Cloud Messaging.
-3. Generate service account JSON.
-4. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY.
-5. Validate with broadcast test endpoint.
+3. Project settings → Service accounts → Generate new private key.
+4. Set in `.env.shared` (then run `scripts/sync-env.ps1`):
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_CLIENT_EMAIL`
+   - `FIREBASE_PRIVATE_KEY` (keep `\n` newlines as in `.env.shared.example`)
+   - `FCM_SENDER_ID` (Project settings → Cloud Messaging → Sender ID)
+5. Confirm backend logs `Firebase Admin initialized` on boot.
+6. Validate with admin broadcast (`POST /notifications/send`) or Admin → Notifications.
+
+### Mobile config files
+
+1. Firebase Console → Add Android app (`com.gmsilver.app`) → download `google-services.json`.
+2. Add iOS app (`com.gmsilver.app`) → download `GoogleService-Info.plist`.
+3. Copy templates if needed, then replace with real downloads:
+
+```bash
+cp mobile/google-services.json.example mobile/google-services.json
+cp mobile/GoogleService-Info.plist.example mobile/GoogleService-Info.plist
+```
+
+4. **iOS APNs:** Apple Developer → Keys → create APNs Auth Key (.p8) → Firebase → Project settings → Cloud Messaging → Apple app configuration → upload key.
+5. From `mobile/` on **macOS** (required for iOS native folder): `npx expo prebuild`  
+   On Windows, `expo prebuild` generates **Android only**; run the same command on a Mac to generate `ios/`.
+6. Run on a **physical device** (iOS simulator has limited push support).
 
 ## 7. Mobile Release
 
 - Android:
-1. Configure app signing and Google services.
+1. Configure app signing and Google services (`google-services.json`).
 2. Build AAB using Gradle.
 3. Upload to Play Console.
 
 - iOS:
-1. Configure provisioning profile and APNS for FCM.
+1. Configure provisioning profile, Push Notifications capability, and APNs for FCM.
 2. Archive in Xcode.
 3. Upload to App Store Connect.
 

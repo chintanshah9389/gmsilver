@@ -32,6 +32,15 @@ mobile/android/app/build/
 mobile/ios/build/
 mobile/ios/Pods/
 
+# Firebase mobile config (use *.example templates; copy real files from Console)
+mobile/google-services.json
+mobile/GoogleService-Info.plist
+
+# Firebase Admin service account (backend only — never commit)
+backend/firebase-service-account.json
+backend/*firebase-adminsdk*.json
+**/firebase-adminsdk*.json
+
 # OS
 .DS_Store
 Thumbs.db

@@ -14,6 +14,16 @@ export const notificationsApi = api.injectEndpoints({
       query: () => ({ url: '/notifications/read-all', method: 'PATCH' }),
       invalidatesTags: ['Notification'],
     }),
+    updateFcmToken: builder.mutation<
+      any,
+      { userId: string; fcmToken: string }
+    >({
+      query: ({ userId, fcmToken }) => ({
+        url: `/users/${userId}/fcm-token`,
+        method: 'PATCH',
+        body: { fcmToken },
+      }),
+    }),
   }),
 });
 
@@ -21,4 +31,5 @@ export const {
   useNotificationsQuery,
   useMarkReadMutation,
   useMarkAllReadMutation,
+  useUpdateFcmTokenMutation,
 } = notificationsApi;

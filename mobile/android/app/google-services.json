@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "112229712276",
+    "project_id": "gmsliver",
+    "storage_bucket": "gmsliver.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:112229712276:android:3512da1ef94b83317b8f81",
+        "android_client_info": {
+          "package_name": "com.gmsilver.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUSU1tEjqXeSFNOauwaLcmDQK9fUbxkUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

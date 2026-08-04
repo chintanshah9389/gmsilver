@@ -15,11 +15,13 @@ import {
   getPaginationParams,
   createPaginatedResponse,
 } from '../../common/utils/pagination.util';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(dto: CreateUserDto) {
@@ -185,6 +187,13 @@ export class UsersService {
       where: { id: userId },
       data: { status: dto.status },
     });
+
+    if (
+      dto.status === UserStatus.APPROVED &&
+      user.status !== UserStatus.APPROVED
+    ) {
+      await this.notificationsService.notifyUserApproved(userId);
+    }
 
     return { message: `User status updated to ${dto.status}` };
   }

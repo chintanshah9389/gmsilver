@@ -5,6 +5,7 @@ import { RootState } from '@/store';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 import { C } from '@/theme/colors';
+import { linking, navigationRef } from './navigationRef';
 
 const navTheme = {
   ...DefaultTheme,
@@ -24,7 +25,7 @@ export default function RootNavigator() {
   );
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme}>
       {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

@@ -148,6 +148,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid MPIN');
     }
 
+    if (dto.fcmToken) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { fcmToken: dto.fcmToken },
+      });
+    }
+
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
     return {
