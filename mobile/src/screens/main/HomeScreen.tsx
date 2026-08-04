@@ -8,7 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Card, Snackbar, Text } from 'react-native-paper';
+import { Snackbar, Text } from 'react-native-paper';
 import { useProductsQuery } from '@/store/services/productsApi';
 import { useBannersQuery } from '@/store/services/bannersApi';
 import { useTopProductsWidgetQuery } from '@/store/services/homeWidgetsApi';
@@ -20,7 +20,10 @@ import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CAROUSEL_HEIGHT = 180;
+const SCREEN_PAD = 12;
+const SLIDE_WIDTH = SCREEN_WIDTH;
+const SLIDE_ASPECT = 16 / 9;
+const CAROUSEL_HEIGHT = Math.round(SLIDE_WIDTH / SLIDE_ASPECT);
 const AUTO_SCROLL_MS = 3500;
 
 const BADGE_COLORS: Record<string, string> = {
@@ -44,7 +47,7 @@ function BannerCarousel({ navigation }: { navigation: any }) {
       const next = (activeIndexRef.current + 1) % banners.length;
       activeIndexRef.current = next;
       setActiveIndex(next);
-      scrollRef.current?.scrollTo({ x: next * (SCREEN_WIDTH - 24), animated: true });
+      scrollRef.current?.scrollTo({ x: next * SLIDE_WIDTH, animated: true });
     }, AUTO_SCROLL_MS);
 
     return () => clearInterval(interval);
@@ -72,9 +75,13 @@ function BannerCarousel({ navigation }: { navigation: any }) {
         ref={scrollRef}
         horizontal
         pagingEnabled
+        decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
+        snapToInterval={SLIDE_WIDTH}
+        snapToAlignment="start"
+        disableIntervalMomentum
         onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 24));
+          const idx = Math.round(e.nativeEvent.contentOffset.x / SLIDE_WIDTH);
           activeIndexRef.current = idx;
           setActiveIndex(idx);
         }}
@@ -87,7 +94,11 @@ function BannerCarousel({ navigation }: { navigation: any }) {
             style={styles.slide}
           >
             {banner.imageUrl ? (
-              <Image source={{ uri: banner.imageUrl }} style={styles.slideImage} resizeMode="cover" />
+              <Image
+                source={{ uri: banner.imageUrl }}
+                style={styles.slideImage}
+                resizeMode="cover"
+              />
             ) : (
               <View style={styles.slidePlaceholder} />
             )}
@@ -185,16 +196,19 @@ export default function HomeScreen({ navigation }: any) {
 
       <MotionReveal delay={180} duration={320} distance={10}>
         <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>{sectionTitle}</Text>
-            <Text style={styles.sectionSubtitle}>Trending pieces and fast-moving inventory</Text>
-          </View>
-          <ScalePressable style={styles.viewMoreBtn} scaleTo={0.98} onPress={handleViewMore}>
-            <Text style={styles.viewMoreText}>View More</Text>
-          </ScalePressable>
+          <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+          <Text style={styles.sectionSubtitle}>Trending pieces and fast-moving inventory</Text>
         </View>
       </MotionReveal>
     </>
+  );
+
+  const ListFooter = () => (
+    <MotionReveal delay={80} duration={280} distance={8}>
+      <ScalePressable style={styles.viewMoreBtn} scaleTo={0.98} onPress={handleViewMore}>
+        <Text style={styles.viewMoreText}>View More</Text>
+      </ScalePressable>
+    </MotionReveal>
   );
 
   return (
@@ -207,6 +221,7 @@ export default function HomeScreen({ navigation }: any) {
         data={products}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={ListHeader}
+        ListFooterComponent={products.length > 0 ? ListFooter : null}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
@@ -221,17 +236,35 @@ export default function HomeScreen({ navigation }: any) {
                 })
               }
             >
-              <Card style={styles.cardInner}>
+              <View style={styles.cardInner}>
                 <View style={styles.cardShine} />
-                <Card.Content>
-                  <Text variant="titleMedium" style={styles.title}>
+                {item.image1Url ? (
+                  <Image
+                    source={{ uri: item.image1Url }}
+                    style={styles.thumb}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.thumbPlaceholder}>
+                    <Text style={styles.thumbInitial}>
+                      {item.name?.[0]?.toUpperCase() ?? '✦'}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.cardBody}>
+                  <Text style={styles.title} numberOfLines={2}>
                     {item.name}
                   </Text>
                   <Text style={styles.sub}>
                     ₹{Number(item.price).toLocaleString()}
                   </Text>
-                </Card.Content>
-              </Card>
+                  {item.sku ? (
+                    <Text style={styles.sku} numberOfLines={1}>
+                      {item.sku}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
             </ScalePressable>
           </MotionReveal>
         )}
@@ -249,7 +282,7 @@ export default function HomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 12 },
+  container: { flex: 1, backgroundColor: C.bg, padding: SCREEN_PAD },
   listFlex: { flex: 1 },
   listContent: { paddingBottom: 22 },
   heroWrap: { paddingTop: 14, paddingBottom: 10, paddingHorizontal: 2 },
@@ -266,7 +299,11 @@ const styles = StyleSheet.create({
   heroTitle: { color: C.text, fontSize: 24, fontWeight: '800', letterSpacing: 0.3 },
   heroCaption: { color: C.textSub, fontSize: 12, marginTop: 4, letterSpacing: 0.2 },
 
-  carouselWrapper: { marginBottom: 14 },
+  carouselWrapper: {
+    marginHorizontal: -SCREEN_PAD,
+    marginBottom: 14,
+    width: SLIDE_WIDTH,
+  },
   sectionHeader: {
     marginTop: 4,
     paddingTop: 10,
@@ -284,11 +321,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 2,
   },
-  sectionSubtitle: { color: C.textSub, fontSize: 12, marginBottom: 12 },
+  sectionSubtitle: { color: C.textSub, fontSize: 12 },
   viewMoreBtn: {
-    alignSelf: 'flex-start',
-    minWidth: 136,
-    paddingHorizontal: 18,
+    alignSelf: 'center',
+    minWidth: 160,
+    marginTop: 4,
+    marginBottom: 8,
+    paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.72)',
@@ -304,17 +343,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   slide: {
-    width: SCREEN_WIDTH - 24,
+    width: SLIDE_WIDTH,
     height: CAROUSEL_HEIGHT,
-    borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    ...E.cardShadow,
   },
-  slideImage: { width: '100%', height: '100%', position: 'absolute' },
-  slidePlaceholder: { width: '100%', height: '100%', backgroundColor: C.surface2 },
+  slideImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: SLIDE_WIDTH,
+    height: CAROUSEL_HEIGHT,
+  },
+  slidePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: C.surface2,
+  },
   slideOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(21,29,40,0.24)',
@@ -322,13 +364,18 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: 12,
-    left: 12,
+    left: SCREEN_PAD + 4,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  slideTextBox: { position: 'absolute', bottom: 14, left: 14, right: 14 },
+  slideTextBox: {
+    position: 'absolute',
+    bottom: 14,
+    left: SCREEN_PAD + 4,
+    right: SCREEN_PAD + 4,
+  },
   slideTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   slideSubtitle: { color: 'rgba(255,255,255,0.86)', fontSize: 13, marginTop: 2 },
   dotsRow: {
@@ -342,6 +389,8 @@ const styles = StyleSheet.create({
 
   card: { marginBottom: 12 },
   cardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: C.surface,
     borderWidth: 1,
     borderColor: C.border,
@@ -359,6 +408,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.26)',
     transform: [{ rotate: '-12deg' }],
   },
-  title: { color: C.text, fontWeight: '700' },
-  sub: { color: C.silver, marginTop: 4, fontWeight: '700', letterSpacing: 0.2 },
+  thumb: {
+    width: 88,
+    height: 88,
+    backgroundColor: C.surface2,
+  },
+  thumbPlaceholder: {
+    width: 88,
+    height: 88,
+    backgroundColor: C.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbInitial: {
+    color: C.textMuted,
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  cardBody: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  title: { color: C.text, fontWeight: '700', fontSize: 15, lineHeight: 20 },
+  sub: { color: C.silver, marginTop: 6, fontWeight: '700', letterSpacing: 0.2, fontSize: 15 },
+  sku: { color: C.textMuted, fontSize: 11, marginTop: 4 },
 });

@@ -31,9 +31,10 @@ export default function ScalePressable({
   };
 
   return (
-    <Animated.View style={[style, { transform: [{ scale }] }]}>
+    <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
         {...rest}
+        style={style}
         onPressIn={(e) => {
           animateTo(scaleTo);
           rest.onPressIn?.(e);
