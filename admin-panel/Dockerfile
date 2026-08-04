@@ -5,7 +5,8 @@ RUN npm ci
 
 FROM deps AS build
 COPY . .
-RUN npm run build
+# Next may have no static assets; ensure public/ exists for the runner COPY
+RUN mkdir -p public && npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
