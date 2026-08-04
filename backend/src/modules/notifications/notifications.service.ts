@@ -71,6 +71,7 @@ export class NotificationsService implements OnModuleInit {
     body: string,
     type: NotificationType,
     data?: Record<string, string>,
+    alreadySentTokens?: Set<string>,
   ): Promise<FcmDeliveryResult> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -104,6 +105,14 @@ export class NotificationsService implements OnModuleInit {
       });
     }
 
+    if (alreadySentTokens?.has(user.fcmToken)) {
+      return this.emptyDelivery({
+        usersTargeted: 1,
+        tokensTargeted: 0,
+        skippedReason: 'Duplicate device token already notified',
+      });
+    }
+
     if (!admin.apps.length) {
       return this.emptyDelivery({
         usersTargeted: 1,
@@ -113,6 +122,7 @@ export class NotificationsService implements OnModuleInit {
       });
     }
 
+    alreadySentTokens?.add(user.fcmToken);
     return this.sendFcmMessage(user.fcmToken, title, body, data, 1);
   }
 
@@ -140,10 +150,12 @@ export class NotificationsService implements OnModuleInit {
       })),
     });
 
-    // Send FCM to all tokens
-    const tokens = users
-      .map((u) => u.fcmToken)
-      .filter(Boolean) as string[];
+    // Send FCM once per unique device token (same phone can be on multiple users while testing)
+    const tokens = [
+      ...new Set(
+        users.map((u) => u.fcmToken).filter(Boolean) as string[],
+      ),
+    ];
 
     if (!admin.apps.length) {
       const delivery = this.emptyDelivery({
@@ -213,8 +225,9 @@ export class NotificationsService implements OnModuleInit {
       select: { id: true, fcmToken: true },
     });
 
+    const sentTokens = new Set<string>();
     for (const user of users) {
-      await this.sendToUser(user.id, title, body, type, data);
+      await this.sendToUser(user.id, title, body, type, data, sentTokens);
     }
   }
 

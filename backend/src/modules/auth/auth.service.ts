@@ -11,8 +11,8 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BcryptUtil } from '../../common/utils/bcrypt.util';
 import { NotificationsService } from '../notifications/notifications.service';
-import { SignupDto } from './dto/signup.dto';
-import { LoginDto } from './dto/login.dto';
+import { UsersService } from '../users/users.service';
+import { SignupDto } from './dto/signup.dto';import { LoginDto } from './dto/login.dto';
 import { MpinLoginDto } from './dto/mpin-login.dto';
 import { CreateMpinDto } from './dto/create-mpin.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -31,6 +31,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly usersService: UsersService,
   ) {}
 
   // ─── SIGNUP ───────────────────────────────────────────────────────
@@ -105,10 +106,7 @@ export class AuthService {
 
     // Update FCM token if provided
     if (dto.fcmToken) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { fcmToken: dto.fcmToken },
-      });
+      await this.usersService.updateFcmToken(user.id, dto.fcmToken);
     }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
@@ -149,10 +147,7 @@ export class AuthService {
     }
 
     if (dto.fcmToken) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { fcmToken: dto.fcmToken },
-      });
+      await this.usersService.updateFcmToken(user.id, dto.fcmToken);
     }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);

@@ -228,10 +228,18 @@ export class UsersService {
   }
 
   async updateFcmToken(userId: string, fcmToken: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { fcmToken },
-    });
+    // One device token must belong to only one user, or broadcasts
+    // deliver the same push multiple times to the same phone.
+    await this.prisma.$transaction([
+      this.prisma.user.updateMany({
+        where: { fcmToken, NOT: { id: userId } },
+        data: { fcmToken: null },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { fcmToken },
+      }),
+    ]);
 
     return { message: 'FCM token updated' };
   }
