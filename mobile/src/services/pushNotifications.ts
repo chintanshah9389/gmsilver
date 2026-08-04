@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Platform } from 'react-native';
+import { Alert, PermissionsAndroid, Platform } from 'react-native';
 import { store } from '@/store';
 import { notificationsApi } from '@/store/services/notificationsApi';
 import {
@@ -139,10 +139,12 @@ export function initPushListeners() {
   initialized = true;
 
   unsubscribeOnMessage = messaging().onMessage(async (remoteMessage) => {
-    console.log(
-      '[push] Foreground message',
-      remoteMessage?.notification?.title,
-    );
+    const title = remoteMessage?.notification?.title || 'Notification';
+    const body = remoteMessage?.notification?.body || '';
+    console.log('[push] Foreground message', title);
+
+    // System tray does not show while app is in foreground — surface it in-app.
+    Alert.alert(title, body || undefined);
   });
 
   unsubscribeTokenRefresh = messaging().onTokenRefresh(async (token) => {

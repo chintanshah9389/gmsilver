@@ -330,6 +330,25 @@ export class NotificationsService implements OnModuleInit {
   }
 
   // ─── PRIVATE HELPERS ──────────────────────────────────────────────
+  private isInvalidTokenError(code?: string): boolean {
+    return (
+      code === 'messaging/registration-token-not-registered' ||
+      code === 'messaging/invalid-registration-token'
+    );
+  }
+
+  private async clearInvalidFcmTokens(tokens: string[]) {
+    if (!tokens.length) return;
+    const unique = [...new Set(tokens)];
+    const result = await this.prisma.user.updateMany({
+      where: { fcmToken: { in: unique } },
+      data: { fcmToken: null },
+    });
+    this.logger.warn(
+      `Cleared ${result.count} stale FCM token(s) from users table`,
+    );
+  }
+
   private async sendFcmMessage(
     token: string,
     title: string,
@@ -356,9 +375,17 @@ export class NotificationsService implements OnModuleInit {
         tokensTargeted: 1,
         successCount: 1,
       });
-    } catch (err) {
-      const errorMessage = err?.message || String(err);
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      const errorMessage = code
+        ? `${code}: ${err?.message || String(err)}`
+        : err?.message || String(err);
       this.logger.error(`FCM send error: ${errorMessage}`);
+
+      if (this.isInvalidTokenError(code)) {
+        await this.clearInvalidFcmTokens([token]);
+      }
+
       return this.emptyDelivery({
         usersTargeted,
         tokensTargeted: 1,
@@ -378,6 +405,7 @@ export class NotificationsService implements OnModuleInit {
     let successCount = 0;
     let failureCount = 0;
     const errors: string[] = [];
+    const invalidTokens: string[] = [];
 
     try {
       // FCM supports max 500 tokens per batch
@@ -411,10 +439,17 @@ export class NotificationsService implements OnModuleInit {
             this.logger.error(
               `FCM token[${i + index}] failed: ${detail}`,
             );
+            if (this.isInvalidTokenError(code)) {
+              invalidTokens.push(batch[index]);
+            }
           }
         });
       }
-    } catch (err) {
+
+      if (invalidTokens.length) {
+        await this.clearInvalidFcmTokens(invalidTokens);
+      }
+    } catch (err: any) {
       const errorMessage = err?.message || String(err);
       this.logger.error(`FCM multicast error: ${errorMessage}`);
       return this.emptyDelivery({
