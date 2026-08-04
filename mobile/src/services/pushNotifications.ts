@@ -37,10 +37,12 @@ function getPushData(remoteMessage: RemoteMessage | null): PushNavigationData | 
     return null;
   }
 
-  const { orderId, type } = remoteMessage.data;
+  const { orderId, productId, type, link } = remoteMessage.data;
   return {
     orderId: typeof orderId === 'string' ? orderId : undefined,
+    productId: typeof productId === 'string' ? productId : undefined,
     type: typeof type === 'string' ? type : undefined,
+    link: typeof link === 'string' ? link : undefined,
   };
 }
 

@@ -1,24 +1,55 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
+import { FlatList, StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Snackbar } from 'react-native-paper';
-import { useNotificationsQuery, useMarkAllReadMutation } from '@/store/services/notificationsApi';
+import {
+  useNotificationsQuery,
+  useMarkAllReadMutation,
+  useMarkReadMutation,
+} from '@/store/services/notificationsApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
+import {
+  navigateFromPushData,
+  PushNavigationData,
+} from '@/navigation/navigationRef';
 
 export default function NotificationsScreen() {
   const { data, error, isError } = useNotificationsQuery({ page: 1, limit: 100 });
   const [markAllRead] = useMarkAllReadMutation();
+  const [markRead] = useMarkReadMutation();
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
   const rows: any[] = data?.notifications || data?.data || [];
 
   useEffect(() => {
-    if (isError && error) { setSnackMsg(getErrorMessage(error, 'Failed.')); setSnackVisible(true); }
+    if (isError && error) {
+      setSnackMsg(getErrorMessage(error, 'Failed.'));
+      setSnackVisible(true);
+    }
   }, [error, isError]);
+
+  const openNotification = async (item: any) => {
+    if (!item.isRead) {
+      try {
+        await markRead(item.id).unwrap();
+      } catch {
+        // still allow navigation
+      }
+    }
+
+    const raw = item.notification?.data || item.data || {};
+    const pushData: PushNavigationData = {
+      link: typeof raw.link === 'string' ? raw.link : undefined,
+      productId: typeof raw.productId === 'string' ? raw.productId : undefined,
+      orderId: typeof raw.orderId === 'string' ? raw.orderId : undefined,
+      type: typeof raw.type === 'string' ? raw.type : item.notification?.type,
+    };
+    navigateFromPushData(pushData);
+  };
 
   return (
     <View style={s.root}>
@@ -39,17 +70,25 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const title = item.notification?.title || item.title;
-          const body  = item.notification?.body  || item.body;
+          const body = item.notification?.body || item.body;
+          const link = item.notification?.data?.link || item.data?.link;
           const isRead = item.isRead;
           return (
             <MotionReveal delay={Math.min(index * 26, 220)} duration={240} distance={9}>
-              <View style={[s.card, !isRead && s.cardUnread]}>
-                {!isRead && <View style={s.unreadDot} />}
-                <View style={{ flex: 1 }}>
-                  <Text style={s.notifTitle}>{title}</Text>
-                  {body ? <Text style={s.notifBody} numberOfLines={3}>{body}</Text> : null}
+              <ScalePressable scaleTo={0.98} onPress={() => openNotification(item)}>
+                <View style={[s.card, !isRead && s.cardUnread]}>
+                  {!isRead && <View style={s.unreadDot} />}
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.notifTitle}>{title}</Text>
+                    {body ? <Text style={s.notifBody} numberOfLines={3}>{body}</Text> : null}
+                    {link ? (
+                      <Text style={s.notifLink} numberOfLines={1}>
+                        Open: {String(link)}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
-              </View>
+              </ScalePressable>
             </MotionReveal>
           );
         }}
@@ -77,9 +116,8 @@ const s = StyleSheet.create({
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.silver, marginTop: 5 },
   notifTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   notifBody: { color: C.textSub, fontSize: 13, lineHeight: 18 },
+  notifLink: { color: C.silver, fontSize: 11, marginTop: 8, fontWeight: '600' },
   emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 8 },
-  emptyIcon: { fontSize: 36, color: C.textMuted },
-  emptyText: { color: C.textSub, fontSize: 15 },
+  emptyIcon: { color: C.textMuted, fontSize: 28 },
+  emptyText: { color: C.textSub, fontSize: 14 },
 });
-
-

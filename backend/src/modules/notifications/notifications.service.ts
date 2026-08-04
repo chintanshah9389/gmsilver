@@ -328,6 +328,39 @@ export class NotificationsService implements OnModuleInit {
     return { notifications, total, unreadCount };
   }
 
+  async getNotificationHistory(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [notifications, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: { select: { logs: true } },
+        },
+      }),
+      this.prisma.notification.count(),
+    ]);
+
+    return {
+      notifications: notifications.map((n) => ({
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        type: n.type,
+        data: n.data,
+        link:
+          n.data && typeof n.data === 'object' && 'link' in (n.data as object)
+            ? String((n.data as Record<string, unknown>).link || '')
+            : '',
+        recipientCount: n._count.logs,
+        createdAt: n.createdAt,
+      })),
+      total,
+    };
+  }
+
   async markAsRead(userId: string, notificationLogId: string) {
     await this.prisma.notificationLog.updateMany({
       where: { id: notificationLogId, userId },

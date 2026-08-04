@@ -36,6 +36,19 @@ export class NotificationsController {
     return this.notificationsService.getUserNotifications(userId, +page, +limit);
   }
 
+  @Get('history')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Broadcast / notification history (Admin)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getHistory(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.notificationsService.getNotificationHistory(+page, +limit);
+  }
+
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
   markAsRead(
@@ -53,14 +66,18 @@ export class NotificationsController {
 
   @Post('send')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
   @ApiOperation({ summary: 'Send broadcast notification (Admin only)' })
   sendBroadcast(@Body() dto: SendNotificationDto) {
+    const data: Record<string, string> = { ...(dto.data || {}) };
+    if (dto.link?.trim()) {
+      data.link = dto.link.trim();
+    }
     return this.notificationsService.broadcast(
       dto.title,
       dto.body,
       'BROADCAST' as any,
-      dto.data,
+      data,
     );
   }
 }

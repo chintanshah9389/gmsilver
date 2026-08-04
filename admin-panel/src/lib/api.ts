@@ -158,8 +158,15 @@ export const invoicesApi = {
 };
 
 export const notificationsApi = {
-  sendBroadcast: (title: string, body: string, data?: any) =>
-    api.post('/notifications/send', { title, body, data }),
+  sendBroadcast: (title: string, body: string, link?: string, data?: any) =>
+    api.post('/notifications/send', {
+      title,
+      body,
+      ...(link ? { link } : {}),
+      ...(data ? { data } : {}),
+    }),
+  getHistory: (params?: { page?: number; limit?: number }) =>
+    api.get('/notifications/history', { params }),
 };
 
 export const excelApi = {

@@ -10,6 +10,15 @@ export class SendNotificationDto {
   @IsString()
   body: string;
 
+  @ApiPropertyOptional({
+    example: 'product:uuid-here',
+    description:
+      'Optional deep link. Formats: product:<id>, order:<id>, https://..., or gmsilver://...',
+  })
+  @IsOptional()
+  @IsString()
+  link?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   data?: Record<string, string>;
