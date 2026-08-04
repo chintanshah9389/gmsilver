@@ -99,12 +99,30 @@ cp mobile/GoogleService-Info.plist.example mobile/GoogleService-Info.plist
 
 ## 7. Mobile Release
 
-- Android:
-1. Configure app signing and Google services (`google-services.json`).
-2. Build AAB using Gradle.
-3. Upload to Play Console.
+### Android (signed production build)
 
-- iOS:
+1. Ensure `mobile/android/app/google-services.json` is present.
+2. Release signing is already wired via `mobile/android/keystore.properties` (gitignored).
+   - Example template: `mobile/android/keystore.properties.example`
+   - Keystore file: `mobile/android/app/gmsilver-release.keystore` (gitignored)
+   - **Back up the keystore + passwords securely.** Losing them blocks Play Store updates.
+3. From `mobile/`:
+
+```bash
+npm run android:release:apk   # APK for sideload
+npm run android:release:aab   # AAB for Play Console
+```
+
+Outputs:
+- `mobile/android/app/build/outputs/apk/release/app-release.apk`
+- `mobile/android/app/build/outputs/bundle/release/app-release.aab`
+
+4. Upload the AAB to Google Play Console. Bump `versionCode` / `versionName` in `mobile/android/app/build.gradle` for each store update.
+
+Release builds use arm ABIs only + Proguard/resource shrink (smaller than ~160 MB debug installs).
+
+### iOS
+
 1. Configure provisioning profile, Push Notifications capability, and APNs for FCM.
 2. Archive in Xcode.
 3. Upload to App Store Connect.

@@ -32,6 +32,12 @@ mobile/android/app/build/
 mobile/ios/build/
 mobile/ios/Pods/
 
+# Android release signing (NEVER commit)
+mobile/android/keystore.properties
+mobile/android/app/*.keystore
+mobile/android/app/*.jks
+!mobile/android/app/debug.keystore
+
 # Firebase mobile config (use *.example templates; copy real files from Console)
 mobile/google-services.json
 mobile/GoogleService-Info.plist

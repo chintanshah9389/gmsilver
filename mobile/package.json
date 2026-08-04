@@ -9,6 +9,8 @@
     "start": "kill-port 8081 && react-native start",
     "web": "kill-port 8081 && expo start --web --port 8081",
     "prebuild": "expo prebuild",
+    "android:release:apk": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat assembleRelease",
+    "android:release:aab": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat bundleRelease",
     "test": "jest",
     "lint": "eslint ."
   },
