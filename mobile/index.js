@@ -1,6 +1,5 @@
 import { AppRegistry, Platform } from 'react-native';
 import App from './App';
-import { name as appName } from './app.json';
 
 // Must be registered outside React lifecycle for killed/background delivery.
 if (Platform.OS !== 'web') {
@@ -11,4 +10,5 @@ if (Platform.OS !== 'web') {
   });
 }
 
-AppRegistry.registerComponent(appName, () => App);
+// Expo / MainActivity expects the component name "main"
+AppRegistry.registerComponent('main', () => App);
