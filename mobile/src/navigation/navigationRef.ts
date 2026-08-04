@@ -18,6 +18,11 @@ export const linking: LinkingOptions<AppStackParamList> = {
               ProductDetail: 'products/:productId',
             },
           },
+          Categories: {
+            screens: {
+              ProductList: 'categories/:categoryId',
+            },
+          },
           Order: {
             screens: {
               Notifications: 'notifications',
@@ -33,6 +38,7 @@ export const linking: LinkingOptions<AppStackParamList> = {
 export type PushNavigationData = {
   orderId?: string;
   productId?: string;
+  categoryId?: string;
   type?: string;
   link?: string;
 };
@@ -44,6 +50,7 @@ function extractId(value?: string | object): string | undefined {
 function parseLink(link: string): {
   productId?: string;
   orderId?: string;
+  categoryId?: string;
   externalUrl?: string;
 } {
   const trimmed = link.trim();
@@ -60,6 +67,13 @@ function parseLink(link: string): {
   );
   if (productMatch) {
     return { productId: productMatch[1] };
+  }
+
+  const categoryMatch = withoutScheme.match(
+    /^(?:category[/:]|categories\/)([A-Za-z0-9-]+)$/i,
+  );
+  if (categoryMatch) {
+    return { categoryId: categoryMatch[1] };
   }
 
   const orderMatch = withoutScheme.match(
@@ -79,6 +93,7 @@ export function navigateFromPushData(data?: PushNavigationData | null) {
 
   const parsed = data?.link ? parseLink(data.link) : {};
   const productId = extractId(data?.productId) || parsed.productId;
+  const categoryId = extractId(data?.categoryId) || parsed.categoryId;
   const orderId = extractId(data?.orderId) || parsed.orderId;
 
   if (parsed.externalUrl) {
@@ -92,6 +107,17 @@ export function navigateFromPushData(data?: PushNavigationData | null) {
       params: {
         screen: 'ProductDetail',
         params: { productId },
+      },
+    });
+    return;
+  }
+
+  if (categoryId) {
+    navigationRef.navigate('Tabs', {
+      screen: 'Categories',
+      params: {
+        screen: 'ProductList',
+        params: { categoryId },
       },
     });
     return;

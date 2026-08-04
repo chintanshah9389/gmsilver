@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Autocomplete,
   Box,
   Card,
   CardContent,
@@ -11,9 +12,10 @@ import {
   Alert,
   Stack,
   Chip,
+  MenuItem,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { notificationsApi } from '@/lib/api';
+import { categoriesApi, notificationsApi, productsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 type DeliveryResult = {
@@ -36,15 +38,43 @@ type HistoryRow = {
   createdAt: string;
 };
 
+type LinkType = 'NONE' | 'PRODUCT' | 'CATEGORY' | 'CUSTOM';
+
+const LINK_TYPES: { value: LinkType; label: string }[] = [
+  { value: 'NONE', label: 'None' },
+  { value: 'PRODUCT', label: 'Product' },
+  { value: 'CATEGORY', label: 'Category' },
+  { value: 'CUSTOM', label: 'Custom URL' },
+];
+
+function buildLink(linkType: LinkType, linkId: string, customUrl: string): string | undefined {
+  if (linkType === 'PRODUCT' && linkId) return `product:${linkId}`;
+  if (linkType === 'CATEGORY' && linkId) return `category:${linkId}`;
+  if (linkType === 'CUSTOM') {
+    const trimmed = customUrl.trim();
+    return trimmed || undefined;
+  }
+  return undefined;
+}
+
 export default function NotificationsPage() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [link, setLink] = useState('');
+  const [linkType, setLinkType] = useState<LinkType>('NONE');
+  const [linkId, setLinkId] = useState('');
+  const [customUrl, setCustomUrl] = useState('');
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [rows, setRows] = useState<HistoryRow[]>([]);
   const [delivery, setDelivery] = useState<DeliveryResult | null>(null);
   const [apiMessage, setApiMessage] = useState('');
+
+  const selectedProduct = products.find((product) => product.id === linkId) ?? null;
+  const selectedCategory = categories.find((category) => category.id === linkId) ?? null;
+  const resolvedLink = buildLink(linkType, linkId, customUrl);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -59,16 +89,54 @@ export default function NotificationsPage() {
     }
   }, []);
 
+  const loadLinkOptions = useCallback(async () => {
+    try {
+      setOptionsLoading(true);
+      const [productsRes, categoriesRes] = await Promise.all([
+        productsApi.getAll({ page: 1, limit: 200 }),
+        categoriesApi.getAll({ page: 1, limit: 200 }),
+      ]);
+      setProducts(productsRes.data?.data || productsRes.data || []);
+      setCategories(categoriesRes.data?.data || categoriesRes.data || []);
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Failed to load products/categories');
+    } finally {
+      setOptionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadHistory();
-  }, [loadHistory]);
+    void loadLinkOptions();
+  }, [loadHistory, loadLinkOptions]);
+
+  const resetForm = () => {
+    setTitle('');
+    setBody('');
+    setLinkType('NONE');
+    setLinkId('');
+    setCustomUrl('');
+  };
 
   const send = async () => {
+    if (linkType === 'PRODUCT' && !linkId) {
+      toast.error('Select a product for the deep link');
+      return;
+    }
+    if (linkType === 'CATEGORY' && !linkId) {
+      toast.error('Select a category for the deep link');
+      return;
+    }
+    if (linkType === 'CUSTOM' && !customUrl.trim()) {
+      toast.error('Enter a custom URL for the deep link');
+      return;
+    }
+
     try {
       setLoading(true);
       setDelivery(null);
       setApiMessage('');
-      const res = await notificationsApi.sendBroadcast(title, body, link.trim() || undefined);
+      const res = await notificationsApi.sendBroadcast(title, body, resolvedLink);
       const payload = res.data;
       const result = (payload?.data ?? payload) as DeliveryResult;
       const message = payload?.message || 'Broadcast processed';
@@ -78,9 +146,7 @@ export default function NotificationsPage() {
 
       if (result?.successCount > 0 && result.failureCount === 0) {
         toast.success(message);
-        setTitle('');
-        setBody('');
-        setLink('');
+        resetForm();
       } else if (result?.successCount > 0) {
         toast.success(message);
       } else {
@@ -155,15 +221,83 @@ export default function NotificationsPage() {
             onChange={(e) => setBody(e.target.value)}
             sx={{ mb: 2 }}
           />
+
           <TextField
+            select
             fullWidth
             label='Link (optional)'
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder='product:<productId>  or  order:<orderId>  or  https://...'
-            helperText='Users tapping the notification open this destination. Examples: product:UUID · order:UUID · https://yoursite.com'
+            value={linkType}
+            onChange={(e) => {
+              setLinkType(e.target.value as LinkType);
+              setLinkId('');
+              setCustomUrl('');
+            }}
+            helperText='Choose where users go when they tap the notification'
             sx={{ mb: 2 }}
-          />
+          >
+            {LINK_TYPES.map((type) => (
+              <MenuItem key={type.value} value={type.value}>{type.label}</MenuItem>
+            ))}
+          </TextField>
+
+          {linkType === 'PRODUCT' ? (
+            <Autocomplete
+              options={products}
+              value={selectedProduct}
+              onChange={(_, value) => setLinkId(value?.id || '')}
+              getOptionLabel={(option) => `${option.name}${option.sku ? ` (${option.sku})` : ''}`}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              loading={optionsLoading}
+              sx={{ mb: 2 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label='Select product'
+                  helperText={
+                    resolvedLink
+                      ? `Deep link: ${resolvedLink}`
+                      : 'Search and choose which product opens on tap'
+                  }
+                />
+              )}
+            />
+          ) : null}
+
+          {linkType === 'CATEGORY' ? (
+            <Autocomplete
+              options={categories}
+              value={selectedCategory}
+              onChange={(_, value) => setLinkId(value?.id || '')}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              loading={optionsLoading}
+              sx={{ mb: 2 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label='Select category'
+                  helperText={
+                    resolvedLink
+                      ? `Deep link: ${resolvedLink}`
+                      : 'Search and choose which category product list opens on tap'
+                  }
+                />
+              )}
+            />
+          ) : null}
+
+          {linkType === 'CUSTOM' ? (
+            <TextField
+              fullWidth
+              label='Custom URL'
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              placeholder='https://...'
+              helperText='Users tapping the notification open this URL'
+              sx={{ mb: 2 }}
+            />
+          ) : null}
+
           <Button
             variant='contained'
             onClick={send}

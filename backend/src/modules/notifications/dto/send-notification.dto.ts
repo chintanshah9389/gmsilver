@@ -13,7 +13,7 @@ export class SendNotificationDto {
   @ApiPropertyOptional({
     example: 'product:uuid-here',
     description:
-      'Optional deep link. Formats: product:<id>, order:<id>, https://..., or gmsilver://...',
+      'Optional deep link. Formats: product:<id>, category:<id>, order:<id>, https://..., or gmsilver://...',
   })
   @IsOptional()
   @IsString()
