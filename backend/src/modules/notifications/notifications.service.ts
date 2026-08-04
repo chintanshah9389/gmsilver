@@ -4,6 +4,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
 import * as admin from 'firebase-admin';
 
+export type FcmDeliveryResult = {
+  firebaseReady: boolean;
+  usersTargeted: number;
+  tokensTargeted: number;
+  successCount: number;
+  failureCount: number;
+  errors: string[];
+  skippedReason?: string;
+};
+
 @Injectable()
 export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger(NotificationsService.name);
@@ -40,6 +50,20 @@ export class NotificationsService implements OnModuleInit {
     }
   }
 
+  private emptyDelivery(
+    overrides: Partial<FcmDeliveryResult> = {},
+  ): FcmDeliveryResult {
+    return {
+      firebaseReady: admin.apps.length > 0,
+      usersTargeted: 0,
+      tokensTargeted: 0,
+      successCount: 0,
+      failureCount: 0,
+      errors: [],
+      ...overrides,
+    };
+  }
+
   // ─── SEND TO SINGLE USER ──────────────────────────────────────────
   async sendToUser(
     userId: string,
@@ -47,13 +71,18 @@ export class NotificationsService implements OnModuleInit {
     body: string,
     type: NotificationType,
     data?: Record<string, string>,
-  ) {
+  ): Promise<FcmDeliveryResult> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, fcmToken: true },
     });
 
-    if (!user) return;
+    if (!user) {
+      return this.emptyDelivery({
+        skippedReason: 'User not found',
+        errors: ['User not found'],
+      });
+    }
 
     // Save notification to DB
     const notification = await this.prisma.notification.create({
@@ -67,10 +96,24 @@ export class NotificationsService implements OnModuleInit {
       },
     });
 
-    // Send FCM if token exists
-    if (user.fcmToken && admin.apps.length) {
-      await this.sendFcmMessage(user.fcmToken, title, body, data);
+    if (!user.fcmToken) {
+      return this.emptyDelivery({
+        usersTargeted: 1,
+        skippedReason: 'User has no FCM token',
+        errors: ['User has no FCM token'],
+      });
     }
+
+    if (!admin.apps.length) {
+      return this.emptyDelivery({
+        usersTargeted: 1,
+        tokensTargeted: 1,
+        skippedReason: 'Firebase Admin not initialized',
+        errors: ['Firebase Admin not initialized'],
+      });
+    }
+
+    return this.sendFcmMessage(user.fcmToken, title, body, data, 1);
   }
 
   // ─── BROADCAST TO ALL ─────────────────────────────────────────────
@@ -79,7 +122,7 @@ export class NotificationsService implements OnModuleInit {
     body: string,
     type: NotificationType,
     data?: Record<string, string>,
-  ) {
+  ): Promise<{ message: string; data: FcmDeliveryResult }> {
     const users = await this.prisma.user.findMany({
       where: { status: 'APPROVED', deletedAt: null },
       select: { id: true, fcmToken: true },
@@ -102,9 +145,59 @@ export class NotificationsService implements OnModuleInit {
       .map((u) => u.fcmToken)
       .filter(Boolean) as string[];
 
-    if (tokens.length > 0 && admin.apps.length) {
-      await this.sendFcmMulticast(tokens, title, body, data);
+    if (!admin.apps.length) {
+      const delivery = this.emptyDelivery({
+        usersTargeted: users.length,
+        tokensTargeted: tokens.length,
+        skippedReason: 'Firebase Admin not initialized',
+        errors: [
+          'Firebase Admin not initialized — set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY',
+        ],
+      });
+      this.logger.warn(
+        `Broadcast saved for ${users.length} users but FCM skipped: Firebase not ready`,
+      );
+      return {
+        message: 'Notification saved but push was not sent (Firebase not ready)',
+        data: delivery,
+      };
     }
+
+    if (tokens.length === 0) {
+      const delivery = this.emptyDelivery({
+        usersTargeted: users.length,
+        skippedReason: 'No approved users have an FCM token',
+        errors: [
+          'No FCM tokens found — users must log in on the mobile app with notifications allowed',
+        ],
+      });
+      this.logger.warn(
+        `Broadcast saved for ${users.length} users but no FCM tokens to send`,
+      );
+      return {
+        message: 'Notification saved but no devices to push to',
+        data: delivery,
+      };
+    }
+
+    const delivery = await this.sendFcmMulticast(
+      tokens,
+      title,
+      body,
+      data,
+      users.length,
+    );
+
+    let message: string;
+    if (delivery.failureCount === 0) {
+      message = `Push sent to ${delivery.successCount} device(s)`;
+    } else if (delivery.successCount === 0) {
+      message = `Push failed for all ${delivery.failureCount} device(s)`;
+    } else {
+      message = `Push partially sent: ${delivery.successCount} ok, ${delivery.failureCount} failed`;
+    }
+
+    return { message, data: delivery };
   }
 
   // ─── SEND TO ROLE ─────────────────────────────────────────────────
@@ -242,7 +335,8 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
-  ) {
+    usersTargeted = 1,
+  ): Promise<FcmDeliveryResult> {
     try {
       await admin.messaging().send({
         token,
@@ -257,8 +351,20 @@ export class NotificationsService implements OnModuleInit {
         },
         apns: { payload: { aps: { sound: 'default', badge: 1 } } },
       });
+      return this.emptyDelivery({
+        usersTargeted,
+        tokensTargeted: 1,
+        successCount: 1,
+      });
     } catch (err) {
-      this.logger.error(`FCM send error: ${err.message}`);
+      const errorMessage = err?.message || String(err);
+      this.logger.error(`FCM send error: ${errorMessage}`);
+      return this.emptyDelivery({
+        usersTargeted,
+        tokensTargeted: 1,
+        failureCount: 1,
+        errors: [errorMessage],
+      });
     }
   }
 
@@ -267,13 +373,18 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
-  ) {
+    usersTargeted = tokens.length,
+  ): Promise<FcmDeliveryResult> {
+    let successCount = 0;
+    let failureCount = 0;
+    const errors: string[] = [];
+
     try {
       // FCM supports max 500 tokens per batch
       const batchSize = 500;
       for (let i = 0; i < tokens.length; i += batchSize) {
         const batch = tokens.slice(i, i + batchSize);
-        await admin.messaging().sendEachForMulticast({
+        const response = await admin.messaging().sendEachForMulticast({
           tokens: batch,
           notification: { title, body },
           data: data || {},
@@ -285,9 +396,41 @@ export class NotificationsService implements OnModuleInit {
             },
           },
         });
+
+        successCount += response.successCount;
+        failureCount += response.failureCount;
+
+        response.responses.forEach((res, index) => {
+          if (!res.success && res.error) {
+            const code = res.error.code || 'unknown';
+            const msg = res.error.message || 'FCM send failed';
+            const detail = `${code}: ${msg}`;
+            if (errors.length < 10) {
+              errors.push(detail);
+            }
+            this.logger.error(
+              `FCM token[${i + index}] failed: ${detail}`,
+            );
+          }
+        });
       }
     } catch (err) {
-      this.logger.error(`FCM multicast error: ${err.message}`);
+      const errorMessage = err?.message || String(err);
+      this.logger.error(`FCM multicast error: ${errorMessage}`);
+      return this.emptyDelivery({
+        usersTargeted,
+        tokensTargeted: tokens.length,
+        failureCount: tokens.length,
+        errors: [errorMessage],
+      });
     }
+
+    return this.emptyDelivery({
+      usersTargeted,
+      tokensTargeted: tokens.length,
+      successCount,
+      failureCount,
+      errors,
+    });
   }
 }
