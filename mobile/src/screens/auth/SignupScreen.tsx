@@ -1,19 +1,49 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { Snackbar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSignupMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
+import {
+  confirmMpinError,
+  emailError,
+  mapApiErrorToSignupField,
+  mpinError,
+  nameError,
+  passwordError,
+  phoneError,
+  securityAnswerError,
+  securityQuestionError,
+} from '@/lib/form-validation';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import SecurityQuestionDropdown from '@/components/SecurityQuestionDropdown';
 
 const digitsOnly = (value: string, max = 6) => value.replace(/\D/g, '').slice(0, max);
 
+type FieldKey =
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'password'
+  | 'mpin'
+  | 'confirmMpin'
+  | 'securityQuestion'
+  | 'securityAnswer';
+
 export default function SignupScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const [signup, { isLoading }] = useSignupMutation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,39 +54,85 @@ export default function SignupScreen({ navigation }: any) {
   const [securityQuestion, setSecurityQuestion] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [snackMsg, setSnackMsg] = useState('');
-  const [snackVisible, setSnackVisible] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState('');
 
-  const showSnack = (msg: string) => {
-    setSnackMsg(msg);
-    setSnackVisible(true);
+  const values = {
+    name, email, phone, password, mpin, confirmMpin, securityQuestion, securityAnswer,
+  };
+  const latest = useRef(values);
+  latest.current = values;
+
+  const setFieldError = (key: FieldKey, message: string) => {
+    setErrors((prev) => {
+      if (!message) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: message };
+    });
+  };
+
+  const validateKey = (key: FieldKey, overrides?: Partial<typeof values>) => {
+    const current = { ...latest.current, ...overrides };
+    if (key === 'name') return nameError(current.name);
+    if (key === 'email') return emailError(current.email);
+    if (key === 'phone') return phoneError(current.phone);
+    if (key === 'password') return passwordError(current.password);
+    if (key === 'mpin') return mpinError(current.mpin);
+    if (key === 'confirmMpin') return confirmMpinError(current.confirmMpin, current.mpin);
+    if (key === 'securityQuestion') return securityQuestionError(current.securityQuestion);
+    return securityAnswerError(current.securityAnswer);
+  };
+
+  const onBlurField = (key: FieldKey) => {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+    setFieldError(key, validateKey(key));
+  };
+
+  const updateField = (key: FieldKey, value: string) => {
+    const setters: Record<FieldKey, (v: string) => void> = {
+      name: setName,
+      email: setEmail,
+      phone: setPhone,
+      password: setPassword,
+      mpin: setMpin,
+      confirmMpin: setConfirmMpin,
+      securityQuestion: setSecurityQuestion,
+      securityAnswer: setSecurityAnswer,
+    };
+    setters[key](value);
+    latest.current = { ...latest.current, [key]: value };
+    setApiError('');
+    if (touched[key]) setFieldError(key, validateKey(key, { [key]: value }));
+    if (key === 'mpin' && touched.confirmMpin) {
+      setFieldError('confirmMpin', confirmMpinError(confirmMpin, value));
+    }
+  };
+
+  const fieldKeys: FieldKey[] = [
+    'name', 'email', 'phone', 'password', 'mpin', 'confirmMpin', 'securityQuestion', 'securityAnswer',
+  ];
+
+  const validateAll = () => {
+    const next: Record<string, string> = {};
+    fieldKeys.forEach((key) => {
+      const msg = validateKey(key);
+      if (msg) next[key] = msg;
+    });
+    setTouched({
+      name: true, email: true, phone: true, password: true,
+      mpin: true, confirmMpin: true, securityQuestion: true, securityAnswer: true,
+    });
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const onSignup = async () => {
-    if (!name.trim() || !email.trim() || !password) {
-      showSnack('Please fill in name, email and password.');
-      return;
-    }
-    if (phone.replace(/\D/g, '').length < 10) {
-      showSnack('Enter a valid 10-digit mobile number.');
-      return;
-    }
-    if (!/^\d{6}$/.test(mpin)) {
-      showSnack('MPIN must be exactly 6 digits.');
-      return;
-    }
-    if (mpin !== confirmMpin) {
-      showSnack('MPINs do not match.');
-      return;
-    }
-    if (!securityQuestion) {
-      showSnack('Select a security question.');
-      return;
-    }
-    if (securityAnswer.trim().length < 2) {
-      showSnack('Enter an answer for your security question.');
-      return;
-    }
+    setApiError('');
+    if (!validateAll()) return;
     try {
       await signup({
         name,
@@ -74,7 +150,13 @@ export default function SignupScreen({ navigation }: any) {
         [{ text: 'OK', onPress: () => navigation.navigate('MpinLogin') }],
       );
     } catch (e) {
-      showSnack(getErrorMessage(e, 'Signup failed. Please try again.'));
+      const message = getErrorMessage(e, 'Signup failed. Please try again.');
+      const mapped = mapApiErrorToSignupField(message);
+      if (mapped.field) {
+        setTouched((prev) => ({ ...prev, [mapped.field!]: true }));
+        setFieldError(mapped.field as FieldKey, mapped.text);
+      }
+      setApiError(mapped.text || message);
     }
   };
 
@@ -82,150 +164,267 @@ export default function SignupScreen({ navigation }: any) {
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <PremiumBackground variant="auth" />
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-      <View style={s.bgCircle} />
 
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.logoWrap}>
-          <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
+      <View style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
+        <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
+        <View style={s.headerCopy}>
           <Text style={s.brand}>GM SILVER</Text>
-        </View>
-
-        <View style={s.card}>
           <Text style={s.heading}>Create Account</Text>
-          <Text style={s.subheading}>Set email, mobile, password and MPIN for login</Text>
+        </View>
+      </View>
 
-          {([
-            { label: 'Full Name', value: name, set: setName, placeholder: 'Your full name' },
-            { label: 'Email Address', value: email, set: setEmail, placeholder: 'you@example.com', keyboard: 'email-address' as const },
-            { label: 'Mobile Number', value: phone, set: setPhone, placeholder: '9876543210', keyboard: 'phone-pad' as const },
-          ] as const).map(({ label, value, set, placeholder, keyboard }: any) => (
-            <View key={label}>
-              <Text style={s.fieldLabel}>{label}</Text>
-              <TextInput
-                style={s.input}
-                placeholder={placeholder}
-                placeholderTextColor={C.textMuted}
-                value={value}
-                onChangeText={set}
-                autoCapitalize="none"
-                keyboardType={keyboard}
-                selectionColor={C.silver}
-              />
-            </View>
-          ))}
-          <Text style={s.hint}>You can log in with email or this mobile number</Text>
+      {!!apiError && (
+        <View style={s.apiBanner}>
+          <Text style={s.apiBannerText}>{apiError}</Text>
+        </View>
+      )}
 
-          <Text style={s.fieldLabel}>Password</Text>
-          <View style={s.pwWrap}>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollInner}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={s.card}>
+          <Text style={s.subheading}>Fill the details below. You can log in with email or mobile.</Text>
+
+          <Field label="Full Name" error={errors.name}>
             <TextInput
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
-              placeholder="Create a password"
+              style={[s.input, errors.name && s.inputError]}
+              placeholder="Your full name"
               placeholderTextColor={C.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPw}
+              value={name}
+              onChangeText={(v) => updateField('name', v)}
+              onBlur={() => onBlurField('name')}
+              autoCapitalize="words"
               selectionColor={C.silver}
             />
-            <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw(v => !v)}>
-              <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={s.hint}>Used if you forget MPIN. Security question recovers both.</Text>
+          </Field>
 
-          <Text style={s.fieldLabel}>6-Digit MPIN</Text>
-          <TextInput
-            style={s.input}
-            placeholder="* * * * * *"
-            placeholderTextColor={C.textMuted}
-            value={mpin}
-            onChangeText={(v) => setMpin(digitsOnly(v))}
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={6}
-            selectionColor={C.silver}
-          />
+          <Field label="Email Address" error={errors.email}>
+            <TextInput
+              style={[s.input, errors.email && s.inputError]}
+              placeholder="you@example.com"
+              placeholderTextColor={C.textMuted}
+              value={email}
+              onChangeText={(v) => updateField('email', v)}
+              onBlur={() => onBlurField('email')}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              selectionColor={C.silver}
+            />
+          </Field>
 
-          <Text style={s.fieldLabel}>Confirm MPIN</Text>
-          <TextInput
-            style={s.input}
-            placeholder="* * * * * *"
-            placeholderTextColor={C.textMuted}
-            value={confirmMpin}
-            onChangeText={(v) => setConfirmMpin(digitsOnly(v))}
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={6}
-            selectionColor={C.silver}
-          />
-          <Text style={s.hint}>You will always log in with this MPIN</Text>
+          <Field label="Mobile Number" error={errors.phone} hint="You can log in with email or this mobile number">
+            <TextInput
+              style={[s.input, errors.phone && s.inputError]}
+              placeholder="9876543210"
+              placeholderTextColor={C.textMuted}
+              value={phone}
+              onChangeText={(v) => updateField('phone', v)}
+              onBlur={() => onBlurField('phone')}
+              keyboardType="phone-pad"
+              selectionColor={C.silver}
+            />
+          </Field>
 
-          <Text style={s.fieldLabel}>Security Question</Text>
-          <SecurityQuestionDropdown value={securityQuestion} onChange={setSecurityQuestion} />
+          <Field
+            label="Password"
+            error={errors.password}
+            hint="Min 8 characters with 1 capital, 1 number and 1 special character"
+          >
+            <View style={s.pwWrap}>
+              <TextInput
+                style={[s.input, s.pwInput, errors.password && s.inputError]}
+                placeholder="Create a password"
+                placeholderTextColor={C.textMuted}
+                value={password}
+                onChangeText={(v) => updateField('password', v)}
+                onBlur={() => onBlurField('password')}
+                secureTextEntry={!showPw}
+                selectionColor={C.silver}
+              />
+              <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw((v) => !v)}>
+                <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
+              </TouchableOpacity>
+            </View>
+          </Field>
 
-          <Text style={s.fieldLabel}>Security Answer</Text>
-          <TextInput
-            style={s.input}
-            placeholder="Your answer"
-            placeholderTextColor={C.textMuted}
-            value={securityAnswer}
-            onChangeText={setSecurityAnswer}
-            autoCapitalize="none"
-            selectionColor={C.silver}
-          />
-          <Text style={s.hint}>Used to reset MPIN and password if you forget both</Text>
+          <Field label="6-Digit MPIN" error={errors.mpin} hint="Exactly 6 numbers. Used for daily login">
+            <TextInput
+              style={[s.input, errors.mpin && s.inputError]}
+              placeholder="* * * * * *"
+              placeholderTextColor={C.textMuted}
+              value={mpin}
+              onChangeText={(v) => updateField('mpin', digitsOnly(v))}
+              onBlur={() => onBlurField('mpin')}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              selectionColor={C.silver}
+            />
+          </Field>
 
-          <TouchableOpacity style={[s.btn, s.btnPrimary, { marginTop: 24 }]} onPress={onSignup} disabled={isLoading} activeOpacity={0.85}>
-            {isLoading
-              ? <ActivityIndicator color={C.bg} size="small" />
-              : <Text style={s.btnPrimaryText}>Create Account</Text>
-            }
-          </TouchableOpacity>
+          <Field label="Confirm MPIN" error={errors.confirmMpin}>
+            <TextInput
+              style={[s.input, errors.confirmMpin && s.inputError]}
+              placeholder="* * * * * *"
+              placeholderTextColor={C.textMuted}
+              value={confirmMpin}
+              onChangeText={(v) => updateField('confirmMpin', digitsOnly(v))}
+              onBlur={() => onBlurField('confirmMpin')}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={6}
+              selectionColor={C.silver}
+            />
+          </Field>
+
+          <Field label="Security Question" error={errors.securityQuestion}>
+            <SecurityQuestionDropdown
+              value={securityQuestion}
+              hasError={!!errors.securityQuestion}
+              onChange={(key) => {
+                setSecurityQuestion(key);
+                setTouched((prev) => ({ ...prev, securityQuestion: true }));
+                setFieldError('securityQuestion', securityQuestionError(key));
+                setApiError('');
+              }}
+            />
+          </Field>
+
+          <Field label="Security Answer" error={errors.securityAnswer} hint="Used to reset MPIN and password if you forget both">
+            <TextInput
+              style={[s.input, errors.securityAnswer && s.inputError]}
+              placeholder="Your answer"
+              placeholderTextColor={C.textMuted}
+              value={securityAnswer}
+              onChangeText={(v) => updateField('securityAnswer', v)}
+              onBlur={() => onBlurField('securityAnswer')}
+              autoCapitalize="none"
+              selectionColor={C.silver}
+            />
+          </Field>
         </View>
+      </ScrollView>
 
+      <View style={[s.footerBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onSignup} disabled={isLoading} activeOpacity={0.85}>
+          {isLoading
+            ? <ActivityIndicator color={C.bg} size="small" />
+            : <Text style={s.btnPrimaryText}>Create Account</Text>}
+        </TouchableOpacity>
         <View style={s.footer}>
           <Text style={s.footerText}>Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('MpinLogin')}>
             <Text style={s.footerLink}>Sign In with MPIN</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
-        {snackMsg}
-      </Snackbar>
+      </View>
     </KeyboardAvoidingView>
+  );
+}
+
+function Field({
+  label,
+  error,
+  hint,
+  children,
+}: {
+  label: string;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={s.field}>
+      <Text style={s.fieldLabel}>{label}</Text>
+      {children}
+      {error ? (
+        <Text style={s.errorText}>{error}</Text>
+      ) : hint ? (
+        <Text style={s.hint}>{hint}</Text>
+      ) : (
+        <View style={s.fieldSpacer} />
+      )}
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
-  bgCircle: { position: 'absolute', top: -80, right: -60, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(192,192,192,0.04)' },
-
-  logoWrap: { alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
-  logoBox: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: C.silver, backgroundColor: 'rgba(192,192,192,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  logoText: { color: C.silverLt, fontSize: 18, fontWeight: '800', letterSpacing: 1 },
-  brand: { color: C.silverLt, fontSize: 14, fontWeight: '800', letterSpacing: 5 },
-
-  card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
-  heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },
-
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    backgroundColor: C.bg,
+    gap: 12,
+  },
+  logoBox: {
+    width: 44, height: 44, borderRadius: 22,
+    borderWidth: 2, borderColor: C.silver,
+    backgroundColor: 'rgba(192,192,192,0.1)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  logoText: { color: C.silverLt, fontSize: 13, fontWeight: '800', letterSpacing: 1 },
+  headerCopy: { flex: 1 },
+  brand: { color: C.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 3 },
+  heading: { color: C.text, fontSize: 20, fontWeight: '800', marginTop: 2 },
+  apiBanner: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    backgroundColor: 'rgba(201,125,138,0.12)',
+    borderWidth: 1,
+    borderColor: C.error,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  apiBannerText: { color: C.error, fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  scroll: { flex: 1 },
+  scrollInner: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  subheading: { color: C.textSub, fontSize: 13, lineHeight: 18, marginBottom: 18 },
+  field: { marginBottom: 4 },
   fieldLabel: { color: C.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
-  input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14, marginBottom: 14 },
-  hint: { color: C.textMuted, fontSize: 11, marginTop: -8, marginBottom: 14 },
-  pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 0 },
-  eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
-  eyeText: { fontSize: 16 },
-
+  input: {
+    backgroundColor: C.surface2,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: C.text,
+    fontSize: 14,
+  },
+  inputError: { borderColor: C.error },
+  errorText: { color: C.error, fontSize: 12, lineHeight: 16, marginTop: 6, marginBottom: 10 },
+  hint: { color: C.textMuted, fontSize: 11, lineHeight: 15, marginTop: 6, marginBottom: 10 },
+  fieldSpacer: { height: 12 },
+  pwWrap: { flexDirection: 'row', alignItems: 'center' },
+  pwInput: { flex: 1, marginRight: 8 },
+  eyeBtn: { paddingHorizontal: 8, paddingVertical: 10 },
+  eyeText: { color: C.silver, fontSize: 13, fontWeight: '700' },
+  footerBar: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    backgroundColor: C.bg,
+  },
   btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   btnPrimary: { backgroundColor: C.silver },
   btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
-
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
+  footer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 12 },
   footerText: { color: C.textSub, fontSize: 13 },
   footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
 });
-
-
-

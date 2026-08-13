@@ -11,9 +11,9 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
-import { Snackbar } from 'react-native-paper';
 import { useResetMpinWithPasswordMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
+import { confirmMpinError, identifierError, mpinError } from '@/lib/form-validation';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
@@ -26,34 +26,34 @@ export default function ForgotMpinScreen({ navigation }: any) {
   const [newMpin, setNewMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [snackVisible, setSnackVisible] = useState(false);
-  const [snackMsg, setSnackMsg] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState('');
   const [resetMpin, { isLoading }] = useResetMpinWithPasswordMutation();
 
-  const showSnack = (msg: string) => {
-    setSnackMsg(msg);
-    setSnackVisible(true);
+  const setErr = (key: string, msg: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[key] = msg;
+      else delete next[key];
+      return next;
+    });
   };
 
   const onSubmit = async () => {
-    if (!identifier.trim() || !password) {
-      showSnack('Enter your email or mobile and password.');
-      return;
-    }
-    if (!/^\d{6}$/.test(newMpin)) {
-      showSnack('New MPIN must be exactly 6 digits.');
-      return;
-    }
-    if (newMpin !== confirmMpin) {
-      showSnack('MPINs do not match.');
-      return;
-    }
+    const next = {
+      identifier: identifierError(identifier),
+      password: password ? '' : 'Password is required',
+      newMpin: mpinError(newMpin),
+      confirmMpin: confirmMpinError(confirmMpin, newMpin),
+    };
+    setErrors(next);
+    setApiError('');
+    if (Object.values(next).some(Boolean)) return;
     try {
       await resetMpin({ ...toAuthIdentifier(identifier), password, newMpin, confirmMpin }).unwrap();
-      showSnack('MPIN updated. Sign in with your new MPIN.');
       navigation.navigate('MpinLogin');
     } catch (e) {
-      showSnack(getErrorMessage(e, 'Failed to reset MPIN.'));
+      setApiError(getErrorMessage(e, 'Failed to reset MPIN.'));
     }
   };
 
@@ -71,26 +71,31 @@ export default function ForgotMpinScreen({ navigation }: any) {
           <Text style={s.heading}>Reset MPIN</Text>
           <Text style={s.subheading}>Verify with your password, then set a new 6-digit MPIN</Text>
 
+          {!!apiError && <Text style={s.apiError}>{apiError}</Text>}
+
           <Text style={s.fieldLabel}>Email or Mobile</Text>
           <TextInput
-            style={s.input}
+            style={[s.input, errors.identifier && s.inputError]}
             placeholder="you@example.com or 9876543210"
             placeholderTextColor={C.textMuted}
             value={identifier}
-            onChangeText={setIdentifier}
+            onChangeText={(v) => { setIdentifier(v); setErr('identifier', ''); setApiError(''); }}
+            onBlur={() => setErr('identifier', identifierError(identifier))}
             autoCapitalize="none"
             keyboardType="email-address"
             selectionColor={C.silver}
           />
+          {errors.identifier ? <Text style={s.errorText}>{errors.identifier}</Text> : <View style={s.spacer} />}
 
           <Text style={s.fieldLabel}>Password</Text>
           <View style={s.pwWrap}>
             <TextInput
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
+              style={[s.input, s.pwInput, errors.password && s.inputError]}
               placeholder="Account password"
               placeholderTextColor={C.textMuted}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(v) => { setPassword(v); setErr('password', ''); setApiError(''); }}
+              onBlur={() => setErr('password', password ? '' : 'Password is required')}
               secureTextEntry={!showPw}
               selectionColor={C.silver}
             />
@@ -98,35 +103,40 @@ export default function ForgotMpinScreen({ navigation }: any) {
               <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
+          {errors.password ? <Text style={s.errorText}>{errors.password}</Text> : <View style={s.spacer} />}
           <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
             <Text style={s.forgot}>Forgot password too? Recover with security question</Text>
           </TouchableOpacity>
 
           <Text style={s.fieldLabel}>New 6-Digit MPIN</Text>
           <TextInput
-            style={s.input}
+            style={[s.input, errors.newMpin && s.inputError]}
             placeholder="* * * * * *"
             placeholderTextColor={C.textMuted}
             value={newMpin}
-            onChangeText={(v) => setNewMpin(digitsOnly(v))}
+            onChangeText={(v) => { setNewMpin(digitsOnly(v)); setErr('newMpin', ''); }}
+            onBlur={() => setErr('newMpin', mpinError(newMpin))}
             keyboardType="number-pad"
             secureTextEntry
             maxLength={6}
             selectionColor={C.silver}
           />
+          {errors.newMpin ? <Text style={s.errorText}>{errors.newMpin}</Text> : <Text style={s.hint}>Exactly 6 numbers</Text>}
 
           <Text style={s.fieldLabel}>Confirm MPIN</Text>
           <TextInput
-            style={s.input}
+            style={[s.input, errors.confirmMpin && s.inputError]}
             placeholder="* * * * * *"
             placeholderTextColor={C.textMuted}
             value={confirmMpin}
-            onChangeText={(v) => setConfirmMpin(digitsOnly(v))}
+            onChangeText={(v) => { setConfirmMpin(digitsOnly(v)); setErr('confirmMpin', ''); }}
+            onBlur={() => setErr('confirmMpin', confirmMpinError(confirmMpin, newMpin))}
             keyboardType="number-pad"
             secureTextEntry
             maxLength={6}
             selectionColor={C.silver}
           />
+          {errors.confirmMpin ? <Text style={s.errorText}>{errors.confirmMpin}</Text> : <View style={s.spacer} />}
 
           <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onSubmit} disabled={isLoading} activeOpacity={0.85}>
             {isLoading ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={s.btnPrimaryText}>Set New MPIN</Text>}
@@ -140,10 +150,6 @@ export default function ForgotMpinScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
-        {snackMsg}
-      </Snackbar>
     </KeyboardAvoidingView>
   );
 }
@@ -157,17 +163,23 @@ const s = StyleSheet.create({
   brand: { color: C.silverLt, fontSize: 14, fontWeight: '800', letterSpacing: 5 },
   card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
   heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },
+  subheading: { color: C.textSub, fontSize: 13, lineHeight: 18, marginBottom: 20 },
   fieldLabel: { color: C.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
-  input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14, marginBottom: 16 },
-  pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
-  eyeText: { fontSize: 16 },
-  forgot: { color: C.silver, fontSize: 12, textAlign: 'right', marginBottom: 16 },
+  input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14 },
+  inputError: { borderColor: C.error },
+  errorText: { color: C.error, fontSize: 12, lineHeight: 16, marginTop: 6, marginBottom: 12 },
+  hint: { color: C.textMuted, fontSize: 11, lineHeight: 15, marginTop: 6, marginBottom: 12 },
+  spacer: { height: 12 },
+  apiError: { color: C.error, fontSize: 13, lineHeight: 18, fontWeight: '600', marginBottom: 14 },
+  pwWrap: { flexDirection: 'row', alignItems: 'center' },
+  pwInput: { flex: 1, marginRight: 8 },
+  eyeBtn: { paddingHorizontal: 8, paddingVertical: 10 },
+  eyeText: { color: C.silver, fontSize: 13, fontWeight: '700' },
+  forgot: { color: C.silver, fontSize: 12, lineHeight: 16, textAlign: 'right', marginBottom: 16 },
   btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnPrimary: { backgroundColor: C.silver },
   btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
+  footer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 },
   footerText: { color: C.textSub, fontSize: 13 },
   footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
 });

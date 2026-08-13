@@ -14,15 +14,16 @@ import { SECURITY_QUESTIONS } from '@/lib/security-questions';
 type Props = {
   value: string;
   onChange: (key: string) => void;
+  hasError?: boolean;
 };
 
-export default function SecurityQuestionDropdown({ value, onChange }: Props) {
+export default function SecurityQuestionDropdown({ value, onChange, hasError }: Props) {
   const [open, setOpen] = useState(false);
   const selected = SECURITY_QUESTIONS.find((q) => q.key === value);
 
   return (
     <>
-      <TouchableOpacity style={s.trigger} onPress={() => setOpen(true)} activeOpacity={0.85}>
+      <TouchableOpacity style={[s.trigger, hasError && s.triggerError]} onPress={() => setOpen(true)} activeOpacity={0.85}>
         <Text style={selected ? s.triggerText : s.placeholder} numberOfLines={2}>
           {selected?.label || 'Select a security question'}
         </Text>
@@ -66,11 +67,12 @@ const s = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 14,
+    marginBottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  triggerError: { borderColor: C.error },
   triggerText: { flex: 1, color: C.text, fontSize: 14 },
   placeholder: { flex: 1, color: C.textMuted, fontSize: 14 },
   chevron: { color: C.textSub, fontSize: 16 },

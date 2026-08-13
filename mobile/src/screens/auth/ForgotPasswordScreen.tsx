@@ -3,12 +3,19 @@ import {
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
 } from 'react-native';
-import { Snackbar } from 'react-native-paper';
 import {
   useLookupSecurityQuestionMutation,
   useResetWithSecurityQuestionMutation,
 } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
+import {
+  confirmMpinError,
+  confirmPasswordError,
+  identifierError,
+  mpinError,
+  passwordError,
+  securityAnswerError,
+} from '@/lib/form-validation';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
@@ -24,46 +31,44 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   const [newMpin, setNewMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [snackMsg, setSnackMsg] = useState('');
-  const [snackVisible, setSnackVisible] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState('');
   const [lookupQuestion, { isLoading: lookingUp }] = useLookupSecurityQuestionMutation();
   const [resetAccount, { isLoading: resetting }] = useResetWithSecurityQuestionMutation();
 
-  const showSnack = (msg: string) => {
-    setSnackMsg(msg);
-    setSnackVisible(true);
+  const setErr = (key: string, msg: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[key] = msg;
+      else delete next[key];
+      return next;
+    });
   };
 
   const onLookup = async () => {
-    if (!identifier.trim()) {
-      showSnack('Enter your email or mobile number.');
-      return;
-    }
+    const msg = identifierError(identifier);
+    setErr('identifier', msg);
+    setApiError('');
+    if (msg) return;
     try {
       const res = await lookupQuestion(toAuthIdentifier(identifier)).unwrap();
       setQuestion(res.data?.question || '');
     } catch (e) {
-      showSnack(getErrorMessage(e, 'No security question found for this account.'));
+      setApiError(getErrorMessage(e, 'No security question found for this account.'));
     }
   };
 
   const onReset = async () => {
-    if (securityAnswer.trim().length < 2) {
-      showSnack('Enter your security answer.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showSnack('Passwords do not match.');
-      return;
-    }
-    if (!/^\d{6}$/.test(newMpin)) {
-      showSnack('New MPIN must be exactly 6 digits.');
-      return;
-    }
-    if (newMpin !== confirmMpin) {
-      showSnack('MPINs do not match.');
-      return;
-    }
+    const next = {
+      securityAnswer: securityAnswerError(securityAnswer),
+      newPassword: passwordError(newPassword),
+      confirmPassword: confirmPasswordError(confirmPassword, newPassword),
+      newMpin: mpinError(newMpin),
+      confirmMpin: confirmMpinError(confirmMpin, newMpin),
+    };
+    setErrors(next);
+    setApiError('');
+    if (Object.values(next).some(Boolean)) return;
     try {
       await resetAccount({
         ...toAuthIdentifier(identifier),
@@ -73,10 +78,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         newMpin,
         confirmMpin,
       }).unwrap();
-      showSnack('Password and MPIN updated. Sign in with your new MPIN.');
       navigation.navigate('MpinLogin');
     } catch (e) {
-      showSnack(getErrorMessage(e, 'Failed to reset account.'));
+      setApiError(getErrorMessage(e, 'Failed to reset account.'));
     }
   };
 
@@ -97,21 +101,27 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               : 'Enter your email or mobile to load your security question'}
           </Text>
 
+          {!!apiError && <Text style={s.apiError}>{apiError}</Text>}
+
           <Text style={s.fieldLabel}>Email or Mobile</Text>
           <TextInput
-            style={s.input}
+            style={[s.input, errors.identifier && s.inputError]}
             placeholder="you@example.com or 9876543210"
             placeholderTextColor={C.textMuted}
             value={identifier}
             onChangeText={(v) => {
               setIdentifier(v);
+              setApiError('');
               if (question) setQuestion('');
+              setErr('identifier', '');
             }}
+            onBlur={() => setErr('identifier', identifierError(identifier))}
             autoCapitalize="none"
             keyboardType="email-address"
             editable={!question}
             selectionColor={C.silver}
           />
+          {errors.identifier ? <Text style={s.errorText}>{errors.identifier}</Text> : <View style={s.spacer} />}
 
           {!question ? (
             <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onLookup} disabled={lookingUp} activeOpacity={0.85}>
@@ -126,23 +136,26 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
               <Text style={s.fieldLabel}>Your Answer</Text>
               <TextInput
-                style={s.input}
+                style={[s.input, errors.securityAnswer && s.inputError]}
                 placeholder="Enter your answer"
                 placeholderTextColor={C.textMuted}
                 value={securityAnswer}
-                onChangeText={setSecurityAnswer}
+                onChangeText={(v) => { setSecurityAnswer(v); setErr('securityAnswer', ''); }}
+                onBlur={() => setErr('securityAnswer', securityAnswerError(securityAnswer))}
                 autoCapitalize="none"
                 selectionColor={C.silver}
               />
+              {errors.securityAnswer ? <Text style={s.errorText}>{errors.securityAnswer}</Text> : <View style={s.spacer} />}
 
               <Text style={s.fieldLabel}>New Password</Text>
               <View style={s.pwWrap}>
                 <TextInput
-                  style={[s.input, { flex: 1, marginBottom: 0 }]}
+                  style={[s.input, s.pwInput, errors.newPassword && s.inputError]}
                   placeholder="Create a password"
                   placeholderTextColor={C.textMuted}
                   value={newPassword}
-                  onChangeText={setNewPassword}
+                  onChangeText={(v) => { setNewPassword(v); setErr('newPassword', ''); }}
+                  onBlur={() => setErr('newPassword', passwordError(newPassword))}
                   secureTextEntry={!showPw}
                   selectionColor={C.silver}
                 />
@@ -150,48 +163,57 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                   <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
                 </TouchableOpacity>
               </View>
+              {errors.newPassword
+                ? <Text style={s.errorText}>{errors.newPassword}</Text>
+                : <Text style={s.hint}>Min 8 characters with 1 capital, 1 number and 1 special character</Text>}
 
               <Text style={s.fieldLabel}>Confirm Password</Text>
               <TextInput
-                style={s.input}
+                style={[s.input, errors.confirmPassword && s.inputError]}
                 placeholder="Repeat password"
                 placeholderTextColor={C.textMuted}
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(v) => { setConfirmPassword(v); setErr('confirmPassword', ''); }}
+                onBlur={() => setErr('confirmPassword', confirmPasswordError(confirmPassword, newPassword))}
                 secureTextEntry={!showPw}
                 selectionColor={C.silver}
               />
+              {errors.confirmPassword ? <Text style={s.errorText}>{errors.confirmPassword}</Text> : <View style={s.spacer} />}
 
               <Text style={s.fieldLabel}>New 6-Digit MPIN</Text>
               <TextInput
-                style={s.input}
+                style={[s.input, errors.newMpin && s.inputError]}
                 placeholder="* * * * * *"
                 placeholderTextColor={C.textMuted}
                 value={newMpin}
-                onChangeText={(v) => setNewMpin(digitsOnly(v))}
+                onChangeText={(v) => { setNewMpin(digitsOnly(v)); setErr('newMpin', ''); }}
+                onBlur={() => setErr('newMpin', mpinError(newMpin))}
                 keyboardType="number-pad"
                 secureTextEntry
                 maxLength={6}
                 selectionColor={C.silver}
               />
+              {errors.newMpin ? <Text style={s.errorText}>{errors.newMpin}</Text> : <Text style={s.hint}>Exactly 6 numbers</Text>}
 
               <Text style={s.fieldLabel}>Confirm MPIN</Text>
               <TextInput
-                style={s.input}
+                style={[s.input, errors.confirmMpin && s.inputError]}
                 placeholder="* * * * * *"
                 placeholderTextColor={C.textMuted}
                 value={confirmMpin}
-                onChangeText={(v) => setConfirmMpin(digitsOnly(v))}
+                onChangeText={(v) => { setConfirmMpin(digitsOnly(v)); setErr('confirmMpin', ''); }}
+                onBlur={() => setErr('confirmMpin', confirmMpinError(confirmMpin, newMpin))}
                 keyboardType="number-pad"
                 secureTextEntry
                 maxLength={6}
                 selectionColor={C.silver}
               />
+              {errors.confirmMpin ? <Text style={s.errorText}>{errors.confirmMpin}</Text> : <View style={s.spacer} />}
 
               <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onReset} disabled={resetting} activeOpacity={0.85}>
                 {resetting ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={s.btnPrimaryText}>Reset Password & MPIN</Text>}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setQuestion(''); setSecurityAnswer(''); }}>
+              <TouchableOpacity onPress={() => { setQuestion(''); setSecurityAnswer(''); setApiError(''); }}>
                 <Text style={s.forgot}>Use a different email or mobile</Text>
               </TouchableOpacity>
             </>
@@ -204,7 +226,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>{snackMsg}</Snackbar>
     </KeyboardAvoidingView>
   );
 }
@@ -218,9 +239,14 @@ const s = StyleSheet.create({
   brand: { color: C.silverLt, fontSize: 14, fontWeight: '800', letterSpacing: 5 },
   card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
   heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },
+  subheading: { color: C.textSub, fontSize: 13, lineHeight: 18, marginBottom: 20 },
   fieldLabel: { color: C.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
-  input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14, marginBottom: 16 },
+  input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14 },
+  inputError: { borderColor: C.error },
+  errorText: { color: C.error, fontSize: 12, lineHeight: 16, marginTop: 6, marginBottom: 12 },
+  hint: { color: C.textMuted, fontSize: 11, lineHeight: 15, marginTop: 6, marginBottom: 12 },
+  spacer: { height: 12 },
+  apiError: { color: C.error, fontSize: 13, lineHeight: 18, fontWeight: '600', marginBottom: 14 },
   questionBox: {
     backgroundColor: C.surface2,
     borderWidth: 1,
@@ -231,14 +257,15 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   questionText: { color: C.text, fontSize: 14, lineHeight: 20 },
-  pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
-  eyeText: { fontSize: 16 },
+  pwWrap: { flexDirection: 'row', alignItems: 'center' },
+  pwInput: { flex: 1, marginRight: 8 },
+  eyeBtn: { paddingHorizontal: 8, paddingVertical: 10 },
+  eyeText: { color: C.silver, fontSize: 13, fontWeight: '700' },
   forgot: { color: C.silver, fontSize: 12, textAlign: 'center', marginTop: 14 },
   btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnPrimary: { backgroundColor: C.silver },
   btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
+  footer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 },
   footerText: { color: C.textSub, fontSize: 13 },
   footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
 });
