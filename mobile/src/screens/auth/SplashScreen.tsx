@@ -1,92 +1,273 @@
 ﻿import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View, Text, StatusBar } from 'react-native';
+import { Animated, Easing, StyleSheet, View, Text, StatusBar, Dimensions } from 'react-native';
 import { C } from '@/theme/colors';
-import PremiumBackground from '@/components/PremiumBackground';
+
+const { width: SW, height: SH } = Dimensions.get('window');
 
 export default function SplashScreen({ navigation }: any) {
-  const scale  = useRef(new Animated.Value(0.7)).current;
-  const fade   = useRef(new Animated.Value(0)).current;
-  const slideY = useRef(new Animated.Value(20)).current;
+  const logoScale = useRef(new Animated.Value(0.82)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const brandOpacity = useRef(new Animated.Value(0)).current;
+  const brandY = useRef(new Animated.Value(18)).current;
+  const ringScale = useRef(new Animated.Value(0.7)).current;
+  const ringOpacity = useRef(new Animated.Value(0)).current;
+  const lineWidth = useRef(new Animated.Value(0)).current;
+  const footerOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale,  { toValue: 1, useNativeDriver: true, tension: 60, friction: 8 }),
-      Animated.timing(fade,   { toValue: 1, duration: 700, useNativeDriver: true }),
-      Animated.timing(slideY, { toValue: 0, duration: 700, useNativeDriver: true }),
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(ringOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.spring(ringScale, {
+          toValue: 1,
+          friction: 7,
+          tension: 48,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.spring(logoScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 55,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 420,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(brandOpacity, {
+          toValue: 1,
+          duration: 480,
+          useNativeDriver: true,
+        }),
+        Animated.timing(brandY, {
+          toValue: 0,
+          duration: 480,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(lineWidth, {
+          toValue: 1,
+          duration: 520,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]),
+      Animated.timing(footerOpacity, {
+        toValue: 1,
+        duration: 360,
+        useNativeDriver: true,
+      }),
     ]).start();
 
-    const t = setTimeout(() => navigation.replace('MpinLogin'), 2200);
+    const t = setTimeout(() => navigation.replace('MpinLogin'), 2600);
     return () => clearTimeout(t);
-  }, [navigation]);
+  }, [
+    navigation,
+    logoScale,
+    logoOpacity,
+    brandOpacity,
+    brandY,
+    ringScale,
+    ringOpacity,
+    lineWidth,
+    footerOpacity,
+  ]);
+
+  const lineAnimWidth = lineWidth.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 56],
+  });
 
   return (
     <View style={s.root}>
-      <PremiumBackground variant="auth" shimmer />
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="light-content" backgroundColor="#1A1714" />
 
-      {/* Background rings */}
-      <View style={[s.ring, s.ring1]} />
-      <View style={[s.ring, s.ring2]} />
-      <View style={[s.ring, s.ring3]} />
+      {/* Deep charcoal luxury field */}
+      <View style={s.field} />
+      <View style={s.goldWashTop} />
+      <View style={s.goldWashBottom} />
+      <View style={s.vignette} />
 
-      <Animated.View style={{ opacity: fade, transform: [{ scale }, { translateY: slideY }], alignItems: 'center' }}>
-        {/* Logo medallion */}
-        <View style={s.medallion}>
-          <View style={s.medallionInner}>
-            <Text style={s.logoText}>GM</Text>
+      {/* Decorative arcs */}
+      <Animated.View
+        style={[
+          s.arc,
+          s.arcOuter,
+          { opacity: ringOpacity, transform: [{ scale: ringScale }] },
+        ]}
+      />
+      <Animated.View
+        style={[
+          s.arc,
+          s.arcMid,
+          { opacity: ringOpacity, transform: [{ scale: ringScale }] },
+        ]}
+      />
+      <Animated.View
+        style={[
+          s.arc,
+          s.arcInner,
+          { opacity: ringOpacity, transform: [{ scale: ringScale }] },
+        ]}
+      />
+
+      <View style={s.center}>
+        <Animated.View
+          style={[
+            s.medallion,
+            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+          ]}
+        >
+          <View style={s.medallionRing}>
+            <View style={s.medallionCore}>
+              <Text style={s.logoText}>GM</Text>
+            </View>
           </View>
-        </View>
+        </Animated.View>
 
-        {/* Brand name */}
-        <Text style={s.brand}>GM SILVER</Text>
-        <View style={s.divider} />
-        <Text style={s.tagline}>B2B Silver Catalog Platform</Text>
-      </Animated.View>
+        <Animated.View
+          style={{
+            opacity: brandOpacity,
+            transform: [{ translateY: brandY }],
+            alignItems: 'center',
+          }}
+        >
+          <Text style={s.brand}>GM SILVER</Text>
+          <Animated.View style={[s.goldLine, { width: lineAnimWidth }]} />
+          <Text style={s.tagline}>Fine silver · B2B catalog</Text>
+        </Animated.View>
+      </View>
 
-      {/* Footer dots */}
-      <Animated.View style={[s.dotsRow, { opacity: fade }]}>
-        {[0, 1, 2].map(i => <View key={i} style={[s.dot, i === 1 && s.dotActive]} />)}
+      <Animated.View style={[s.footer, { opacity: footerOpacity }]}>
+        <Text style={s.footerText}>CRAFT · QUALITY · TRUST</Text>
       </Animated.View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
-
-  ring: { position: 'absolute', borderRadius: 999, borderWidth: 1 },
-  ring1: { width: 320, height: 320, borderColor: 'rgba(192,192,192,0.06)' },
-  ring2: { width: 230, height: 230, borderColor: 'rgba(192,192,192,0.1)' },
-  ring3: { width: 150, height: 150, borderColor: 'rgba(192,192,192,0.08)' },
-
+  root: {
+    flex: 1,
+    backgroundColor: '#1A1714',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  field: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#1A1714',
+  },
+  goldWashTop: {
+    position: 'absolute',
+    top: -SH * 0.15,
+    alignSelf: 'center',
+    width: SW * 1.2,
+    height: SH * 0.45,
+    borderRadius: SW,
+    backgroundColor: 'rgba(196, 165, 116, 0.10)',
+  },
+  goldWashBottom: {
+    position: 'absolute',
+    bottom: -SH * 0.2,
+    alignSelf: 'center',
+    width: SW * 1.1,
+    height: SH * 0.4,
+    borderRadius: SW,
+    backgroundColor: 'rgba(196, 165, 116, 0.06)',
+  },
+  vignette: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+  arc: {
+    position: 'absolute',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(196, 165, 116, 0.22)',
+  },
+  arcOuter: {
+    width: Math.min(SW * 0.78, 320),
+    height: Math.min(SW * 0.78, 320),
+  },
+  arcMid: {
+    width: Math.min(SW * 0.58, 240),
+    height: Math.min(SW * 0.58, 240),
+    borderColor: 'rgba(196, 165, 116, 0.32)',
+  },
+  arcInner: {
+    width: Math.min(SW * 0.4, 168),
+    height: Math.min(SW * 0.4, 168),
+    borderColor: 'rgba(196, 165, 116, 0.42)',
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
   medallion: {
-    width: 100, height: 100, borderRadius: 50,
-    borderWidth: 2, borderColor: C.silver,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(192,192,192,0.08)',
-    shadowColor: C.silver, shadowOpacity: 0.25, shadowRadius: 20, elevation: 8,
+    marginBottom: 28,
   },
-  medallionInner: {
-    width: 78, height: 78, borderRadius: 39,
-    backgroundColor: 'rgba(192,192,192,0.12)',
-    alignItems: 'center', justifyContent: 'center',
+  medallionRing: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: 1.5,
+    borderColor: C.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  logoText: { color: C.silverLt, fontSize: 30, fontWeight: '800', letterSpacing: 2 },
-
+  medallionCore: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(196, 165, 116, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    color: '#F5E6C8',
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
   brand: {
-    color: C.silverLt, fontSize: 22, fontWeight: '800',
-    letterSpacing: 8, marginTop: 24,
+    color: '#F7F3EC',
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: 7,
   },
-  divider: {
-    width: 40, height: 1.5, backgroundColor: C.gold,
-    borderRadius: 2, marginVertical: 12, opacity: 0.8,
+  goldLine: {
+    height: 1.5,
+    backgroundColor: C.gold,
+    marginTop: 16,
+    marginBottom: 14,
+    borderRadius: 2,
   },
-  tagline: { color: C.textSub, fontSize: 12, letterSpacing: 2, fontWeight: '500' },
-
-  dotsRow: { position: 'absolute', bottom: 52, flexDirection: 'row', gap: 6 },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.textMuted },
-  dotActive: { width: 18, backgroundColor: C.silver },
+  tagline: {
+    color: 'rgba(247,243,236,0.62)',
+    fontSize: 13,
+    letterSpacing: 1.6,
+    fontWeight: '500',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+  },
+  footerText: {
+    color: 'rgba(196, 165, 116, 0.7)',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 3.2,
+  },
 });
-
-
-

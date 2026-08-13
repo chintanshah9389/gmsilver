@@ -186,18 +186,18 @@ export default function SettingsScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  scroll: { paddingHorizontal: 16, paddingBottom: 32 },
+  scroll: { paddingHorizontal: 16, paddingBottom: 110 },
   card: {
     backgroundColor: C.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 14,
     borderWidth: 1,
     borderColor: C.border,
     ...E.softShadow,
   },
   sectionTitle: {
-    color: C.silver,
+    color: C.goldDim,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.8,
@@ -221,7 +221,7 @@ const s = StyleSheet.create({
     backgroundColor: C.surface2,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: C.text,
@@ -229,12 +229,12 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   saveBtn: {
-    backgroundColor: C.silver,
-    borderRadius: 14,
+    backgroundColor: C.text,
+    borderRadius: 999,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 4,
     ...E.buttonShadow,
   },
-  saveBtnText: { color: C.bg, fontSize: 14, fontWeight: '700', letterSpacing: 0.4 },
+  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700', letterSpacing: 0.4 },
 });

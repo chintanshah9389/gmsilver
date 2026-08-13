@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -60,7 +60,7 @@ export default function ResetMpinScreen({ navigation }: any) {
             onChangeText={setIdentifier}
             autoCapitalize="none"
             keyboardType="email-address"
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           <Text style={s.fieldLabel}>Reset Token</Text>
           <TextInput
@@ -69,7 +69,7 @@ export default function ResetMpinScreen({ navigation }: any) {
             placeholderTextColor={C.textMuted}
             value={token}
             onChangeText={setToken}
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           <Text style={s.fieldLabel}>New MPIN</Text>
           <TextInput
@@ -81,7 +81,7 @@ export default function ResetMpinScreen({ navigation }: any) {
             maxLength={6}
             value={newMpin}
             onChangeText={setNewMpin}
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           <Text style={s.fieldLabel}>Confirm MPIN</Text>
           <TextInput
@@ -93,7 +93,7 @@ export default function ResetMpinScreen({ navigation }: any) {
             maxLength={6}
             value={confirmMpin}
             onChangeText={setConfirmMpin}
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onSubmit} disabled={isLoading} activeOpacity={0.85}>
             {isLoading ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={s.btnPrimaryText}>Reset MPIN</Text>}
@@ -112,16 +112,16 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
   logoWrap: { alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
-  logoBox: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: C.silver, backgroundColor: 'rgba(192,192,192,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  logoText: { color: C.silverLt, fontSize: 20, fontWeight: '800', letterSpacing: 1 },
-  brand: { color: C.silverLt, fontSize: 13, fontWeight: '800', letterSpacing: 4 },
+  logoBox: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: C.gold, backgroundColor: 'rgba(192,192,192,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  logoText: { color: C.text, fontSize: 20, fontWeight: '800', letterSpacing: 1 },
+  brand: { color: C.text, fontSize: 13, fontWeight: '800', letterSpacing: 4 },
   card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
   heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
   subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },
   fieldLabel: { color: C.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14, marginBottom: 14 },
-  btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
-  btnPrimary: { backgroundColor: C.silver },
-  btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  btn: { borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  btnPrimary: { backgroundColor: C.text },
+  btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 });
 

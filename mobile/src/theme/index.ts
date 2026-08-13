@@ -5,9 +5,9 @@ export const theme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#87A9D9',
-    secondary: '#4EA8A1',
-    tertiary: '#8C78B8',
+    primary: C.gold,
+    secondary: C.silver,
+    tertiary: C.goldDim,
     background: C.bg,
     surface: C.surface,
     surfaceVariant: C.surface2,
@@ -17,10 +17,13 @@ export const theme = {
     onSurfaceVariant: C.textSub,
     error: C.error,
   },
-  roundness: 14,
+  roundness: 16,
   fonts: configureFonts({
     config: {
       fontFamily: 'System',
     },
   }),
 };
+
+export { C, R, S } from './colors';
+export { E } from './effects';

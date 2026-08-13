@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Button, Card, Text, TextInput, Snackbar } from 'react-native-paper';
+import { StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import { useCreateOrderMutation } from '@/store/services/ordersApi';
 import { getErrorMessage } from '@/lib/error-message';
 import PremiumBackground from '@/components/PremiumBackground';
-import { C } from '@/theme/colors';
+import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
+import ScalePressable from '@/components/ScalePressable';
+import ScreenHeader from '@/components/ScreenHeader';
+import MotionReveal from '@/components/MotionReveal';
 
 export default function CheckoutScreen({ navigation }: any) {
   const [notes, setNotes] = useState('');
@@ -26,24 +29,32 @@ export default function CheckoutScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <PremiumBackground />
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
-            Checkout
-          </Text>
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+      <ScreenHeader title="Checkout" subtitle="Confirm your order" onBack={() => navigation.goBack()} />
+
+      <MotionReveal delay={40} duration={360} distance={14}>
+        <View style={styles.card}>
+          <Text style={styles.label}>Order notes</Text>
+          <Text style={styles.hint}>Optional delivery or billing notes for your team</Text>
           <TextInput
-            mode="outlined"
-            label="Order Notes (optional)"
+            style={styles.input}
             value={notes}
             onChangeText={setNotes}
             multiline
-            style={styles.input}
+            placeholder="Add a note…"
+            placeholderTextColor={C.textMuted}
+            selectionColor={C.gold}
           />
-          <Button mode="contained" onPress={onPlaceOrder} loading={isLoading}>
-            Place Order
-          </Button>
-        </Card.Content>
-      </Card>
+          <ScalePressable
+            style={[styles.btn, isLoading && styles.btnDisabled]}
+            scaleTo={0.97}
+            disabled={isLoading}
+            onPress={onPlaceOrder}
+          >
+            <Text style={styles.btnText}>{isLoading ? 'Placing…' : 'Place Order'}</Text>
+          </ScalePressable>
+        </View>
+      </MotionReveal>
 
       <Snackbar
         visible={snackbarVisible}
@@ -57,8 +68,38 @@ export default function CheckoutScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 12 },
-  card: { backgroundColor: 'rgba(255,255,255,0.8)', borderColor: C.border, borderWidth: 1, ...E.softShadow },
-  title: { color: C.text, marginBottom: 12 },
-  input: { marginBottom: 12 },
+  container: { flex: 1, backgroundColor: C.bg },
+  card: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    backgroundColor: C.surface,
+    borderRadius: R.xl,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 20,
+    ...E.cardShadow,
+  },
+  label: { color: C.text, fontSize: 18, fontWeight: '800' },
+  hint: { color: C.textMuted, fontSize: 12, marginTop: 6, marginBottom: 14 },
+  input: {
+    minHeight: 110,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.surface2,
+    padding: 14,
+    color: C.text,
+    textAlignVertical: 'top',
+    fontSize: 14,
+    marginBottom: 18,
+  },
+  btn: {
+    backgroundColor: C.text,
+    borderRadius: R.pill,
+    paddingVertical: 15,
+    alignItems: 'center',
+    ...E.buttonShadow,
+  },
+  btnDisabled: { opacity: 0.6 },
+  btnText: { color: '#fff', fontWeight: '800', fontSize: 14, letterSpacing: 0.3 },
 });

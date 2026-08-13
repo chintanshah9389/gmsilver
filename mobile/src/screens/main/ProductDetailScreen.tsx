@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -18,11 +18,12 @@ import { useProductByIdQuery } from '@/store/services/productsApi';
 import { useAddToCartMutation } from '@/store/services/cartApi';
 import { useAddWishlistMutation } from '@/store/services/wishlistApi';
 import { getErrorMessage } from '@/lib/error-message';
-import { C } from '@/theme/colors';
+import { C, R } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
+import LuxCarousel from '@/components/LuxCarousel';
 
 const { width: SW } = Dimensions.get('window');
 const ACTION_PAD = 16;
@@ -45,7 +46,6 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const [cartSheetOpen, setCartSheetOpen] = useState(false);
   const [cartUnit, setCartUnit] = useState<CartUnit>('PIECES');
   const [cartAmount, setCartAmount] = useState('1');
-  const scrollRef = useRef<ScrollView>(null);
   const product = data?.data;
 
   const weightGrams = Number(product?.weight || 0);
@@ -161,36 +161,46 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         </ScalePressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingBottom: 24 }}>
         <View style={s.imgWrap}>
           {images.length > 0 ? (
-            <>
-              <ScrollView
-                ref={scrollRef}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) =>
-                  setActiveImg(Math.round(e.nativeEvent.contentOffset.x / SW))
-                }
-              >
-                {images.map((img, i) => (
-                  <Image key={i} source={{ uri: img }} style={s.imgSlide} resizeMode="cover" />
-                ))}
-              </ScrollView>
-              {images.length > 1 && (
-                <View style={s.imgDots}>
-                  {images.map((_, i) => (
-                    <View key={i} style={[s.imgDot, i === activeImg && s.imgDotActive]} />
-                  ))}
-                </View>
-              )}
-            </>
+            <LuxCarousel
+              items={images.map((img, i) => ({
+                id: `img-${i}`,
+                imageUrl: img,
+              }))}
+              height={SW * 0.92}
+              peek={false}
+              fullBleed
+              autoPlay={images.length > 1}
+              showDots
+              activeIndex={activeImg}
+              onIndexChange={setActiveImg}
+              borderRadius={0}
+            />
           ) : (
             <View style={s.imgPlaceholder}>
               <Text style={s.imgInitial}>{product.name?.[0]?.toUpperCase()}</Text>
             </View>
           )}
+          {images.length > 1 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.thumbs}
+            >
+              {images.map((img, i) => (
+                <ScalePressable
+                  key={`thumb-${i}`}
+                  scaleTo={0.95}
+                  onPress={() => setActiveImg(i)}
+                  style={[s.thumb, i === activeImg && s.thumbActive]}
+                >
+                  <Image source={{ uri: img }} style={s.thumbImg} resizeMode="cover" />
+                </ScalePressable>
+              ))}
+            </ScrollView>
+          ) : null}
         </View>
 
         <MotionReveal delay={50} duration={440} distance={18} style={s.content}>
@@ -255,7 +265,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
 
         <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
           <View style={s.cartBtnInner}>
-            <Icon source="cart-outline" size={18} color={C.text} />
+            <Icon source="cart-outline" size={18} color="#fff" />
             <Text style={s.cartBtnText}>Add to Cart</Text>
           </View>
         </ScalePressable>
@@ -364,7 +374,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               onPress={confirmAddToCart}
             >
               {addingCart ? (
-                <ActivityIndicator color={C.text} />
+                <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={s.confirmBtnText}>
                   Confirm · {pieceQuantity > 0 ? `${pieceQuantity} pcs` : '—'}
@@ -403,40 +413,55 @@ const s = StyleSheet.create({
     paddingTop: 52,
   },
   headerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(31,39,51,0.55)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(28,25,21,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.2)',
     ...E.softShadow,
   },
 
-  imgWrap: { width: SW, height: SW * 0.85 },
-  imgSlide: { width: SW, height: SW * 0.85 },
+  imgWrap: { width: SW, backgroundColor: C.surface2 },
   imgPlaceholder: {
     width: SW,
-    height: SW * 0.85,
+    height: SW * 0.92,
     backgroundColor: C.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   imgInitial: { color: C.textMuted, fontSize: SW * 0.18, fontWeight: '700' },
-  imgDots: {
-    position: 'absolute',
-    bottom: 14,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
+  thumbs: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 10,
   },
-  imgDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
-  imgDotActive: { width: 20, backgroundColor: C.silver },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: R.sm,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  thumbActive: {
+    borderColor: C.gold,
+  },
+  thumbImg: { width: '100%', height: '100%' },
 
-  content: { padding: 20 },
+  content: {
+    padding: 20,
+    marginTop: 8,
+    marginHorizontal: 12,
+    borderRadius: R.xl,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    ...E.softShadow,
+  },
   namePriceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -445,27 +470,27 @@ const s = StyleSheet.create({
   },
   productName: {
     color: C.text,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
     flex: 1,
-    lineHeight: 26,
-    letterSpacing: 0.2,
+    lineHeight: 28,
+    letterSpacing: -0.2,
   },
-  productPrice: { color: C.silver, fontSize: 22, fontWeight: '800', letterSpacing: 0.2 },
+  productPrice: { color: C.goldDim, fontSize: 22, fontWeight: '800', letterSpacing: 0.2 },
   skuBadge: {
     alignSelf: 'flex-start',
     backgroundColor: C.surface2,
-    borderRadius: 8,
+    borderRadius: R.xs,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    marginTop: 8,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: C.border,
   },
   skuText: { color: C.textMuted, fontSize: 11, letterSpacing: 0.5 },
   divider: { height: 1, backgroundColor: C.border, marginVertical: 16 },
   sectionLabel: {
-    color: C.silver,
+    color: C.goldDim,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 2.1,
@@ -476,13 +501,12 @@ const s = StyleSheet.create({
   specsRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
   spec: {
     flex: 1,
-    backgroundColor: C.surface,
-    borderRadius: 12,
+    backgroundColor: C.surface2,
+    borderRadius: R.md,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: C.border,
-    ...E.softShadow,
   },
   specVal: { color: C.text, fontSize: 17, fontWeight: '800' },
   specKey: { color: C.textMuted, fontSize: 11, marginTop: 2 },
@@ -495,13 +519,13 @@ const s = StyleSheet.create({
     paddingBottom: 16,
     gap: CART_GAP,
     borderTopWidth: 1,
-    borderTopColor: C.borderHi,
+    borderTopColor: C.border,
     backgroundColor: 'rgba(255,255,255,0.96)',
   },
   wishBtn: {
     width: WISH_SIZE,
     height: WISH_SIZE,
-    borderRadius: 14,
+    borderRadius: R.md,
     borderWidth: 1,
     borderColor: C.borderHi,
     alignItems: 'center',
@@ -510,16 +534,14 @@ const s = StyleSheet.create({
     ...E.softShadow,
   },
   wishBtnActive: {
-    borderColor: 'rgba(201,125,138,0.45)',
-    backgroundColor: 'rgba(201,125,138,0.12)',
+    borderColor: 'rgba(196,92,92,0.4)',
+    backgroundColor: 'rgba(196,92,92,0.1)',
   },
   cartBtn: {
     width: CART_BTN_W,
     height: CART_BTN_H,
-    borderRadius: 14,
-    backgroundColor: C.gold,
-    borderWidth: 1,
-    borderColor: 'rgba(183,155,106,0.55)',
+    borderRadius: R.pill,
+    backgroundColor: C.text,
     alignItems: 'center',
     justifyContent: 'center',
     ...E.buttonShadow,
@@ -530,7 +552,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   cartBtnText: {
-    color: C.text,
+    color: '#fff',
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.4,
@@ -681,10 +703,8 @@ const s = StyleSheet.create({
   },
   confirmBtn: {
     height: 50,
-    borderRadius: 14,
-    backgroundColor: C.gold,
-    borderWidth: 1,
-    borderColor: 'rgba(183,155,106,0.55)',
+    borderRadius: 999,
+    backgroundColor: C.text,
     alignItems: 'center',
     justifyContent: 'center',
     ...E.buttonShadow,
@@ -693,7 +713,7 @@ const s = StyleSheet.create({
     opacity: 0.55,
   },
   confirmBtnText: {
-    color: C.text,
+    color: '#fff',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.3,

@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -190,20 +190,20 @@ export default function SignupScreen({ navigation }: any) {
 
           <Field label="Full Name" error={errors.name}>
             <TextInput
-              style={[s.input, errors.name && s.inputError]}
+              style={[s.input, (errors.name ? s.inputError : undefined)]}
               placeholder="Your full name"
               placeholderTextColor={C.textMuted}
               value={name}
               onChangeText={(v) => updateField('name', v)}
               onBlur={() => onBlurField('name')}
               autoCapitalize="words"
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
           </Field>
 
           <Field label="Email Address" error={errors.email}>
             <TextInput
-              style={[s.input, errors.email && s.inputError]}
+              style={[s.input, (errors.email ? s.inputError : undefined)]}
               placeholder="you@example.com"
               placeholderTextColor={C.textMuted}
               value={email}
@@ -211,20 +211,20 @@ export default function SignupScreen({ navigation }: any) {
               onBlur={() => onBlurField('email')}
               autoCapitalize="none"
               keyboardType="email-address"
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
           </Field>
 
           <Field label="Mobile Number" error={errors.phone} hint="You can log in with email or this mobile number">
             <TextInput
-              style={[s.input, errors.phone && s.inputError]}
+              style={[s.input, (errors.phone ? s.inputError : undefined)]}
               placeholder="9876543210"
               placeholderTextColor={C.textMuted}
               value={phone}
               onChangeText={(v) => updateField('phone', v)}
               onBlur={() => onBlurField('phone')}
               keyboardType="phone-pad"
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
           </Field>
 
@@ -235,14 +235,14 @@ export default function SignupScreen({ navigation }: any) {
           >
             <View style={s.pwWrap}>
               <TextInput
-                style={[s.input, s.pwInput, errors.password && s.inputError]}
+                style={[s.input, s.pwInput, (errors.password ? s.inputError : undefined)]}
                 placeholder="Create a password"
                 placeholderTextColor={C.textMuted}
                 value={password}
                 onChangeText={(v) => updateField('password', v)}
                 onBlur={() => onBlurField('password')}
                 secureTextEntry={!showPw}
-                selectionColor={C.silver}
+                selectionColor={C.gold}
               />
               <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw((v) => !v)}>
                 <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
@@ -252,7 +252,7 @@ export default function SignupScreen({ navigation }: any) {
 
           <Field label="6-Digit MPIN" error={errors.mpin} hint="Exactly 6 numbers. Used for daily login">
             <TextInput
-              style={[s.input, errors.mpin && s.inputError]}
+              style={[s.input, (errors.mpin ? s.inputError : undefined)]}
               placeholder="* * * * * *"
               placeholderTextColor={C.textMuted}
               value={mpin}
@@ -261,13 +261,13 @@ export default function SignupScreen({ navigation }: any) {
               keyboardType="number-pad"
               secureTextEntry
               maxLength={6}
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
           </Field>
 
           <Field label="Confirm MPIN" error={errors.confirmMpin}>
             <TextInput
-              style={[s.input, errors.confirmMpin && s.inputError]}
+              style={[s.input, (errors.confirmMpin ? s.inputError : undefined)]}
               placeholder="* * * * * *"
               placeholderTextColor={C.textMuted}
               value={confirmMpin}
@@ -276,7 +276,7 @@ export default function SignupScreen({ navigation }: any) {
               keyboardType="number-pad"
               secureTextEntry
               maxLength={6}
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
           </Field>
 
@@ -295,14 +295,14 @@ export default function SignupScreen({ navigation }: any) {
 
           <Field label="Security Answer" error={errors.securityAnswer} hint="Used to reset MPIN and password if you forget both">
             <TextInput
-              style={[s.input, errors.securityAnswer && s.inputError]}
+              style={[s.input, (errors.securityAnswer ? s.inputError : undefined)]}
               placeholder="Your answer"
               placeholderTextColor={C.textMuted}
               value={securityAnswer}
               onChangeText={(v) => updateField('securityAnswer', v)}
               onBlur={() => onBlurField('securityAnswer')}
               autoCapitalize="none"
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
           </Field>
         </View>
@@ -365,18 +365,18 @@ const s = StyleSheet.create({
   },
   logoBox: {
     width: 44, height: 44, borderRadius: 22,
-    borderWidth: 2, borderColor: C.silver,
-    backgroundColor: 'rgba(192,192,192,0.1)',
+    borderWidth: 1.5, borderColor: C.gold,
+    backgroundColor: C.surface,
     alignItems: 'center', justifyContent: 'center',
   },
-  logoText: { color: C.silverLt, fontSize: 13, fontWeight: '800', letterSpacing: 1 },
+  logoText: { color: C.text, fontSize: 13, fontWeight: '800', letterSpacing: 1 },
   headerCopy: { flex: 1 },
-  brand: { color: C.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 3 },
+  brand: { color: C.goldDim, fontSize: 11, fontWeight: '800', letterSpacing: 3 },
   heading: { color: C.text, fontSize: 20, fontWeight: '800', marginTop: 2 },
   apiBanner: {
     marginHorizontal: 20,
     marginTop: 12,
-    backgroundColor: 'rgba(201,125,138,0.12)',
+    backgroundColor: 'rgba(196,92,92,0.1)',
     borderWidth: 1,
     borderColor: C.error,
     borderRadius: 12,
@@ -388,7 +388,7 @@ const s = StyleSheet.create({
   scrollInner: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
   card: {
     backgroundColor: C.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 20,
     borderWidth: 1,
     borderColor: C.border,
@@ -400,7 +400,7 @@ const s = StyleSheet.create({
     backgroundColor: C.surface2,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 12,
+    borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: C.text,
@@ -413,7 +413,7 @@ const s = StyleSheet.create({
   pwWrap: { flexDirection: 'row', alignItems: 'center' },
   pwInput: { flex: 1, marginRight: 8 },
   eyeBtn: { paddingHorizontal: 8, paddingVertical: 10 },
-  eyeText: { color: C.silver, fontSize: 13, fontWeight: '700' },
+  eyeText: { color: C.goldDim, fontSize: 13, fontWeight: '700' },
   footerBar: {
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -421,10 +421,10 @@ const s = StyleSheet.create({
     borderTopColor: C.border,
     backgroundColor: C.bg,
   },
-  btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  btnPrimary: { backgroundColor: C.silver },
-  btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  btn: { borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
+  btnPrimary: { backgroundColor: C.text },
+  btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
   footer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 12 },
   footerText: { color: C.textSub, fontSize: 13 },
-  footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
+  footerLink: { color: C.goldDim, fontSize: 13, fontWeight: '700' },
 });

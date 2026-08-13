@@ -26,7 +26,7 @@ function MenuItem({
   return (
     <ScalePressable style={s.menuItem} scaleTo={0.985} onPress={onPress}>
       <View style={[s.menuIconBox, danger && s.menuIconBoxDanger]}>
-        <Icon source={icon} size={20} color={danger ? C.error : C.silver} />
+        <Icon source={icon} size={20} color={danger ? C.error : C.goldDim} />
       </View>
       <View style={s.menuCopy}>
         <Text style={[s.menuLabel, danger && s.menuLabelDanger]}>{label}</Text>
@@ -126,39 +126,39 @@ export default function ProfileScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  scroll: { paddingBottom: 32 },
+  scroll: { paddingBottom: 110 },
   profileCard: {
     marginHorizontal: 16,
     backgroundColor: C.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: C.border,
-    padding: 16,
+    padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     ...E.softShadow,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: C.surface2,
-    borderWidth: 2,
-    borderColor: C.silver,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: C.goldSoft,
+    borderWidth: 1.5,
+    borderColor: C.gold,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: C.silverLt, fontSize: 22, fontWeight: '800' },
+  avatarText: { color: C.goldDim, fontSize: 22, fontWeight: '800' },
   profileCopy: { flex: 1, minWidth: 0 },
   userName: { color: C.text, fontSize: 18, fontWeight: '800', letterSpacing: 0.2 },
   userEmail: { color: C.textSub, fontSize: 13, marginTop: 2 },
   userPhone: { color: C.textMuted, fontSize: 12, marginTop: 2 },
   section: { paddingHorizontal: 16, paddingTop: 22 },
-  sectionLabel: { color: C.silver, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, marginBottom: 9 },
+  sectionLabel: { color: C.goldDim, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, marginBottom: 9 },
   menuCard: {
     backgroundColor: C.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: C.border,
     overflow: 'hidden',
@@ -174,12 +174,12 @@ const s = StyleSheet.create({
   menuIconBox: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: C.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuIconBoxDanger: { backgroundColor: 'rgba(201,125,138,0.12)' },
+  menuIconBoxDanger: { backgroundColor: 'rgba(196,92,92,0.12)' },
   menuCopy: { flex: 1, minWidth: 0 },
   menuLabel: { color: C.text, fontSize: 14, fontWeight: '600' },
   menuLabelDanger: { color: C.error },

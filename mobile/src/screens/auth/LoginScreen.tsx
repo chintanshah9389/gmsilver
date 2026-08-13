@@ -1,18 +1,23 @@
 ﻿import React, { useState } from 'react';
 import {
-  KeyboardAvoidingView, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { useLoginMutation } from '@/store/services/authApi';
 import { useAppDispatch } from '@/hooks/redux';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/lib/error-message';
-import { C } from '@/theme/colors';
-import PremiumBackground from '@/components/PremiumBackground';
+import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
 import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
+import AuthShell from '@/components/AuthShell';
+import ScalePressable from '@/components/ScalePressable';
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -47,140 +52,110 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PremiumBackground variant="auth" shimmer />
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-
-      {/* Background decoration */}
-      <View style={s.bgCircle1} />
-      <View style={s.bgCircle2} />
-
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        {/* Logo */}
-        <View style={s.logoWrap}>
-          <View style={s.logoBox}>
-            <Text style={s.logoText}>GM</Text>
-          </View>
-          <Text style={s.brand}>GM SILVER</Text>
-          <Text style={s.tagline}>B2B Silver Catalog</Text>
-        </View>
-
-        {/* Card */}
-        <View style={s.card}>
-          <Text style={s.heading}>Password Login</Text>
-          <Text style={s.subheading}>Use this if you forgot your MPIN, then reset it</Text>
-
-          <Text style={s.fieldLabel}>Email or Mobile</Text>
-          <TextInput
-            style={s.input}
-            placeholder="you@example.com or 9876543210"
-            placeholderTextColor={C.textMuted}
-            value={identifier}
-            onChangeText={setIdentifier}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            selectionColor={C.silver}
-          />
-
-          <Text style={s.fieldLabel}>Password</Text>
-          <View style={s.pwWrap}>
-            <TextInput
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
-              placeholder="********"
-              placeholderTextColor={C.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPw}
-              selectionColor={C.silver}
-            />
-            <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw(v => !v)}>
-              <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
+    <>
+      <AuthShell
+        title="Password login"
+        subtitle="Use this if you forgot your MPIN, then reset it"
+        footer={
+          <View style={s.footer}>
+            <Text style={s.footerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text style={s.footerLink}>Create Account</Text>
             </TouchableOpacity>
           </View>
+        }
+      >
+        <Text style={s.fieldLabel}>Email or Mobile</Text>
+        <TextInput
+          style={s.input}
+          placeholder="you@example.com or 9876543210"
+          placeholderTextColor={C.textMuted}
+          value={identifier}
+          onChangeText={setIdentifier}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          selectionColor={C.gold}
+        />
 
-          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={s.forgot}>Forgot password? Use security question</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onLogin} disabled={isLoading} activeOpacity={0.85}>
-            {isLoading
-              ? <ActivityIndicator color={C.bg} size="small" />
-              : <Text style={s.btnPrimaryText}>Sign In with Password</Text>
-            }
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[s.btn, s.btnSecondary]} onPress={() => navigation.navigate('MpinLogin')} activeOpacity={0.85}>
-            <Text style={s.btnSecondaryText}>Back to MPIN login</Text>
+        <Text style={s.fieldLabel}>Password</Text>
+        <View style={s.pwWrap}>
+          <TextInput
+            style={[s.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="********"
+            placeholderTextColor={C.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPw}
+            selectionColor={C.gold}
+          />
+          <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw((v) => !v)}>
+            <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
-        <View style={s.footer}>
-          <Text style={s.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-            <Text style={s.footerLink}>Create Account</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={s.forgot}>Forgot password?</Text>
+        </TouchableOpacity>
+
+        <ScalePressable
+          style={[s.btn, s.btnPrimary]}
+          scaleTo={0.97}
+          onPress={onLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={s.btnPrimaryText}>Sign In with Password</Text>
+          )}
+        </ScalePressable>
+
+        <ScalePressable
+          style={[s.btn, s.btnSecondary]}
+          scaleTo={0.97}
+          onPress={() => navigation.navigate('MpinLogin')}
+        >
+          <Text style={s.btnSecondaryText}>Back to MPIN login</Text>
+        </ScalePressable>
+      </AuthShell>
 
       <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
         {snackMsg}
       </Snackbar>
-    </KeyboardAvoidingView>
+    </>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
-  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
-
-  bgCircle1: { position: 'absolute', top: -120, right: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: 'rgba(192,192,192,0.05)' },
-  bgCircle2: { position: 'absolute', bottom: 80, left: -100, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(255,215,0,0.04)' },
-
-  logoWrap: { alignItems: 'center', paddingTop: 64, paddingBottom: 32 },
-  logoBox: {
-    width: 68, height: 68, borderRadius: 34,
-    borderWidth: 2, borderColor: C.silver,
-    backgroundColor: 'rgba(192,192,192,0.1)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  fieldLabel: {
+    color: C.textSub,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 6,
+    textTransform: 'uppercase',
   },
-  logoText: { color: C.silverLt, fontSize: 22, fontWeight: '800', letterSpacing: 1 },
-  brand: { color: C.silverLt, fontSize: 17, fontWeight: '800', letterSpacing: 5.4 },
-  tagline: { color: C.textSub, fontSize: 11, letterSpacing: 2.1, marginTop: 5 },
-
-  card: {
-    backgroundColor: C.surface,
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: C.border,
-    ...E.cardShadow,
-  },
-  heading: { color: C.text, fontSize: 24, fontWeight: '800', marginBottom: 4, letterSpacing: 0.2 },
-  subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },
-
-  fieldLabel: { color: C.textSub, fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' },
   input: {
     backgroundColor: C.surface2,
-    borderWidth: 1, borderColor: C.border,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    color: C.text, fontSize: 14, marginBottom: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: R.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: C.text,
+    fontSize: 14,
+    marginBottom: 16,
   },
   pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
-  eyeText: { fontSize: 16 },
-  forgot: { color: C.silver, fontSize: 12, textAlign: 'right', marginBottom: 20 },
-
-  btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnPrimary: { backgroundColor: C.silver, ...E.buttonShadow },
-  btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  eyeText: { color: C.goldDim, fontSize: 12, fontWeight: '700' },
+  forgot: { color: C.goldDim, fontSize: 12, textAlign: 'right', marginBottom: 16 },
+  btn: { borderRadius: R.pill, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnPrimary: { backgroundColor: C.text, ...E.buttonShadow },
+  btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.4 },
   btnSecondary: { borderWidth: 1, borderColor: C.border, backgroundColor: C.surface2 },
   btnSecondaryText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
-
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
+  footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: C.textSub, fontSize: 13 },
-  footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
+  footerLink: { color: C.goldDim, fontSize: 13, fontWeight: '700' },
 });
-
-
-

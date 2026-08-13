@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
-import { C } from '@/theme/colors';
+import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
 import ScalePressable from '@/components/ScalePressable';
 
@@ -25,8 +25,14 @@ export default function ScreenHeader({
           </ScalePressable>
         ) : null}
         <View style={s.titles}>
-          <Text style={s.title} numberOfLines={1}>{title}</Text>
-          {subtitle ? <Text style={s.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+          <Text style={s.title} numberOfLines={1}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text style={s.subtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
         {right ? <View style={s.right}>{right}</View> : null}
       </View>
@@ -35,14 +41,14 @@ export default function ScreenHeader({
 }
 
 const s = StyleSheet.create({
-  wrap: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 12 },
+  wrap: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.74)',
-    borderRadius: 20,
+    backgroundColor: C.surface,
+    borderRadius: R.lg,
     borderWidth: 1,
-    borderColor: C.borderHi,
+    borderColor: C.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
     ...E.softShadow,
@@ -62,10 +68,10 @@ const s = StyleSheet.create({
   titles: { flex: 1, minWidth: 0 },
   title: { color: C.text, fontSize: 18, fontWeight: '800', letterSpacing: 0.2 },
   subtitle: {
-    color: C.textSub,
+    color: C.textMuted,
     fontSize: 11,
     marginTop: 2,
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   right: { marginLeft: 8, flexShrink: 0 },

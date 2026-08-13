@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -75,7 +75,7 @@ export default function ForgotMpinScreen({ navigation }: any) {
 
           <Text style={s.fieldLabel}>Email or Mobile</Text>
           <TextInput
-            style={[s.input, errors.identifier && s.inputError]}
+            style={[s.input, (errors.identifier ? s.inputError : undefined)]}
             placeholder="you@example.com or 9876543210"
             placeholderTextColor={C.textMuted}
             value={identifier}
@@ -83,21 +83,21 @@ export default function ForgotMpinScreen({ navigation }: any) {
             onBlur={() => setErr('identifier', identifierError(identifier))}
             autoCapitalize="none"
             keyboardType="email-address"
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           {errors.identifier ? <Text style={s.errorText}>{errors.identifier}</Text> : <View style={s.spacer} />}
 
           <Text style={s.fieldLabel}>Password</Text>
           <View style={s.pwWrap}>
             <TextInput
-              style={[s.input, s.pwInput, errors.password && s.inputError]}
+              style={[s.input, s.pwInput, (errors.password ? s.inputError : undefined)]}
               placeholder="Account password"
               placeholderTextColor={C.textMuted}
               value={password}
               onChangeText={(v) => { setPassword(v); setErr('password', ''); setApiError(''); }}
               onBlur={() => setErr('password', password ? '' : 'Password is required')}
               secureTextEntry={!showPw}
-              selectionColor={C.silver}
+              selectionColor={C.gold}
             />
             <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPw((v) => !v)}>
               <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
@@ -110,7 +110,7 @@ export default function ForgotMpinScreen({ navigation }: any) {
 
           <Text style={s.fieldLabel}>New 6-Digit MPIN</Text>
           <TextInput
-            style={[s.input, errors.newMpin && s.inputError]}
+            style={[s.input, (errors.newMpin ? s.inputError : undefined)]}
             placeholder="* * * * * *"
             placeholderTextColor={C.textMuted}
             value={newMpin}
@@ -119,13 +119,13 @@ export default function ForgotMpinScreen({ navigation }: any) {
             keyboardType="number-pad"
             secureTextEntry
             maxLength={6}
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           {errors.newMpin ? <Text style={s.errorText}>{errors.newMpin}</Text> : <Text style={s.hint}>Exactly 6 numbers</Text>}
 
           <Text style={s.fieldLabel}>Confirm MPIN</Text>
           <TextInput
-            style={[s.input, errors.confirmMpin && s.inputError]}
+            style={[s.input, (errors.confirmMpin ? s.inputError : undefined)]}
             placeholder="* * * * * *"
             placeholderTextColor={C.textMuted}
             value={confirmMpin}
@@ -134,7 +134,7 @@ export default function ForgotMpinScreen({ navigation }: any) {
             keyboardType="number-pad"
             secureTextEntry
             maxLength={6}
-            selectionColor={C.silver}
+            selectionColor={C.gold}
           />
           {errors.confirmMpin ? <Text style={s.errorText}>{errors.confirmMpin}</Text> : <View style={s.spacer} />}
 
@@ -158,9 +158,9 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
   logoWrap: { alignItems: 'center', paddingTop: 64, paddingBottom: 32 },
-  logoBox: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: C.silver, backgroundColor: 'rgba(192,192,192,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  logoText: { color: C.silverLt, fontSize: 22, fontWeight: '800', letterSpacing: 1 },
-  brand: { color: C.silverLt, fontSize: 14, fontWeight: '800', letterSpacing: 5 },
+  logoBox: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: C.gold, backgroundColor: 'rgba(192,192,192,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  logoText: { color: C.text, fontSize: 22, fontWeight: '800', letterSpacing: 1 },
+  brand: { color: C.text, fontSize: 14, fontWeight: '800', letterSpacing: 5 },
   card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
   heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
   subheading: { color: C.textSub, fontSize: 13, lineHeight: 18, marginBottom: 20 },
@@ -174,12 +174,12 @@ const s = StyleSheet.create({
   pwWrap: { flexDirection: 'row', alignItems: 'center' },
   pwInput: { flex: 1, marginRight: 8 },
   eyeBtn: { paddingHorizontal: 8, paddingVertical: 10 },
-  eyeText: { color: C.silver, fontSize: 13, fontWeight: '700' },
-  forgot: { color: C.silver, fontSize: 12, lineHeight: 16, textAlign: 'right', marginBottom: 16 },
-  btn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnPrimary: { backgroundColor: C.silver },
-  btnPrimaryText: { color: C.bg, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  eyeText: { color: C.goldDim, fontSize: 13, fontWeight: '700' },
+  forgot: { color: C.goldDim, fontSize: 12, lineHeight: 16, textAlign: 'right', marginBottom: 16 },
+  btn: { borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnPrimary: { backgroundColor: C.text },
+  btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
   footer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 },
   footerText: { color: C.textSub, fontSize: 13 },
-  footerLink: { color: C.silver, fontSize: 13, fontWeight: '700' },
+  footerLink: { color: C.goldDim, fontSize: 13, fontWeight: '700' },
 });
