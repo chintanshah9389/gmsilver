@@ -21,8 +21,12 @@ import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
 import EmptyState from '@/components/EmptyState';
 import ScreenHeader from '@/components/ScreenHeader';
+import { useHideTabBarOnFocus } from '@/hooks/useHideTabBarOnFocus';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CartScreen({ navigation }: any) {
+  useHideTabBarOnFocus();
+  const insets = useSafeAreaInsets();
   const { data, error, isError } = useCartQuery();
   const [updateQty] = useUpdateCartItemMutation();
   const [removeItem] = useRemoveCartItemMutation();
@@ -144,7 +148,7 @@ export default function CartScreen({ navigation }: any) {
       />
 
       {items.length > 0 ? (
-        <View style={s.footer}>
+        <View style={[s.footer, { bottom: Math.max(insets.bottom, 16) }]}>
           <View>
             <Text style={s.totalLabel}>Estimated total</Text>
             <Text style={s.totalVal}>₹{total.toLocaleString()}</Text>
@@ -216,7 +220,6 @@ const s = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

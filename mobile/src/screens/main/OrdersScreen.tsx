@@ -8,7 +8,6 @@ import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
-import ScreenHeader from '@/components/ScreenHeader';
 
 const STATUS_COLOR: Record<string, string> = {
   PENDING: C.warning,
@@ -56,43 +55,49 @@ export default function OrdersScreen({ navigation }: any) {
     <View style={s.root}>
       <PremiumBackground />
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-      <MotionReveal delay={20} duration={360} distance={12}>
-        <ScreenHeader
-          title="My Orders"
-          subtitle={`${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`}
-        />
-      </MotionReveal>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.filters}
-      >
-        {FILTERS.map(key => (
-          <ScalePressable
-            key={key}
-            scaleTo={0.97}
-            style={[s.filterChip, filter === key && s.filterChipOn]}
-            onPress={() => setFilter(key)}
-          >
-            <Text style={[s.filterText, filter === key && s.filterTextOn]}>
-              {key === 'ALL' ? 'All' : key}
+      <View style={s.topBlock}>
+        <View style={s.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.pageTitle}>My Orders</Text>
+            <Text style={s.pageSub}>
+              {orders.length} {orders.length === 1 ? 'order' : 'orders'}
             </Text>
-          </ScalePressable>
-        ))}
-      </ScrollView>
+          </View>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={s.filtersScroll}
+          contentContainerStyle={s.filters}
+        >
+          {FILTERS.map((key) => (
+            <ScalePressable
+              key={key}
+              scaleTo={0.97}
+              style={[s.filterChip, filter === key && s.filterChipOn]}
+              onPress={() => setFilter(key)}
+            >
+              <Text style={[s.filterText, filter === key && s.filterTextOn]}>
+                {key === 'ALL' ? 'All' : key}
+              </Text>
+            </ScalePressable>
+          ))}
+        </ScrollView>
+      </View>
 
       <FlatList
         style={s.listFlex}
         data={visible}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const color = STATUS_COLOR[item.status] ?? C.textMuted;
           const items: any[] = item.items || [];
           const thumbs = items
-            .map(row => row.product?.image1Url || row.product?.imageUrl)
+            .map((row) => row.product?.image1Url || row.product?.imageUrl)
             .filter(Boolean)
             .slice(0, 3);
           return (
@@ -104,14 +109,23 @@ export default function OrdersScreen({ navigation }: any) {
               >
                 <View style={s.cardTop}>
                   <View style={s.cardTitleWrap}>
-                    <Text style={s.orderNum} numberOfLines={1}>{item.orderNumber}</Text>
+                    <Text style={s.orderNum} numberOfLines={1}>
+                      {item.orderNumber}
+                    </Text>
                     <Text style={s.meta}>
                       {items.length} {items.length === 1 ? 'item' : 'items'}
                       {item.createdAt ? `  ·  ${formatDate(item.createdAt)}` : ''}
                     </Text>
                   </View>
-                  <View style={[s.statusBadge, { backgroundColor: color + '22', borderColor: color }]}>
-                    <Text style={[s.statusText, { color }]} numberOfLines={1}>{item.status}</Text>
+                  <View
+                    style={[
+                      s.statusBadge,
+                      { backgroundColor: color + '22', borderColor: color },
+                    ]}
+                  >
+                    <Text style={[s.statusText, { color }]} numberOfLines={1}>
+                      {item.status}
+                    </Text>
                   </View>
                 </View>
 
@@ -159,11 +173,36 @@ export default function OrdersScreen({ navigation }: any) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   listFlex: { flex: 1 },
+  topBlock: {
+    paddingTop: 4,
+    paddingBottom: 4,
+  },
+  titleRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  pageTitle: {
+    color: C.text,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  pageSub: {
+    color: C.textMuted,
+    fontSize: 12,
+    marginTop: 3,
+    letterSpacing: 0.4,
+  },
+  filtersScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   filters: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   filterChip: {
     borderRadius: 999,

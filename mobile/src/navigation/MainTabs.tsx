@@ -1,16 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Icon } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList } from './types';
 import HomeScreen from '@/screens/main/HomeScreen';
 import { CategoriesTabStack, OrdersTabStack, ProductsTabStack } from './TabStacks';
-import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
+import { C } from '@/theme/colors';
 import AppLogoHeader from '@/components/AppLogoHeader';
+import { getFloatingTabBarStyle } from '@/hooks/useHideTabBarOnFocus';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+const HIDE_TAB_ROUTES = new Set([
+  'Cart',
+  'Checkout',
+  'Wishlist',
+  'OrderDetail',
+  'Settings',
+]);
 
 const TabIcon = ({
   icon,
@@ -23,7 +32,7 @@ const TabIcon = ({
 }) => (
   <View style={tabStyles.wrap}>
     <View style={[tabStyles.iconBox, focused && tabStyles.iconBoxActive]}>
-      <Icon source={icon} size={18} color={focused ? '#fff' : C.textMuted} />
+      <Icon source={icon} size={20} color={focused ? '#fff' : C.textMuted} />
     </View>
     <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{label}</Text>
   </View>
@@ -52,9 +61,9 @@ const tabStyles = StyleSheet.create({
 
 const ICONS: Record<string, { idle: string; active: string }> = {
   Home: { idle: 'home-outline', active: 'home' },
-  Products: { idle: 'diamond-stone', active: 'diamond-stone' },
+  Products: { idle: 'storefront-outline', active: 'storefront' },
   Categories: { idle: 'view-grid-outline', active: 'view-grid' },
-  Order: { idle: 'receipt-text-outline', active: 'receipt-text' },
+  Order: { idle: 'package-variant-closed', active: 'package-variant' },
 };
 
 const LABELS: Record<string, string> = {
@@ -64,9 +73,16 @@ const LABELS: Record<string, string> = {
   Order: 'Orders',
 };
 
+function tabBarForRoute(route: any, bottomInset: number) {
+  const focused = getFocusedRouteNameFromRoute(route) ?? route.name;
+  if (HIDE_TAB_ROUTES.has(focused)) {
+    return { display: 'none' as const };
+  }
+  return getFloatingTabBarStyle(bottomInset);
+}
+
 export default function MainTabs() {
   const insets = useSafeAreaInsets();
-  const bottom = Math.max(insets.bottom, 8);
 
   return (
     <Tab.Navigator
@@ -74,22 +90,7 @@ export default function MainTabs() {
         headerShown: true,
         header: () => <AppLogoHeader />,
         tabBarShowLabel: false,
-        tabBarStyle: {
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom,
-          height: 68,
-          borderRadius: R.xl,
-          backgroundColor: C.surface,
-          borderTopWidth: 0,
-          borderWidth: 1,
-          borderColor: C.borderHi,
-          paddingBottom: 0,
-          paddingTop: 6,
-          ...E.floatShadow,
-          ...(Platform.OS === 'android' ? { elevation: 14 } : null),
-        },
+        tabBarStyle: tabBarForRoute(route, insets.bottom),
         tabBarIcon: ({ focused }) => {
           const icons = ICONS[route.name] ?? { idle: 'circle-outline', active: 'circle' };
           return (
@@ -103,11 +104,26 @@ export default function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Products" component={ProductsTabStack} />
-      <Tab.Screen name="Categories" component={CategoriesTabStack} />
+      <Tab.Screen
+        name="Products"
+        component={ProductsTabStack}
+        options={({ route }) => ({
+          tabBarStyle: tabBarForRoute(route, insets.bottom),
+        })}
+      />
+      <Tab.Screen
+        name="Categories"
+        component={CategoriesTabStack}
+        options={({ route }) => ({
+          tabBarStyle: tabBarForRoute(route, insets.bottom),
+        })}
+      />
       <Tab.Screen
         name="Order"
         component={OrdersTabStack}
+        options={({ route }) => ({
+          tabBarStyle: tabBarForRoute(route, insets.bottom),
+        })}
         listeners={({ navigation }) => ({
           tabPress: () => {
             navigation.navigate('Order', { screen: 'Orders' });

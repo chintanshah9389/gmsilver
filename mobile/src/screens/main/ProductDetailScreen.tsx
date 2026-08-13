@@ -24,6 +24,8 @@ import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
 import LuxCarousel from '@/components/LuxCarousel';
+import { getTabBarClearance } from '@/hooks/useHideTabBarOnFocus';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SW } = Dimensions.get('window');
 const ACTION_PAD = 16;
@@ -36,6 +38,8 @@ type CartUnit = 'PIECES' | 'KG';
 
 export default function ProductDetailScreen({ route, navigation }: any) {
   const { productId } = route.params;
+  const insets = useSafeAreaInsets();
+  const tabClearance = getTabBarClearance(insets.bottom);
   const { data, error, isError, isLoading } = useProductByIdQuery(productId);
   const [addToCart, { isLoading: addingCart }] = useAddToCartMutation();
   const [addWishlist, { isLoading: addingWish }] = useAddWishlistMutation();
@@ -161,7 +165,11 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         </ScalePressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
         <View style={s.imgWrap}>
           {images.length > 0 ? (
             <LuxCarousel
@@ -241,7 +249,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         </MotionReveal>
       </ScrollView>
 
-      <View style={s.actionBar}>
+      <View style={[s.actionBar, { marginBottom: tabClearance }]}>
         <ScalePressable
           style={[s.wishBtn, wished && s.wishBtnActive]}
           scaleTo={0.95}
@@ -516,11 +524,13 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: ACTION_PAD,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 12,
     gap: CART_GAP,
     borderTopWidth: 1,
     borderTopColor: C.border,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    backgroundColor: 'rgba(255,255,255,0.98)',
+    zIndex: 20,
+    elevation: 8,
   },
   wishBtn: {
     width: WISH_SIZE,

@@ -9,8 +9,10 @@ import { E } from '@/theme/effects';
 import ScalePressable from '@/components/ScalePressable';
 import ScreenHeader from '@/components/ScreenHeader';
 import MotionReveal from '@/components/MotionReveal';
+import { useHideTabBarOnFocus } from '@/hooks/useHideTabBarOnFocus';
 
 export default function CheckoutScreen({ navigation }: any) {
+  useHideTabBarOnFocus();
   const [notes, setNotes] = useState('');
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
