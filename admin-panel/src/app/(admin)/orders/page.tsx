@@ -9,23 +9,61 @@ import {
   Chip,
   Button,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider,
+  Avatar,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
-import { CheckCircle, Cancel, Description, Delete } from '@mui/icons-material';
+import {
+  CheckCircle,
+  Cancel,
+  Description,
+  Delete,
+  DoneAll,
+  Visibility,
+} from '@mui/icons-material';
 import { ordersApi, invoicesApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+
+function formatMoney(value: unknown) {
+  return `₹${Number(value || 0).toLocaleString('en-IN')}`;
+}
+
+function itemSummary(items: any[] = []) {
+  if (!items.length) return '—';
+  return items
+    .map((item) => `${item.quantity}× ${item.product?.name || 'Item'}`)
+    .join(', ');
+}
+
+function statusColor(status: string) {
+  if (status === 'PENDING') return 'warning';
+  if (status === 'APPROVED') return 'info';
+  if (status === 'COMPLETED') return 'success';
+  if (status === 'REJECTED') return 'error';
+  return 'default';
+}
 
 export default function OrdersPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const res = await ordersApi.getAll({ page: 1, limit: 200 });
-      setRows(res.data.data);
+      const nextRows = res.data.data || [];
+      setRows(nextRows);
+      setSelectedOrder((current: any | null) => {
+        if (!current) return current;
+        return nextRows.find((row: any) => row.id === current.id) || current;
+      });
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to fetch orders');
     } finally {
@@ -37,9 +75,23 @@ export default function OrdersPage() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await ordersApi.updateStatus(id, status);
-      toast.success(`Order ${status.toLowerCase()}`);
-      fetchOrders();
+      const res = await ordersApi.updateStatus(id, status);
+      const result = res.data?.data || res.data;
+      const push = result?.push;
+      const label = status.toLowerCase();
+
+      if (push?.successCount > 0) {
+        toast.success(`Order ${label}. Customer notified.`);
+      } else if (push?.skippedReason || push?.failureCount > 0) {
+        toast.success(`Order ${label}`);
+        toast.error(
+          `Push not sent: ${push.skippedReason || push.errors?.[0] || 'delivery failed'}`,
+        );
+      } else {
+        toast.success(`Order ${label}`);
+      }
+
+      await fetchOrders();
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Status update failed');
     }
@@ -61,6 +113,7 @@ export default function OrdersPage() {
       await ordersApi.delete(id);
       toast.success('Order deleted');
       setSelectedIds((prev) => prev.filter((selectedId) => String(selectedId) !== id));
+      if (selectedOrder?.id === id) setSelectedOrder(null);
       await fetchOrders();
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Delete failed');
@@ -94,6 +147,7 @@ export default function OrdersPage() {
       }
 
       setSelectedIds([]);
+      setSelectedOrder(null);
       await fetchOrders();
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Bulk delete failed');
@@ -102,21 +156,43 @@ export default function OrdersPage() {
     }
   };
 
+  const openDetails = (row: any) => setSelectedOrder(row);
+
   const columns: GridColDef[] = [
-    { field: 'orderNumber', headerName: 'Order No', width: 180 },
-    { field: 'user', headerName: 'Customer', flex: 1, minWidth: 180, valueGetter: (p) => p.row.user?.name || '-' },
-    { field: 'status', headerName: 'Status', width: 130, renderCell: (p) => <Chip size='small' label={p.value} color={p.value === 'PENDING' ? 'warning' : p.value === 'APPROVED' ? 'info' : p.value === 'COMPLETED' ? 'success' : p.value === 'REJECTED' ? 'error' : 'default'} /> },
-    { field: 'grandTotal', headerName: 'Total', width: 130, valueGetter: (p) => `₹${Number(p.row.grandTotal).toLocaleString()}` },
-    { field: 'createdAt', headerName: 'Date', width: 130, valueGetter: (p) => new Date(p.row.createdAt).toLocaleDateString('en-IN') },
+    { field: 'orderNumber', headerName: 'Order No', width: 170 },
+    { field: 'user', headerName: 'Customer', width: 160, valueGetter: (p) => p.row.user?.name || '-' },
+    {
+      field: 'items',
+      headerName: 'Requested items',
+      flex: 1.4,
+      minWidth: 240,
+      sortable: false,
+      renderCell: (p) => (
+        <Typography variant='body2' noWrap title={itemSummary(p.row.items)}>
+          {itemSummary(p.row.items)}
+        </Typography>
+      ),
+    },
+    { field: 'status', headerName: 'Status', width: 120, renderCell: (p) => <Chip size='small' label={p.value} color={statusColor(p.value)} /> },
+    { field: 'grandTotal', headerName: 'Total', width: 120, valueGetter: (p) => formatMoney(p.row.grandTotal) },
+    { field: 'createdAt', headerName: 'Date', width: 120, valueGetter: (p) => new Date(p.row.createdAt).toLocaleDateString('en-IN') },
     {
       field: 'actions', headerName: 'Actions', width: 280, sortable: false,
       renderCell: (p) => (
-        <Box sx={{ display:'flex', gap:1 }}>
+        <Box sx={{ display:'flex', gap:0.5 }}>
+          <IconButton size='small' title='View request' onClick={(e) => { e.stopPropagation(); openDetails(p.row); }}>
+            <Visibility fontSize='small' />
+          </IconButton>
           {p.row.status === 'PENDING' && (
             <>
-              <IconButton color='success' size='small' onClick={(e) => { e.stopPropagation(); updateStatus(p.row.id, 'APPROVED'); }}><CheckCircle fontSize='small' /></IconButton>
-              <IconButton color='error' size='small' onClick={(e) => { e.stopPropagation(); updateStatus(p.row.id, 'REJECTED'); }}><Cancel fontSize='small' /></IconButton>
+              <IconButton color='success' size='small' title='Approve' onClick={(e) => { e.stopPropagation(); updateStatus(p.row.id, 'APPROVED'); }}><CheckCircle fontSize='small' /></IconButton>
+              <IconButton color='error' size='small' title='Reject' onClick={(e) => { e.stopPropagation(); updateStatus(p.row.id, 'REJECTED'); }}><Cancel fontSize='small' /></IconButton>
             </>
+          )}
+          {p.row.status === 'APPROVED' && (
+            <IconButton color='success' size='small' title='Complete' onClick={(e) => { e.stopPropagation(); updateStatus(p.row.id, 'COMPLETED'); }}>
+              <DoneAll fontSize='small' />
+            </IconButton>
           )}
           {(p.row.status === 'APPROVED' || p.row.status === 'COMPLETED') && (
             <Button size='small' startIcon={<Description />} onClick={(e) => { e.stopPropagation(); generateInvoice(p.row.id); }}>
@@ -139,6 +215,8 @@ export default function OrdersPage() {
     }
   ];
 
+  const items: any[] = selectedOrder?.items || [];
+
   return (
     <Box>
       <Box sx={{
@@ -148,7 +226,7 @@ export default function OrdersPage() {
       }}>
         <Box>
           <Typography variant='h5' fontWeight={700}>Orders</Typography>
-          <Typography variant='body2' color='text.secondary'>Approve, reject, complete, and invoice orders</Typography>
+          <Typography variant='body2' color='text.secondary'>Review requested items, then approve, reject, complete, or invoice</Typography>
         </Box>
         <Button
           variant='outlined'
@@ -173,10 +251,153 @@ export default function OrdersPage() {
               disableRowSelectionOnClick
               rowSelectionModel={selectedIds}
               onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+              onRowDoubleClick={(params) => openDetails(params.row)}
             />
           </Box>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={Boolean(selectedOrder)}
+        onClose={() => setSelectedOrder(null)}
+        fullWidth
+        maxWidth='md'
+        PaperProps={{
+          sx: {
+            background: '#12121A',
+            border: '1px solid rgba(192,192,192,0.1)',
+            borderRadius: 3,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+          <Box>
+            <Typography variant='h6' fontWeight={700}>{selectedOrder?.orderNumber}</Typography>
+            <Typography variant='body2' color='text.secondary'>
+              {selectedOrder?.createdAt
+                ? new Date(selectedOrder.createdAt).toLocaleString('en-IN')
+                : ''}
+            </Typography>
+          </Box>
+          {selectedOrder ? (
+            <Chip size='small' label={selectedOrder.status} color={statusColor(selectedOrder.status)} />
+          ) : null}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 0.5 }}>Customer</Typography>
+          <Typography fontWeight={600}>{selectedOrder?.user?.name || '-'}</Typography>
+          <Typography variant='body2' color='text.secondary'>
+            {[selectedOrder?.user?.email, selectedOrder?.user?.phone].filter(Boolean).join(' · ') || 'No contact details'}
+          </Typography>
+
+          {selectedOrder?.notes ? (
+            <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, background: 'rgba(192,192,192,0.06)' }}>
+              <Typography variant='subtitle2' color='text.secondary'>Customer notes</Typography>
+              <Typography variant='body2'>{selectedOrder.notes}</Typography>
+            </Box>
+          ) : null}
+
+          <Typography variant='subtitle2' color='text.secondary' sx={{ mt: 3, mb: 1 }}>
+            Requested items
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {items.map((item) => {
+              const image = item.product?.imageUrl || item.product?.image1Url;
+              const meta = [
+                item.product?.sku,
+                item.product?.purity,
+                item.product?.weight ? `${item.product.weight}g` : null,
+              ].filter(Boolean).join(' · ');
+
+              return (
+                <Box
+                  key={item.id}
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    alignItems: 'center',
+                    p: 1.5,
+                    borderRadius: 2,
+                    border: '1px solid rgba(192,192,192,0.08)',
+                    background: 'rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <Avatar
+                    variant='rounded'
+                    src={image || undefined}
+                    alt={item.product?.name || 'Item'}
+                    sx={{ width: 56, height: 56, bgcolor: '#1E1E2E' }}
+                  >
+                    {(item.product?.name || '?')[0]}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography fontWeight={700} noWrap>{item.product?.name || 'Item'}</Typography>
+                    {meta ? (
+                      <Typography variant='caption' color='text.secondary'>{meta}</Typography>
+                    ) : null}
+                    <Typography variant='body2' color='text.secondary'>
+                      Qty {item.quantity} · {formatMoney(item.rate)} each
+                    </Typography>
+                  </Box>
+                  <Typography fontWeight={700}>
+                    {formatMoney(item.amount ?? Number(item.rate) * Number(item.quantity))}
+                  </Typography>
+                </Box>
+              );
+            })}
+            {items.length === 0 ? (
+              <Typography variant='body2' color='text.secondary'>No items on this order.</Typography>
+            ) : null}
+          </Box>
+
+          <Divider sx={{ my: 2, borderColor: 'rgba(192,192,192,0.08)' }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography color='text.secondary'>Subtotal</Typography>
+            <Typography>{formatMoney(selectedOrder?.totalAmount)}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography color='text.secondary'>GST</Typography>
+            <Typography>{formatMoney(selectedOrder?.gstAmount)}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography fontWeight={700}>Grand total</Typography>
+            <Typography fontWeight={800}>{formatMoney(selectedOrder?.grandTotal)}</Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Button onClick={() => setSelectedOrder(null)}>Close</Button>
+          {selectedOrder?.status === 'PENDING' && (
+            <>
+              <Button
+                color='error'
+                variant='outlined'
+                startIcon={<Cancel />}
+                onClick={() => void updateStatus(selectedOrder.id, 'REJECTED')}
+              >
+                Reject
+              </Button>
+              <Button
+                color='success'
+                variant='contained'
+                startIcon={<CheckCircle />}
+                onClick={() => void updateStatus(selectedOrder.id, 'APPROVED')}
+              >
+                Approve
+              </Button>
+            </>
+          )}
+          {selectedOrder?.status === 'APPROVED' && (
+            <Button
+              color='success'
+              variant='contained'
+              startIcon={<DoneAll />}
+              onClick={() => void updateStatus(selectedOrder.id, 'COMPLETED')}
+            >
+              Complete
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

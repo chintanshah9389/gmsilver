@@ -1,11 +1,12 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsService, FcmDeliveryResult } from '../notifications/notifications.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -17,6 +18,8 @@ import {
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
@@ -154,7 +157,18 @@ export class OrdersService {
         include: {
           user: { select: { id: true, name: true, email: true, phone: true } },
           items: {
-            include: { product: { select: { id: true, name: true, image1Url: true } } },
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  sku: true,
+                  weight: true,
+                  purity: true,
+                  image1Url: true,
+                },
+              },
+            },
           },
           invoice: { select: { id: true, invoiceNumber: true, pdfUrl: true } },
           _count: { select: { items: true } },
@@ -292,19 +306,30 @@ export class OrdersService {
       data: { status: dto.status },
     });
 
-    // Send notifications & generate invoice
+    const push = await this.notifyCustomerOfStatus(
+      dto.status,
+      order.userId,
+      order.id,
+      order.orderNumber,
+      dto.reason,
+    );
+
     if (dto.status === OrderStatus.APPROVED) {
-      await this.notificationsService.notifyOrderApproved(order.userId, id);
-      await this.invoicesService.generateInvoice(order.id);
-    } else if (dto.status === OrderStatus.REJECTED) {
-      await this.notificationsService.notifyOrderRejected(order.userId, id);
-    } else if (dto.status === OrderStatus.COMPLETED) {
-      await this.notificationsService.notifyOrderCompleted(order.userId, id);
+      try {
+        await this.invoicesService.generateInvoice(order.id);
+      } catch (error: any) {
+        this.logger.error(
+          `Invoice generation failed for order ${order.orderNumber}: ${error?.message || error}`,
+        );
+      }
     }
 
     return {
       message: `Order status updated to ${dto.status}`,
-      data: updated,
+      data: {
+        ...updated,
+        push,
+      },
     };
   }
 
@@ -327,6 +352,60 @@ export class OrdersService {
     });
 
     return { message: 'Order cancelled successfully' };
+  }
+
+  private async notifyCustomerOfStatus(
+    status: OrderStatus,
+    userId: string,
+    orderId: string,
+    orderNumber: string,
+    reason?: string,
+  ): Promise<FcmDeliveryResult | null> {
+    try {
+      let delivery: FcmDeliveryResult | null = null;
+
+      if (status === OrderStatus.APPROVED) {
+        delivery = await this.notificationsService.notifyOrderApproved(
+          userId,
+          orderId,
+          orderNumber,
+        );
+      } else if (status === OrderStatus.REJECTED) {
+        delivery = await this.notificationsService.notifyOrderRejected(
+          userId,
+          orderId,
+          orderNumber,
+          reason,
+        );
+      } else if (status === OrderStatus.COMPLETED) {
+        delivery = await this.notificationsService.notifyOrderCompleted(
+          userId,
+          orderId,
+          orderNumber,
+        );
+      }
+
+      if (delivery?.successCount) {
+        this.logger.log(
+          `Push sent to customer for order ${orderNumber} (${status})`,
+        );
+      } else if (delivery) {
+        this.logger.warn(
+          `Push not delivered for order ${orderNumber} (${status}): ${
+            delivery.skippedReason || delivery.errors.join('; ') || 'unknown'
+          }`,
+        );
+      }
+
+      return delivery;
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to notify customer for order ${orderNumber} (${status}): ${
+          error?.message || error
+        }`,
+      );
+      return null;
+    }
   }
 
   async remove(id: string) {

@@ -86,8 +86,13 @@ export class NotificationsService implements OnModuleInit {
     }
 
     // Save notification to DB
+    const payload: Record<string, string> = {
+      ...(data || {}),
+      type,
+    };
+
     const notification = await this.prisma.notification.create({
-      data: { title, body, type, data },
+      data: { title, body, type, data: payload },
     });
 
     await this.prisma.notificationLog.create({
@@ -123,7 +128,7 @@ export class NotificationsService implements OnModuleInit {
     }
 
     alreadySentTokens?.add(user.fcmToken);
-    return this.sendFcmMessage(user.fcmToken, title, body, data, 1);
+    return this.sendFcmMessage(user.fcmToken, title, body, payload, 1);
   }
 
   // ─── BROADCAST TO ALL ─────────────────────────────────────────────
@@ -258,33 +263,53 @@ export class NotificationsService implements OnModuleInit {
     );
   }
 
-  async notifyOrderApproved(userId: string, orderId: string) {
-    await this.sendToUser(
+  async notifyOrderApproved(userId: string, orderId: string, orderNumber?: string) {
+    const label = orderNumber ? ` ${orderNumber}` : '';
+    return this.sendToUser(
       userId,
       'Order Approved ✅',
-      'Your order has been approved and is being processed.',
+      `Your order${label} has been approved and is being processed.`,
       NotificationType.ORDER_APPROVED,
-      { orderId },
+      {
+        orderId,
+        link: `order:${orderId}`,
+      },
     );
   }
 
-  async notifyOrderRejected(userId: string, orderId: string) {
-    await this.sendToUser(
+  async notifyOrderRejected(
+    userId: string,
+    orderId: string,
+    orderNumber?: string,
+    reason?: string,
+  ) {
+    const label = orderNumber ? ` ${orderNumber}` : '';
+    const detail = reason?.trim()
+      ? ` Reason: ${reason.trim()}`
+      : ' Please contact support for more information.';
+    return this.sendToUser(
       userId,
       'Order Rejected ❌',
-      'Your order has been rejected. Please contact support for more information.',
+      `Your order${label} has been rejected.${detail}`,
       NotificationType.ORDER_REJECTED,
-      { orderId },
+      {
+        orderId,
+        link: `order:${orderId}`,
+      },
     );
   }
 
-  async notifyOrderCompleted(userId: string, orderId: string) {
-    await this.sendToUser(
+  async notifyOrderCompleted(userId: string, orderId: string, orderNumber?: string) {
+    const label = orderNumber ? ` ${orderNumber}` : '';
+    return this.sendToUser(
       userId,
       'Order Completed 🎊',
-      'Your order has been completed. Thank you for shopping with GM Silver!',
+      `Your order${label} has been completed. Thank you for shopping with GM Silver!`,
       NotificationType.ORDER_COMPLETED,
-      { orderId },
+      {
+        orderId,
+        link: `order:${orderId}`,
+      },
     );
   }
 
