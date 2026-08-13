@@ -329,6 +329,53 @@ export class OrdersService {
     return { message: 'Order cancelled successfully' };
   }
 
+  async remove(id: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    await this.prisma.order.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    return { message: 'Order deleted', data: { id } };
+  }
+
+  async removeMany(ids: string[]) {
+    const uniqueIds = Array.from(new Set(ids));
+    const existing = await this.prisma.order.findMany({
+      where: { id: { in: uniqueIds }, deletedAt: null },
+      select: { id: true },
+    });
+    const existingIds = existing.map((item) => item.id);
+    const existingSet = new Set(existingIds);
+    const failed = uniqueIds
+      .filter((id) => !existingSet.has(id))
+      .map((id) => ({ id, reason: 'Order not found' }));
+
+    if (existingIds.length > 0) {
+      await this.prisma.order.updateMany({
+        where: { id: { in: existingIds } },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    return {
+      message: 'Bulk order delete processed',
+      requested: uniqueIds.length,
+      deletedCount: existingIds.length,
+      failedCount: failed.length,
+      deletedIds: existingIds,
+      failed,
+    };
+  }
+
   private async generateOrderNumber(): Promise<string> {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);

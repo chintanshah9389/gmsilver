@@ -110,6 +110,63 @@ export class InvoicesService {
     return { data: invoices };
   }
 
+  async remove(id: string) {
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found');
+    }
+
+    await this.prisma.invoice.delete({ where: { id } });
+    await this.deleteInvoicePdf(invoice.storageKey);
+
+    return { message: 'Invoice deleted', data: { id } };
+  }
+
+  async removeMany(ids: string[]) {
+    const uniqueIds = Array.from(new Set(ids));
+    const existing = await this.prisma.invoice.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true, storageKey: true },
+    });
+    const existingIds = existing.map((item) => item.id);
+    const existingSet = new Set(existingIds);
+    const failed = uniqueIds
+      .filter((id) => !existingSet.has(id))
+      .map((id) => ({ id, reason: 'Invoice not found' }));
+
+    if (existingIds.length > 0) {
+      await this.prisma.invoice.deleteMany({
+        where: { id: { in: existingIds } },
+      });
+      await Promise.all(
+        existing.map((item) => this.deleteInvoicePdf(item.storageKey)),
+      );
+    }
+
+    return {
+      message: 'Bulk invoice delete processed',
+      requested: uniqueIds.length,
+      deletedCount: existingIds.length,
+      failedCount: failed.length,
+      deletedIds: existingIds,
+      failed,
+    };
+  }
+
+  private async deleteInvoicePdf(storageKey?: string | null) {
+    if (!storageKey) return;
+    try {
+      await this.storageService.deleteFile(storageKey);
+    } catch (error: any) {
+      this.logger.warn(
+        `Failed to delete invoice PDF (${storageKey}): ${error?.message || error}`,
+      );
+    }
+  }
+
   // ─── PDF GENERATION ───────────────────────────────────────────────
   private async generatePdfBuffer(order: any, invoiceNumber: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {

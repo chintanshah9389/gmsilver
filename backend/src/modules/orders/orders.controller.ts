@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -17,6 +18,7 @@ import {
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { BulkDeleteOrdersDto } from './dto/bulk-delete-orders.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -89,5 +91,21 @@ export class OrdersController {
     @Param('id') id: string,
   ) {
     return this.ordersService.cancelOrder(id, userId);
+  }
+
+  @Delete('bulk')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Bulk delete orders (Admin/Owner)' })
+  removeMany(@Body() dto: BulkDeleteOrdersDto) {
+    return this.ordersService.removeMany(dto.ids);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Delete an order (Admin/Owner)' })
+  remove(@Param('id') id: string) {
+    return this.ordersService.remove(id);
   }
 }

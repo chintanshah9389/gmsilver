@@ -148,6 +148,8 @@ export const ordersApi = {
   getById: (id: string) => api.get(`/orders/${id}`),
   updateStatus: (id: string, status: string, reason?: string) =>
     api.patch(`/orders/${id}/status`, { status, reason }),
+  delete: (id: string) => api.delete(`/orders/${id}`),
+  bulkDelete: (ids: string[]) => api.delete('/orders/bulk', { data: { ids } }),
 };
 
 export const invoicesApi = {
@@ -155,6 +157,8 @@ export const invoicesApi = {
     api.post(`/invoices/generate/${orderId}`),
   getByOrderId: (orderId: string) =>
     api.get(`/invoices/order/${orderId}`),
+  delete: (id: string) => api.delete(`/invoices/${id}`),
+  bulkDelete: (ids: string[]) => api.delete('/invoices/bulk', { data: { ids } }),
 };
 
 export const notificationsApi = {
@@ -167,6 +171,8 @@ export const notificationsApi = {
     }),
   getHistory: (params?: { page?: number; limit?: number }) =>
     api.get('/notifications/history', { params }),
+  delete: (id: string) => api.delete(`/notifications/${id}`),
+  bulkDelete: (ids: string[]) => api.delete('/notifications/bulk', { data: { ids } }),
 };
 
 export const excelApi = {
@@ -208,4 +214,6 @@ export const auditLogsApi = {
   getAll: (params?: any) => api.get('/audit-logs', { params }),
   getSummary: (startDate?: string, endDate?: string) =>
     api.get('/audit-logs/summary', { params: { startDate, endDate } }),
+  delete: (id: string) => api.delete(`/audit-logs/${id}`),
+  bulkDelete: (ids: string[]) => api.delete('/audit-logs/bulk', { data: { ids } }),
 };

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
@@ -373,6 +373,57 @@ export class NotificationsService implements OnModuleInit {
       where: { userId, isRead: false },
       data: { isRead: true, readAt: new Date() },
     });
+  }
+
+  async remove(id: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.notificationLog.deleteMany({ where: { notificationId: id } }),
+      this.prisma.notification.delete({ where: { id } }),
+    ]);
+
+    return { message: 'Notification deleted', data: { id } };
+  }
+
+  async removeMany(ids: string[]) {
+    const uniqueIds = Array.from(new Set(ids));
+    const existing = await this.prisma.notification.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true },
+    });
+    const existingIds = existing.map((item) => item.id);
+    const existingSet = new Set(existingIds);
+    const failed = uniqueIds
+      .filter((id) => !existingSet.has(id))
+      .map((id) => ({ id, reason: 'Notification not found' }));
+
+    if (existingIds.length > 0) {
+      await this.prisma.$transaction([
+        this.prisma.notificationLog.deleteMany({
+          where: { notificationId: { in: existingIds } },
+        }),
+        this.prisma.notification.deleteMany({
+          where: { id: { in: existingIds } },
+        }),
+      ]);
+    }
+
+    return {
+      message: 'Bulk notification delete processed',
+      requested: uniqueIds.length,
+      deletedCount: existingIds.length,
+      failedCount: failed.length,
+      deletedIds: existingIds,
+      failed,
+    };
   }
 
   // ─── PRIVATE HELPERS ──────────────────────────────────────────────

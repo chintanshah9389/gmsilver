@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -11,6 +12,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { SendNotificationDto } from './dto/send-notification.dto';
+import { BulkDeleteNotificationsDto } from './dto/bulk-delete-notifications.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -79,5 +81,21 @@ export class NotificationsController {
       'BROADCAST' as any,
       data,
     );
+  }
+
+  @Delete('bulk')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Bulk delete notification history (Admin only)' })
+  removeMany(@Body() dto: BulkDeleteNotificationsDto) {
+    return this.notificationsService.removeMany(dto.ids);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Delete a notification history record (Admin only)' })
+  remove(@Param('id') id: string) {
+    return this.notificationsService.remove(id);
   }
 }

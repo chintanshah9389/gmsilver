@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuditLogsService } from './audit-logs.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -6,6 +6,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
+import { BulkDeleteAuditLogsDto } from './dto/bulk-delete-audit-logs.dto';
 
 @ApiTags('Audit Logs')
 @ApiBearerAuth('JWT')
@@ -41,5 +42,19 @@ export class AuditLogsController {
       startDate ? new Date(startDate) : undefined,
       endDate ? new Date(endDate) : undefined,
     );
+  }
+
+  @Delete('bulk')
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Bulk delete audit logs (Admin/Owner)' })
+  removeMany(@Body() dto: BulkDeleteAuditLogsDto) {
+    return this.auditLogsService.removeMany(dto.ids);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Delete an audit log (Admin/Owner)' })
+  remove(@Param('id') id: string) {
+    return this.auditLogsService.remove(id);
   }
 }

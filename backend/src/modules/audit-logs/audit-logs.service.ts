@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   getPaginationParams,
@@ -134,5 +134,47 @@ export class AuditLogsService {
       ipAddress,
       userAgent,
     });
+  }
+
+  async remove(id: string) {
+    const log = await this.prisma.auditLog.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!log) {
+      throw new NotFoundException('Audit log not found');
+    }
+
+    await this.prisma.auditLog.delete({ where: { id } });
+    return { message: 'Audit log deleted', data: { id } };
+  }
+
+  async removeMany(ids: string[]) {
+    const uniqueIds = Array.from(new Set(ids));
+    const existing = await this.prisma.auditLog.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true },
+    });
+    const existingIds = existing.map((item) => item.id);
+    const existingSet = new Set(existingIds);
+    const failed = uniqueIds
+      .filter((id) => !existingSet.has(id))
+      .map((id) => ({ id, reason: 'Audit log not found' }));
+
+    if (existingIds.length > 0) {
+      await this.prisma.auditLog.deleteMany({
+        where: { id: { in: existingIds } },
+      });
+    }
+
+    return {
+      message: 'Bulk audit log delete processed',
+      requested: uniqueIds.length,
+      deletedCount: existingIds.length,
+      failedCount: failed.length,
+      deletedIds: existingIds,
+      failed,
+    };
   }
 }

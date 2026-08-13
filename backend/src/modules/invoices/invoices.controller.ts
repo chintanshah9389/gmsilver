@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
+  Body,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -12,6 +14,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
+import { BulkDeleteInvoicesDto } from './dto/bulk-delete-invoices.dto';
 
 @ApiTags('Invoices')
 @ApiBearerAuth('JWT')
@@ -41,5 +44,21 @@ export class InvoicesController {
   @ApiOperation({ summary: 'Generate invoice for an order (Admin/Owner)' })
   generateInvoice(@Param('orderId') orderId: string) {
     return this.invoicesService.generateInvoice(orderId);
+  }
+
+  @Delete('bulk')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Bulk delete invoices (Admin/Owner)' })
+  removeMany(@Body() dto: BulkDeleteInvoicesDto) {
+    return this.invoicesService.removeMany(dto.ids);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Delete an invoice (Admin/Owner)' })
+  remove(@Param('id') id: string) {
+    return this.invoicesService.remove(id);
   }
 }

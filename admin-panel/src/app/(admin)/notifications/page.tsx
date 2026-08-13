@@ -13,8 +13,10 @@ import {
   Stack,
   Chip,
   MenuItem,
+  IconButton,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { Delete } from '@mui/icons-material';
 import { categoriesApi, notificationsApi, productsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -69,6 +71,8 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [rows, setRows] = useState<HistoryRow[]>([]);
+  const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryResult | null>(null);
   const [apiMessage, setApiMessage] = useState('');
 
@@ -116,6 +120,53 @@ export default function NotificationsPage() {
     setLinkType('NONE');
     setLinkId('');
     setCustomUrl('');
+  };
+
+  const onDelete = async (id: string) => {
+    if (!confirm('Delete this notification record?')) return;
+    try {
+      await notificationsApi.delete(id);
+      toast.success('Notification deleted');
+      setSelectedIds((prev) => prev.filter((selectedId) => String(selectedId) !== id));
+      await loadHistory();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Delete failed');
+    }
+  };
+
+  const onDeleteSelected = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('Select at least one notification');
+      return;
+    }
+
+    if (!confirm(`Delete ${selectedIds.length} selected notification(s)?`)) return;
+
+    try {
+      setBulkDeleting(true);
+      const ids = selectedIds.map((id) => String(id));
+      const res = await notificationsApi.bulkDelete(ids);
+      const result = res.data?.data || res.data;
+      const deletedCount = Number(result?.deletedCount || 0);
+      const failedCount = Number(result?.failedCount || 0);
+
+      if (deletedCount > 0) {
+        toast.success(`${deletedCount} notification(s) deleted`);
+      }
+      if (failedCount > 0) {
+        toast.error(`${failedCount} notification(s) could not be deleted`);
+      }
+      if (deletedCount === 0 && failedCount === 0) {
+        toast('No notifications were deleted');
+      }
+
+      setSelectedIds([]);
+      await loadHistory();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Bulk delete failed');
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
   const send = async () => {
@@ -189,6 +240,27 @@ export default function NotificationsPage() {
     },
     { field: 'type', headerName: 'Type', width: 120 },
     { field: 'recipientCount', headerName: 'Recipients', width: 110 },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 90,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      renderCell: (params) => (
+        <IconButton
+          size='small'
+          color='error'
+          title='Delete'
+          onClick={(e) => {
+            e.stopPropagation();
+            void onDelete(params.row.id);
+          }}
+        >
+          <Delete fontSize='small' />
+        </IconButton>
+      ),
+    },
   ];
 
   return (
@@ -347,11 +419,23 @@ export default function NotificationsPage() {
 
       <Card>
         <CardContent>
-          <Stack direction='row' justifyContent='space-between' alignItems='center' sx={{ mb: 2 }}>
+          <Stack direction='row' justifyContent='space-between' alignItems='center' sx={{ mb: 2 }} flexWrap='wrap' useFlexGap spacing={1}>
             <Typography variant='h6' fontWeight={700}>Notification history</Typography>
-            <Button size='small' onClick={() => void loadHistory()} disabled={historyLoading}>
-              Refresh
-            </Button>
+            <Stack direction='row' spacing={1}>
+              <Button
+                size='small'
+                variant='outlined'
+                color='error'
+                startIcon={<Delete />}
+                disabled={selectedIds.length === 0 || bulkDeleting}
+                onClick={() => void onDeleteSelected()}
+              >
+                {bulkDeleting ? 'Deleting...' : `Delete (${selectedIds.length})`}
+              </Button>
+              <Button size='small' onClick={() => void loadHistory()} disabled={historyLoading}>
+                Refresh
+              </Button>
+            </Stack>
           </Stack>
           <Box sx={{ height: 480 }}>
             <DataGrid
@@ -359,7 +443,10 @@ export default function NotificationsPage() {
               columns={columns}
               loading={historyLoading}
               getRowId={(r) => r.id}
+              checkboxSelection
               disableRowSelectionOnClick
+              rowSelectionModel={selectedIds}
+              onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
               pageSizeOptions={[10, 25, 50]}
               initialState={{
                 pagination: { paginationModel: { pageSize: 10, page: 0 } },
