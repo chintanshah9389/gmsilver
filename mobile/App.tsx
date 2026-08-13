@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Provider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,11 +17,23 @@ function AppProviders() {
 export default function App() {
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
-        <PaperProvider theme={theme}>
-          <AppProviders />
-        </PaperProvider>
-      </SafeAreaProvider>
+      <View style={Platform.OS === 'web' ? styles.rootWeb : styles.root}>
+        <SafeAreaProvider style={styles.root}>
+          <PaperProvider theme={theme}>
+            <AppProviders />
+          </PaperProvider>
+        </SafeAreaProvider>
+      </View>
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  rootWeb: {
+    flex: 1,
+    height: '100%',
+  },
+});

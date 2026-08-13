@@ -1,6 +1,6 @@
-﻿import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
-import { Snackbar } from 'react-native-paper';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { FlatList, Image, ScrollView, StyleSheet, Text, View, StatusBar } from 'react-native';
+import { Icon, Snackbar } from 'react-native-paper';
 import { useMyOrdersQuery } from '@/store/services/ordersApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
@@ -8,69 +8,150 @@ import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
+import ScreenHeader from '@/components/ScreenHeader';
 
 const STATUS_COLOR: Record<string, string> = {
-  PENDING:   '#FFB347',
-  APPROVED:  '#4CAF50',
+  PENDING: C.warning,
+  APPROVED: C.success,
   COMPLETED: C.silver,
-  REJECTED:  C.error,
+  REJECTED: C.error,
   CANCELLED: C.error,
 };
+
+const FILTERS = ['ALL', 'PENDING', 'APPROVED', 'COMPLETED', 'CANCELLED'] as const;
+
+function formatMoney(value: unknown) {
+  return `Rs. ${Number(value || 0).toLocaleString()}`;
+}
+
+function formatDate(value?: string) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 export default function OrdersScreen({ navigation }: any) {
   const { data, error, isError } = useMyOrdersQuery({ page: 1, limit: 100 });
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL');
   const orders: any[] = data?.data || [];
 
   useEffect(() => {
-    if (isError && error) { setSnackMsg(getErrorMessage(error, 'Failed.')); setSnackVisible(true); }
+    if (isError && error) {
+      setSnackMsg(getErrorMessage(error, 'Failed to load orders.'));
+      setSnackVisible(true);
+    }
   }, [error, isError]);
+
+  const visible = useMemo(
+    () => (filter === 'ALL' ? orders : orders.filter(o => o.status === filter)),
+    [orders, filter],
+  );
 
   return (
     <View style={s.root}>
       <PremiumBackground />
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-      <MotionReveal delay={30} duration={420} distance={18}>
-        <View style={s.header}>
-          <Text style={s.headerTitle}>My Orders</Text>
-          <Text style={s.headerSub}>{orders.length} orders</Text>
-        </View>
+      <MotionReveal delay={20} duration={360} distance={12}>
+        <ScreenHeader
+          title="My Orders"
+          subtitle={`${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`}
+        />
       </MotionReveal>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.filters}
+      >
+        {FILTERS.map(key => (
+          <ScalePressable
+            key={key}
+            scaleTo={0.97}
+            style={[s.filterChip, filter === key && s.filterChipOn]}
+            onPress={() => setFilter(key)}
+          >
+            <Text style={[s.filterText, filter === key && s.filterTextOn]}>
+              {key === 'ALL' ? 'All' : key}
+            </Text>
+          </ScalePressable>
+        ))}
+      </ScrollView>
+
       <FlatList
         style={s.listFlex}
-        data={orders}
+        data={visible}
         keyExtractor={item => item.id}
         contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <MotionReveal delay={Math.min(index * 28, 220)} duration={250} distance={10}>
-            <ScalePressable
-              style={s.card}
-              scaleTo={0.985}
-              onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-            >
-              <View style={s.cardTop}>
-                <Text style={s.orderNum}>{item.orderNumber}</Text>
-                <View style={[s.statusBadge, { backgroundColor: (STATUS_COLOR[item.status] ?? C.textMuted) + '22', borderColor: STATUS_COLOR[item.status] ?? C.textMuted }]}>
-                  <Text style={[s.statusText, { color: STATUS_COLOR[item.status] ?? C.textMuted }]}>{item.status}</Text>
+        renderItem={({ item, index }) => {
+          const color = STATUS_COLOR[item.status] ?? C.textMuted;
+          const items: any[] = item.items || [];
+          const thumbs = items
+            .map(row => row.product?.image1Url || row.product?.imageUrl)
+            .filter(Boolean)
+            .slice(0, 3);
+          return (
+            <MotionReveal delay={Math.min(index * 28, 220)} duration={250} distance={10}>
+              <ScalePressable
+                style={s.card}
+                scaleTo={0.985}
+                onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+              >
+                <View style={s.cardTop}>
+                  <View style={s.cardTitleWrap}>
+                    <Text style={s.orderNum} numberOfLines={1}>{item.orderNumber}</Text>
+                    <Text style={s.meta}>
+                      {items.length} {items.length === 1 ? 'item' : 'items'}
+                      {item.createdAt ? `  ·  ${formatDate(item.createdAt)}` : ''}
+                    </Text>
+                  </View>
+                  <View style={[s.statusBadge, { backgroundColor: color + '22', borderColor: color }]}>
+                    <Text style={[s.statusText, { color }]} numberOfLines={1}>{item.status}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={s.cardBottom}>
-                <Text style={s.orderTotal}>Rs. {Number(item.grandTotal).toLocaleString()}</Text>
-                <Text style={s.orderDate}>{new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
-              </View>
-            </ScalePressable>
-          </MotionReveal>
-        )}
+
+                {thumbs.length > 0 ? (
+                  <View style={s.thumbs}>
+                    {thumbs.map((uri: string, i: number) => (
+                      <Image key={`${item.id}-${i}`} source={{ uri }} style={s.thumb} />
+                    ))}
+                    {items.length > thumbs.length ? (
+                      <View style={s.moreThumb}>
+                        <Text style={s.moreThumbText}>+{items.length - thumbs.length}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                <View style={s.cardBottom}>
+                  <Text style={s.orderTotal}>{formatMoney(item.grandTotal)}</Text>
+                  <View style={s.viewRow}>
+                    <Text style={s.viewText}>View details</Text>
+                    <Icon source="chevron-right" size={16} color={C.silver} />
+                  </View>
+                </View>
+              </ScalePressable>
+            </MotionReveal>
+          );
+        }}
         ListEmptyComponent={
           <View style={s.emptyWrap}>
-            <Text style={s.emptyIcon}>O</Text>
+            <View style={s.emptyIconBox}>
+              <Icon source="package-variant-closed" size={28} color={C.textMuted} />
+            </View>
             <Text style={s.emptyText}>No orders yet</Text>
+            <Text style={s.emptySub}>Placed orders will show up here</Text>
           </View>
         }
       />
-      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>{snackMsg}</Snackbar>
+      <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
+        {snackMsg}
+      </Snackbar>
     </View>
   );
 }
@@ -78,21 +159,75 @@ export default function OrdersScreen({ navigation }: any) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   listFlex: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
-  headerTitle: { color: C.text, fontSize: 26, fontWeight: '800', letterSpacing: 0.2 },
-  headerSub: { color: C.textSub, fontSize: 11, marginTop: 3, letterSpacing: 1, textTransform: 'uppercase' },
+  filters: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  filterChip: {
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.surface,
+  },
+  filterChipOn: { backgroundColor: C.surface2, borderColor: C.borderHi },
+  filterText: { color: C.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
+  filterTextOn: { color: C.text },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
-  card: { backgroundColor: C.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: C.border, ...E.softShadow },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    ...E.softShadow,
+  },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
+  cardTitleWrap: { flex: 1, minWidth: 0 },
   orderNum: { color: C.text, fontSize: 14, fontWeight: '800', letterSpacing: 0.2 },
-  statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1 },
-  statusText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.9 },
+  meta: { color: C.textMuted, fontSize: 11, marginTop: 3 },
+  statusBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    maxWidth: 110,
+    flexShrink: 0,
+  },
+  statusText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6 },
+  thumbs: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  thumb: { width: 42, height: 42, borderRadius: 10, backgroundColor: C.surface2 },
+  moreThumb: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: C.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  moreThumbText: { color: C.textSub, fontSize: 11, fontWeight: '700' },
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   orderTotal: { color: C.silver, fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
-  orderDate: { color: C.textMuted, fontSize: 12 },
+  viewRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  viewText: { color: C.textSub, fontSize: 12, fontWeight: '600' },
   emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 8 },
-  emptyIcon: { fontSize: 36, color: C.textMuted },
-  emptyText: { color: C.textSub, fontSize: 15 },
+  emptyIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyText: { color: C.text, fontSize: 16, fontWeight: '700' },
+  emptySub: { color: C.textMuted, fontSize: 13 },
 });
-
-

@@ -1,5 +1,13 @@
-import { AppRegistry, Platform } from 'react-native';
+import '@expo/metro-runtime';
+import 'react-native-gesture-handler';
+import { Platform } from 'react-native';
+import { registerRootComponent } from 'expo';
+import { enableScreens } from 'react-native-screens';
 import App from './App';
+
+if (Platform.OS === 'web') {
+  enableScreens(false);
+}
 
 // Must be registered outside React lifecycle for killed/background delivery.
 if (Platform.OS !== 'web') {
@@ -10,5 +18,4 @@ if (Platform.OS !== 'web') {
   });
 }
 
-// Expo / MainActivity expects the component name "main"
-AppRegistry.registerComponent('main', () => App);
+registerRootComponent(App);

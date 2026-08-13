@@ -6,8 +6,8 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "start": "kill-port 8081 && react-native start",
-    "web": "kill-port 8081 && expo start --web --port 8081",
+    "start": "node scripts/free-port.js 8081 && node ./node_modules/react-native/cli.js start",
+    "web": "node scripts/free-port.js 8081 && node ./node_modules/expo/bin/cli start --web --port 8081",
     "prebuild": "expo prebuild",
     "android:release:apk": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat assembleRelease",
     "android:release:aab": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat bundleRelease",
@@ -51,6 +51,7 @@
     "@types/react-test-renderer": "^18.0.7",
     "babel-jest": "^29.7.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "babel-preset-expo": "~11.0.15",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "kill-port": "^2.0.1",

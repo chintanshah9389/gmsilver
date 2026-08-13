@@ -30,6 +30,20 @@ export const authApi = api.injectEndpoints({
       query: () => ({ url: '/auth/me' }),
       providesTags: ['User'],
     }),
+    changePassword: builder.mutation<any, {
+      currentPassword: string;
+      newPassword: string;
+      confirmPassword: string;
+    }>({
+      query: (body) => ({ url: '/auth/password/change', method: 'PATCH', body }),
+    }),
+    changeMpin: builder.mutation<any, {
+      currentMpin: string;
+      newMpin: string;
+      confirmMpin: string;
+    }>({
+      query: (body) => ({ url: '/auth/mpin/change', method: 'PATCH', body }),
+    }),
   }),
 });
 
@@ -43,4 +57,6 @@ export const {
   useForgotMpinMutation,
   useResetMpinMutation,
   useMeQuery,
+  useChangePasswordMutation,
+  useChangeMpinMutation,
 } = authApi;

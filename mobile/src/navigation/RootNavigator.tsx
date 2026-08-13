@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
@@ -25,7 +26,11 @@ export default function RootNavigator() {
   );
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      linking={Platform.OS === 'web' ? undefined : linking}
+      theme={navTheme}
+    >
       {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

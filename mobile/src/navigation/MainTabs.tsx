@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Icon } from 'react-native-paper';
 import { MainTabParamList } from './types';
 import HomeScreen from '@/screens/main/HomeScreen';
 import { CategoriesTabStack, OrdersTabStack, ProductsTabStack } from './TabStacks';
@@ -9,11 +10,18 @@ import AppLogoHeader from '@/components/AppLogoHeader';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// SVG-free icon using Unicode symbols
-const TabIcon = ({ symbol, focused, label }: { symbol: string; focused: boolean; label: string }) => (
+const TabIcon = ({
+  icon,
+  focused,
+  label,
+}: {
+  icon: string;
+  focused: boolean;
+  label: string;
+}) => (
   <View style={tabStyles.wrap}>
     <View style={[tabStyles.iconBox, focused && tabStyles.iconBoxActive]}>
-      <Text style={[tabStyles.symbol, focused && tabStyles.symbolActive]}>{symbol}</Text>
+      <Icon source={icon} size={18} color={focused ? C.text : C.textMuted} />
     </View>
     <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{label}</Text>
   </View>
@@ -26,14 +34,15 @@ const tabStyles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   iconBoxActive: { backgroundColor: 'rgba(255,255,255,0.82)' },
-  symbol: { fontSize: 18, color: C.textMuted },
-  symbolActive: { color: C.text },
   label: { fontSize: 10, color: C.textMuted, marginTop: 2, fontWeight: '500' },
   labelActive: { color: C.text, fontWeight: '700' },
 });
 
-const ICONS: Record<string, string> = {
-  Home: 'H', Products: 'P', Categories: 'C', Order: 'O',
+const ICONS: Record<string, { idle: string; active: string }> = {
+  Home: { idle: 'home-outline', active: 'home' },
+  Products: { idle: 'cube-outline', active: 'cube' },
+  Categories: { idle: 'view-grid-outline', active: 'view-grid' },
+  Order: { idle: 'receipt-text-outline', active: 'receipt-text' },
 };
 
 const LABELS: Record<string, string> = {
@@ -59,19 +68,30 @@ export default function MainTabs() {
           paddingBottom: 8,
           elevation: 0,
         },
-        tabBarIcon: ({ focused }) => (
-          <TabIcon
-            symbol={ICONS[route.name] ?? '●'}
-            focused={focused}
-            label={LABELS[route.name] ?? route.name}
-          />
-        ),
+        tabBarIcon: ({ focused }) => {
+          const icons = ICONS[route.name] ?? { idle: 'circle-outline', active: 'circle' };
+          return (
+            <TabIcon
+              icon={focused ? icons.active : icons.idle}
+              focused={focused}
+              label={LABELS[route.name] ?? route.name}
+            />
+          );
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Products" component={ProductsTabStack} />
       <Tab.Screen name="Categories" component={CategoriesTabStack} />
-      <Tab.Screen name="Order" component={OrdersTabStack} />
+      <Tab.Screen
+        name="Order"
+        component={OrdersTabStack}
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            navigation.navigate('Order', { screen: 'Orders' });
+          },
+        })}
+      />
     </Tab.Navigator>
   );
 }
