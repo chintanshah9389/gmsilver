@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ActivityIndicator,
 } from 'react-native';
@@ -8,6 +9,9 @@ import { useSignupMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
+import SecurityQuestionDropdown from '@/components/SecurityQuestionDropdown';
+
+const digitsOnly = (value: string, max = 6) => value.replace(/\D/g, '').slice(0, max);
 
 export default function SignupScreen({ navigation }: any) {
   const [signup, { isLoading }] = useSignupMutation();
@@ -15,17 +19,62 @@ export default function SignupScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [mpin, setMpin] = useState('');
+  const [confirmMpin, setConfirmMpin] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
 
+  const showSnack = (msg: string) => {
+    setSnackMsg(msg);
+    setSnackVisible(true);
+  };
+
   const onSignup = async () => {
+    if (!name.trim() || !email.trim() || !password) {
+      showSnack('Please fill in name, email and password.');
+      return;
+    }
+    if (phone.replace(/\D/g, '').length < 10) {
+      showSnack('Enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!/^\d{6}$/.test(mpin)) {
+      showSnack('MPIN must be exactly 6 digits.');
+      return;
+    }
+    if (mpin !== confirmMpin) {
+      showSnack('MPINs do not match.');
+      return;
+    }
+    if (!securityQuestion) {
+      showSnack('Select a security question.');
+      return;
+    }
+    if (securityAnswer.trim().length < 2) {
+      showSnack('Enter an answer for your security question.');
+      return;
+    }
     try {
-      await signup({ name, email, phone, password }).unwrap();
-      navigation.navigate('Login');
+      await signup({
+        name,
+        email,
+        phone,
+        password,
+        mpin,
+        confirmMpin,
+        securityQuestion,
+        securityAnswer: securityAnswer.trim(),
+      }).unwrap();
+      Alert.alert(
+        'Account created',
+        'Your account is awaiting admin approval. After approval, sign in with your 6-digit MPIN.',
+        [{ text: 'OK', onPress: () => navigation.navigate('MpinLogin') }],
+      );
     } catch (e) {
-      setSnackMsg(getErrorMessage(e, 'Signup failed. Please try again.'));
-      setSnackVisible(true);
+      showSnack(getErrorMessage(e, 'Signup failed. Please try again.'));
     }
   };
 
@@ -43,12 +92,12 @@ export default function SignupScreen({ navigation }: any) {
 
         <View style={s.card}>
           <Text style={s.heading}>Create Account</Text>
-          <Text style={s.subheading}>Join the B2B silver catalog</Text>
+          <Text style={s.subheading}>Set email, mobile, password and MPIN for login</Text>
 
           {([
             { label: 'Full Name', value: name, set: setName, placeholder: 'Your full name' },
             { label: 'Email Address', value: email, set: setEmail, placeholder: 'you@example.com', keyboard: 'email-address' as const },
-            { label: 'Phone Number', value: phone, set: setPhone, placeholder: '+91 98765 43210', keyboard: 'phone-pad' as const },
+            { label: 'Mobile Number', value: phone, set: setPhone, placeholder: '9876543210', keyboard: 'phone-pad' as const },
           ] as const).map(({ label, value, set, placeholder, keyboard }: any) => (
             <View key={label}>
               <Text style={s.fieldLabel}>{label}</Text>
@@ -64,6 +113,7 @@ export default function SignupScreen({ navigation }: any) {
               />
             </View>
           ))}
+          <Text style={s.hint}>You can log in with email or this mobile number</Text>
 
           <Text style={s.fieldLabel}>Password</Text>
           <View style={s.pwWrap}>
@@ -80,6 +130,49 @@ export default function SignupScreen({ navigation }: any) {
               <Text style={s.eyeText}>{showPw ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
+          <Text style={s.hint}>Used if you forget MPIN. Security question recovers both.</Text>
+
+          <Text style={s.fieldLabel}>6-Digit MPIN</Text>
+          <TextInput
+            style={s.input}
+            placeholder="* * * * * *"
+            placeholderTextColor={C.textMuted}
+            value={mpin}
+            onChangeText={(v) => setMpin(digitsOnly(v))}
+            keyboardType="number-pad"
+            secureTextEntry
+            maxLength={6}
+            selectionColor={C.silver}
+          />
+
+          <Text style={s.fieldLabel}>Confirm MPIN</Text>
+          <TextInput
+            style={s.input}
+            placeholder="* * * * * *"
+            placeholderTextColor={C.textMuted}
+            value={confirmMpin}
+            onChangeText={(v) => setConfirmMpin(digitsOnly(v))}
+            keyboardType="number-pad"
+            secureTextEntry
+            maxLength={6}
+            selectionColor={C.silver}
+          />
+          <Text style={s.hint}>You will always log in with this MPIN</Text>
+
+          <Text style={s.fieldLabel}>Security Question</Text>
+          <SecurityQuestionDropdown value={securityQuestion} onChange={setSecurityQuestion} />
+
+          <Text style={s.fieldLabel}>Security Answer</Text>
+          <TextInput
+            style={s.input}
+            placeholder="Your answer"
+            placeholderTextColor={C.textMuted}
+            value={securityAnswer}
+            onChangeText={setSecurityAnswer}
+            autoCapitalize="none"
+            selectionColor={C.silver}
+          />
+          <Text style={s.hint}>Used to reset MPIN and password if you forget both</Text>
 
           <TouchableOpacity style={[s.btn, s.btnPrimary, { marginTop: 24 }]} onPress={onSignup} disabled={isLoading} activeOpacity={0.85}>
             {isLoading
@@ -91,8 +184,8 @@ export default function SignupScreen({ navigation }: any) {
 
         <View style={s.footer}>
           <Text style={s.footerText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={s.footerLink}>Sign In</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('MpinLogin')}>
+            <Text style={s.footerLink}>Sign In with MPIN</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -120,6 +213,7 @@ const s = StyleSheet.create({
 
   fieldLabel: { color: C.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   input: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.text, fontSize: 14, marginBottom: 14 },
+  hint: { color: C.textMuted, fontSize: 11, marginTop: -8, marginBottom: 14 },
   pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 0 },
   eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
   eyeText: { fontSize: 16 },

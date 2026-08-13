@@ -1,7 +1,7 @@
-import { IsOptional, IsString, Matches } from 'class-validator';
+import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class ResetMpinDto {
+export class ResetMpinWithPasswordDto {
   @ApiPropertyOptional({ example: 'john@example.com or 9876543210' })
   @IsOptional()
   @IsString()
@@ -12,9 +12,11 @@ export class ResetMpinDto {
   @IsString()
   email?: string;
 
-  @ApiProperty({ example: 'reset-token-uuid' })
+  @ApiProperty({ example: 'SecurePass@123' })
   @IsString()
-  token: string;
+  @MinLength(8)
+  @MaxLength(64)
+  password: string;
 
   @ApiProperty({ example: '654321' })
   @IsString()

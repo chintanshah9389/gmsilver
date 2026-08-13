@@ -26,6 +26,32 @@ export const authApi = api.injectEndpoints({
     resetMpin: builder.mutation<any, any>({
       query: (body) => ({ url: '/auth/mpin/reset', method: 'POST', body }),
     }),
+    resetMpinWithPassword: builder.mutation<any, {
+      identifier?: string;
+      email?: string;
+      password: string;
+      newMpin: string;
+      confirmMpin: string;
+    }>({
+      query: (body) => ({ url: '/auth/mpin/reset-with-password', method: 'POST', body }),
+    }),
+    lookupSecurityQuestion: builder.mutation<{ data: { email: string; question: string } }, {
+      identifier?: string;
+      email?: string;
+    }>({
+      query: (body) => ({ url: '/auth/security-question', method: 'POST', body }),
+    }),
+    resetWithSecurityQuestion: builder.mutation<any, {
+      identifier?: string;
+      email?: string;
+      securityAnswer: string;
+      newPassword: string;
+      confirmPassword: string;
+      newMpin: string;
+      confirmMpin: string;
+    }>({
+      query: (body) => ({ url: '/auth/reset-with-security-question', method: 'POST', body }),
+    }),
     me: builder.query<any, void>({
       query: () => ({ url: '/auth/me' }),
       providesTags: ['User'],
@@ -56,6 +82,9 @@ export const {
   useResetPasswordMutation,
   useForgotMpinMutation,
   useResetMpinMutation,
+  useResetMpinWithPasswordMutation,
+  useLookupSecurityQuestionMutation,
+  useResetWithSecurityQuestionMutation,
   useMeQuery,
   useChangePasswordMutation,
   useChangeMpinMutation,

@@ -23,11 +23,14 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotMpinDto } from './dto/forgot-mpin.dto';
 import { ResetMpinDto } from './dto/reset-mpin.dto';
+import { ResetMpinWithPasswordDto } from './dto/reset-mpin-with-password.dto';
+import { ResetWithSecurityQuestionDto } from './dto/reset-with-security-question.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ChangeMpinDto } from './dto/change-mpin.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { getIdentifier } from './identifier.util';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -42,14 +45,14 @@ export class AuthController {
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiOperation({ summary: 'Login with email or mobile and password' })
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
   @Post('login/mpin')
-  @ApiOperation({ summary: 'Login with MPIN' })
+  @ApiOperation({ summary: 'Login with email or mobile and MPIN' })
   @HttpCode(HttpStatus.OK)
   mpinLogin(@Body() dto: MpinLoginDto) {
     return this.authService.mpinLogin(dto);
@@ -112,6 +115,33 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   resetMpin(@Body() dto: ResetMpinDto) {
     return this.authService.resetMpin(dto);
+  }
+
+  @Post('mpin/reset-with-password')
+  @ApiOperation({ summary: 'Reset MPIN by verifying account password' })
+  @HttpCode(HttpStatus.OK)
+  resetMpinWithPassword(@Body() dto: ResetMpinWithPasswordDto) {
+    return this.authService.resetMpinWithPassword(dto);
+  }
+
+  @Get('security-questions')
+  @ApiOperation({ summary: 'List security questions for signup' })
+  getSecurityQuestions() {
+    return this.authService.getSecurityQuestions();
+  }
+
+  @Post('security-question')
+  @ApiOperation({ summary: 'Look up security question by email' })
+  @HttpCode(HttpStatus.OK)
+  getSecurityQuestion(@Body() dto: ForgotPasswordDto) {
+    return this.authService.getSecurityQuestion(getIdentifier(dto));
+  }
+
+  @Post('reset-with-security-question')
+  @ApiOperation({ summary: 'Reset password and MPIN using security question' })
+  @HttpCode(HttpStatus.OK)
+  resetWithSecurityQuestion(@Body() dto: ResetWithSecurityQuestionDto) {
+    return this.authService.resetWithSecurityQuestion(dto);
   }
 
   @Patch('password/change')

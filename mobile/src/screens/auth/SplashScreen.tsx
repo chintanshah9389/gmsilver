@@ -15,7 +15,7 @@ export default function SplashScreen({ navigation }: any) {
       Animated.timing(slideY, { toValue: 0, duration: 700, useNativeDriver: true }),
     ]).start();
 
-    const t = setTimeout(() => navigation.replace('Login'), 2200);
+    const t = setTimeout(() => navigation.replace('MpinLogin'), 2200);
     return () => clearTimeout(t);
   }, [navigation]);
 

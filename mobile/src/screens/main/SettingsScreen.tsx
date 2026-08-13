@@ -132,6 +132,7 @@ export default function SettingsScreen({ navigation }: any) {
         <MotionReveal delay={90} duration={320} distance={10}>
           <View style={s.card}>
             <Text style={s.sectionTitle}>CHANGE MPIN</Text>
+            <Text style={s.hint}>Daily app login uses this 6-digit MPIN</Text>
             <Text style={s.fieldLabel}>Current MPIN</Text>
             <TextInput
               style={s.input}
@@ -209,6 +210,12 @@ const s = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 6,
     textTransform: 'uppercase',
+  },
+  hint: {
+    color: C.textMuted,
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 14,
   },
   input: {
     backgroundColor: C.surface2,

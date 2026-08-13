@@ -85,15 +85,13 @@ module/
 ## 3. Authentication Flow
 
 ```
-Signup → Pending Status
+Signup (email + password + 6-digit MPIN) → Pending Status
         ↓
 Admin Approves User → Status: APPROVED → User notified via FCM
         ↓
-Login (email + password) → JWT Access Token (15min) + Refresh Token (7d)
+MPIN Login (email + MPIN) → JWT Access Token (15min) + Refresh Token (7d)
         ↓
-Create MPIN (6-digit) → Hashed + stored
-        ↓
-Subsequent Logins → MPIN Login → New JWT issued
+Forgot MPIN → Verify password → Set new MPIN → MPIN Login
         ↓
 Token Refresh → Rotate refresh token (revoke old, issue new)
         ↓

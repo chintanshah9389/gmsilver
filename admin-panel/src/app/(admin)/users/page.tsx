@@ -451,7 +451,7 @@ export default function UsersPage() {
               }}
               fullWidth
               error={!!credentialsErrors.mpin}
-              helperText={credentialsErrors.mpin || 'Optional. Must be exactly 6 digits'}
+              helperText={credentialsErrors.mpin || 'Used for mobile app login. Must be exactly 6 digits'}
             />
             <Typography variant="caption" color="text.secondary">
               Update at least one field. Leave the other blank if no change is needed.

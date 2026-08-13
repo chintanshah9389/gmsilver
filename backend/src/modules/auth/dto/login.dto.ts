@@ -1,10 +1,17 @@
-import { IsEmail, IsString, IsOptional } from 'class-validator';
+import { IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoginDto {
-  @ApiProperty({ example: 'john@example.com' })
-  @IsEmail()
-  email: string;
+  @ApiPropertyOptional({ example: 'john@example.com or 9876543210' })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  identifier?: string;
+
+  @ApiPropertyOptional({ example: 'john@example.com' })
+  @IsOptional()
+  @IsString()
+  email?: string;
 
   @ApiProperty({ example: 'SecurePass@123' })
   @IsString()

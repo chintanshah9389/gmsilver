@@ -16,9 +16,10 @@ import { useResetPasswordMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
+import { toAuthIdentifier } from '@/lib/auth-identifier';
 
 export default function ResetPasswordScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,12 +30,12 @@ export default function ResetPasswordScreen({ navigation }: any) {
   const onSubmit = async () => {
     try {
       await resetPassword({
-        email,
+        ...toAuthIdentifier(identifier),
         token,
         newPassword,
         confirmPassword,
       }).unwrap();
-      navigation.navigate('Login');
+      navigation.navigate('ForgotMpin');
     } catch (e) {
       setSnackMsg(getErrorMessage(e, 'Password reset failed.'));
       setSnackVisible(true);
@@ -55,13 +56,13 @@ export default function ResetPasswordScreen({ navigation }: any) {
           <Text style={s.heading}>Set New Password</Text>
           <Text style={s.subheading}>Use the reset token sent to your email</Text>
 
-          <Text style={s.fieldLabel}>Email Address</Text>
+          <Text style={s.fieldLabel}>Email or Mobile</Text>
           <TextInput
             style={s.input}
-            placeholder="you@example.com"
+            placeholder="you@example.com or 9876543210"
             placeholderTextColor={C.textMuted}
-            value={email}
-            onChangeText={setEmail}
+            value={identifier}
+            onChangeText={setIdentifier}
             autoCapitalize="none"
             keyboardType="email-address"
             selectionColor={C.silver}

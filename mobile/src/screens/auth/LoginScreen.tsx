@@ -12,10 +12,11 @@ import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
 import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
+import { toAuthIdentifier } from '@/lib/auth-identifier';
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
@@ -23,10 +24,15 @@ export default function LoginScreen({ navigation }: any) {
   const [login, { isLoading }] = useLoginMutation();
 
   const onLogin = async () => {
+    if (!identifier.trim()) {
+      setSnackMsg('Enter your email or mobile number.');
+      setSnackVisible(true);
+      return;
+    }
     try {
       const fcmToken = await getFcmToken();
       const res = await login({
-        email,
+        ...toAuthIdentifier(identifier),
         password,
         ...(fcmToken ? { fcmToken } : {}),
       }).unwrap();
@@ -61,16 +67,16 @@ export default function LoginScreen({ navigation }: any) {
 
         {/* Card */}
         <View style={s.card}>
-          <Text style={s.heading}>Welcome Back</Text>
-          <Text style={s.subheading}>Sign in to continue</Text>
+          <Text style={s.heading}>Password Login</Text>
+          <Text style={s.subheading}>Use this if you forgot your MPIN, then reset it</Text>
 
-          <Text style={s.fieldLabel}>Email Address</Text>
+          <Text style={s.fieldLabel}>Email or Mobile</Text>
           <TextInput
             style={s.input}
-            placeholder="you@example.com"
+            placeholder="you@example.com or 9876543210"
             placeholderTextColor={C.textMuted}
-            value={email}
-            onChangeText={setEmail}
+            value={identifier}
+            onChangeText={setIdentifier}
             autoCapitalize="none"
             keyboardType="email-address"
             selectionColor={C.silver}
@@ -93,18 +99,18 @@ export default function LoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={s.forgot}>Forgot password?</Text>
+            <Text style={s.forgot}>Forgot password? Use security question</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[s.btn, s.btnPrimary]} onPress={onLogin} disabled={isLoading} activeOpacity={0.85}>
             {isLoading
               ? <ActivityIndicator color={C.bg} size="small" />
-              : <Text style={s.btnPrimaryText}>Sign In</Text>
+              : <Text style={s.btnPrimaryText}>Sign In with Password</Text>
             }
           </TouchableOpacity>
 
           <TouchableOpacity style={[s.btn, s.btnSecondary]} onPress={() => navigation.navigate('MpinLogin')} activeOpacity={0.85}>
-            <Text style={s.btnSecondaryText}>Login with MPIN</Text>
+            <Text style={s.btnSecondaryText}>Back to MPIN login</Text>
           </TouchableOpacity>
         </View>
 

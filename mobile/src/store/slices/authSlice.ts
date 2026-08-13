@@ -6,6 +6,7 @@ interface User {
   email: string;
   phone?: string;
   role: 'ADMIN' | 'OWNER' | 'CUSTOMER';
+  hasMpin?: boolean;
 }
 
 interface AuthState {
@@ -39,6 +40,11 @@ const authSlice = createSlice({
       state.refreshToken = action.payload.refreshToken;
       state.isAuthenticated = true;
     },
+    setHasMpin: (state, action: PayloadAction<boolean>) => {
+      if (state.user) {
+        state.user.hasMpin = action.payload;
+      }
+    },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
@@ -48,5 +54,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setAuth, logout } = authSlice.actions;
+export const { setAuth, setHasMpin, logout } = authSlice.actions;
 export default authSlice.reducer;

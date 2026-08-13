@@ -16,9 +16,10 @@ import { useResetMpinMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
+import { toAuthIdentifier } from '@/lib/auth-identifier';
 
 export default function ResetMpinScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [token, setToken] = useState('');
   const [newMpin, setNewMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
@@ -28,7 +29,7 @@ export default function ResetMpinScreen({ navigation }: any) {
 
   const onSubmit = async () => {
     try {
-      await resetMpin({ email, token, newMpin, confirmMpin }).unwrap();
+      await resetMpin({ ...toAuthIdentifier(identifier), token, newMpin, confirmMpin }).unwrap();
       navigation.navigate('MpinLogin');
     } catch (e) {
       setSnackMsg(getErrorMessage(e, 'MPIN reset failed.'));
@@ -50,13 +51,13 @@ export default function ResetMpinScreen({ navigation }: any) {
           <Text style={s.heading}>Set New MPIN</Text>
           <Text style={s.subheading}>Use reset token from your email</Text>
 
-          <Text style={s.fieldLabel}>Email Address</Text>
+          <Text style={s.fieldLabel}>Email or Mobile</Text>
           <TextInput
             style={s.input}
-            placeholder="you@example.com"
+            placeholder="you@example.com or 9876543210"
             placeholderTextColor={C.textMuted}
-            value={email}
-            onChangeText={setEmail}
+            value={identifier}
+            onChangeText={setIdentifier}
             autoCapitalize="none"
             keyboardType="email-address"
             selectionColor={C.silver}

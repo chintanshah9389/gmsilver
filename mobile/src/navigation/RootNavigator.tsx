@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
+import CreateMpinScreen from '@/screens/auth/CreateMpinScreen';
 import { C } from '@/theme/colors';
 import { linking, navigationRef } from './navigationRef';
 
@@ -24,6 +25,7 @@ export default function RootNavigator() {
   const isAuthenticated = useSelector(
     (state: RootState) => state.auth.isAuthenticated
   );
+  const hasMpin = useSelector((state: RootState) => state.auth.user?.hasMpin);
 
   return (
     <NavigationContainer
@@ -31,7 +33,11 @@ export default function RootNavigator() {
       linking={Platform.OS === 'web' ? undefined : linking}
       theme={navTheme}
     >
-      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
+      {isAuthenticated
+        ? hasMpin === false
+          ? <CreateMpinScreen />
+          : <AppNavigator />
+        : <AuthNavigator />}
     </NavigationContainer>
   );
 }

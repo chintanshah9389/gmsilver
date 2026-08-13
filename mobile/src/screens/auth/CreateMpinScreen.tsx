@@ -13,11 +13,16 @@ import {
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { useCreateMpinMutation } from '@/store/services/authApi';
+import { useAppDispatch } from '@/hooks/redux';
+import { setHasMpin } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 
+const digitsOnly = (value: string) => value.replace(/\D/g, '').slice(0, 6);
+
 export default function CreateMpinScreen() {
+  const dispatch = useAppDispatch();
   const [mpin, setMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
@@ -25,8 +30,19 @@ export default function CreateMpinScreen() {
   const [createMpin, { isLoading }] = useCreateMpinMutation();
 
   const onSave = async () => {
+    if (!/^\d{6}$/.test(mpin)) {
+      setSnackMsg('MPIN must be exactly 6 digits.');
+      setSnackVisible(true);
+      return;
+    }
+    if (mpin !== confirmMpin) {
+      setSnackMsg('MPINs do not match.');
+      setSnackVisible(true);
+      return;
+    }
     try {
       await createMpin({ mpin, confirmMpin }).unwrap();
+      dispatch(setHasMpin(true));
     } catch (e) {
       setSnackMsg(getErrorMessage(e, 'Failed to create MPIN.'));
       setSnackVisible(true);
@@ -44,8 +60,8 @@ export default function CreateMpinScreen() {
         </View>
 
         <View style={s.card}>
-          <Text style={s.heading}>Secure Access</Text>
-          <Text style={s.subheading}>Set a 6-digit MPIN for quick login</Text>
+          <Text style={s.heading}>Set your MPIN</Text>
+          <Text style={s.subheading}>A 6-digit MPIN is required for app login</Text>
 
           <Text style={s.fieldLabel}>New MPIN</Text>
           <TextInput
@@ -56,7 +72,7 @@ export default function CreateMpinScreen() {
             keyboardType="number-pad"
             maxLength={6}
             value={mpin}
-            onChangeText={setMpin}
+            onChangeText={(v) => setMpin(digitsOnly(v))}
             selectionColor={C.silver}
           />
 
@@ -69,7 +85,7 @@ export default function CreateMpinScreen() {
             keyboardType="number-pad"
             maxLength={6}
             value={confirmMpin}
-            onChangeText={setConfirmMpin}
+            onChangeText={(v) => setConfirmMpin(digitsOnly(v))}
             selectionColor={C.silver}
           />
 
