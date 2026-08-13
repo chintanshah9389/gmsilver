@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import {
-  getPaginationParams,
-  createPaginatedResponse,
-} from '../../common/utils/pagination.util';
+import { createPaginatedResponse } from '../../common/utils/pagination.util';
 
 export interface CreateAuditLogDto {
   userId?: string | null;
@@ -13,6 +11,30 @@ export interface CreateAuditLogDto {
   ipAddress?: string;
   userAgent?: string;
   deviceDetails?: any;
+}
+
+function parseDateTime(
+  date?: string,
+  time?: string,
+  endOfDay = false,
+): Date | undefined {
+  if (!date) return undefined;
+
+  const trimmedDate = String(date).trim();
+  if (!trimmedDate) return undefined;
+
+  if (trimmedDate.includes('T')) {
+    const parsed = new Date(trimmedDate);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }
+
+  const fallbackTime = endOfDay ? '23:59:59.999' : '00:00:00.000';
+  const rawTime = (time || fallbackTime).trim();
+  const normalizedTime =
+    rawTime.length === 5 ? `${rawTime}:00` : rawTime.length === 8 ? rawTime : rawTime;
+
+  const parsed = new Date(`${trimmedDate}T${normalizedTime}`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
 @Injectable()
@@ -34,19 +56,52 @@ export class AuditLogsService {
   }
 
   async findAll(query: any) {
-    const { page, limit, skip } = getPaginationParams(query);
-    const { userId, action, module: mod, startDate, endDate } = query;
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(200, Math.max(1, Number(query.limit) || 25));
+    const skip = (page - 1) * limit;
+    const { userId, action, module: mod, search, startDate, endDate, startTime, endTime } =
+      query;
 
-    const where: any = {};
+    const where: Prisma.AuditLogWhereInput = {};
+    const and: Prisma.AuditLogWhereInput[] = [];
 
-    if (userId) where.userId = userId;
-    if (action) where.action = { contains: action, mode: 'insensitive' };
-    if (mod) where.module = mod;
+    if (userId) {
+      where.userId = userId;
+    }
+    if (action) {
+      where.action = { contains: action, mode: 'insensitive' };
+    }
+    if (mod) {
+      where.module = String(mod).toUpperCase();
+    }
 
-    if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) where.createdAt.lte = new Date(endDate);
+    const from = parseDateTime(startDate, startTime, false);
+    const to = parseDateTime(endDate, endTime, true);
+    if (from || to) {
+      where.createdAt = {
+        ...(from ? { gte: from } : {}),
+        ...(to ? { lte: to } : {}),
+      };
+    }
+
+    if (search) {
+      const term = String(search).trim();
+      if (term) {
+        and.push({
+          OR: [
+            { action: { contains: term, mode: 'insensitive' } },
+            { module: { contains: term, mode: 'insensitive' } },
+            { ipAddress: { contains: term, mode: 'insensitive' } },
+            { user: { name: { contains: term, mode: 'insensitive' } } },
+            { user: { email: { contains: term, mode: 'insensitive' } } },
+            { user: { phone: { contains: term, mode: 'insensitive' } } },
+          ],
+        });
+      }
+    }
+
+    if (and.length) {
+      where.AND = and;
     }
 
     const [logs, total] = await Promise.all([
@@ -56,13 +111,38 @@ export class AuditLogsService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, name: true, email: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+            },
+          },
         },
       }),
       this.prisma.auditLog.count({ where }),
     ]);
 
     return createPaginatedResponse(logs, total, page, limit);
+  }
+
+  async getFilterUsers() {
+    const users = await this.prisma.user.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+      },
+      orderBy: { name: 'asc' },
+      take: 500,
+    });
+
+    return { data: users };
   }
 
   async getUserJourney(userId: string, limit = 50) {
@@ -75,6 +155,8 @@ export class AuditLogsService {
         action: true,
         module: true,
         data: true,
+        ipAddress: true,
+        userAgent: true,
         createdAt: true,
       },
     });
@@ -83,11 +165,12 @@ export class AuditLogsService {
   }
 
   async getActivitySummary(startDate?: Date, endDate?: Date) {
-    const where: any = {};
+    const where: Prisma.AuditLogWhereInput = {};
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      where.createdAt = {
+        ...(startDate ? { gte: startDate } : {}),
+        ...(endDate ? { lte: endDate } : {}),
+      };
     }
 
     const [
@@ -99,7 +182,7 @@ export class AuditLogsService {
       orderActivity,
     ] = await Promise.all([
       this.prisma.auditLog.count({ where }),
-      this.prisma.auditLog.count({ where: { ...where, action: 'LOGIN' } }),
+      this.prisma.auditLog.count({ where: { ...where, action: { contains: 'LOGIN' } } }),
       this.prisma.auditLog.count({ where: { ...where, action: 'SEARCH' } }),
       this.prisma.auditLog.count({ where: { ...where, action: 'PRODUCT_VIEW' } }),
       this.prisma.auditLog.count({ where: { ...where, module: 'CART' } }),

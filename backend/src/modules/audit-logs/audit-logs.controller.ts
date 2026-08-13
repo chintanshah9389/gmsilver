@@ -16,10 +16,27 @@ export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Get all audit logs (Admin only)' })
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Get all audit logs with user, date, and time filters' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'userId', required: false, description: 'Filter by user id' })
+  @ApiQuery({ name: 'action', required: false })
+  @ApiQuery({ name: 'module', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'startDate', required: false, description: 'YYYY-MM-DD or ISO datetime' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'YYYY-MM-DD or ISO datetime' })
+  @ApiQuery({ name: 'startTime', required: false, description: 'HH:mm, used with startDate' })
+  @ApiQuery({ name: 'endTime', required: false, description: 'HH:mm, used with endDate' })
   findAll(@Query() query: any) {
     return this.auditLogsService.findAll(query);
+  }
+
+  @Get('users')
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Users list for audit log filters' })
+  getFilterUsers() {
+    return this.auditLogsService.getFilterUsers();
   }
 
   @Get('my-journey')
@@ -32,8 +49,8 @@ export class AuditLogsController {
   }
 
   @Get('summary')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Get activity summary (Admin only)' })
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Get activity summary (Admin/Owner)' })
   getSummary(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,

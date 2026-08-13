@@ -212,6 +212,7 @@ export const homeWidgetsApi = {
 
 export const auditLogsApi = {
   getAll: (params?: any) => api.get('/audit-logs', { params }),
+  getUsers: () => api.get('/audit-logs/users'),
   getSummary: (startDate?: string, endDate?: string) =>
     api.get('/audit-logs/summary', { params: { startDate, endDate } }),
   delete: (id: string) => api.delete(`/audit-logs/${id}`),
