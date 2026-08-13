@@ -17,9 +17,13 @@ function moduleFromPath(path: string): string {
 }
 
 export function normalizeRequestPath(url?: string): string {
-  const raw = String(url || '').split('?')[0];
-  const stripped = raw.replace(/^\/api\/v\d+/, '');
-  return stripped || raw || '/';
+  let raw = String(url || '').split('?')[0].trim();
+  raw = raw.replace(/^https?:\/\/[^/]+/i, '');
+  if (!raw.startsWith('/')) {
+    raw = `/${raw}`;
+  }
+  raw = raw.replace(/^\/api\/v\d+/, '');
+  return raw.replace(/\/+$/, '') || '/';
 }
 
 export function resolveAuditMeta(

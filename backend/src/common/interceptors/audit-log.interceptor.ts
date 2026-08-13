@@ -5,8 +5,10 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { verify } from 'jsonwebtoken';
 import { AuditLogsService } from '../../modules/audit-logs/audit-logs.service';
 import { AUDIT_LOG_KEY } from '../decorators/audit-log.decorator';
 import {
@@ -21,6 +23,7 @@ export class AuditLogInterceptor implements NestInterceptor {
   constructor(
     private readonly reflector: Reflector,
     private readonly auditLogsService: AuditLogsService,
+    private readonly configService: ConfigService,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -38,7 +41,34 @@ export class AuditLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const user = request.user;
+    // Auth login/signup/logout are written in AuthService (guarantees userId).
+    // Interceptor only records failed AUTH attempts here.
+    if (
+      auditMeta.module === 'AUTH' &&
+      ['LOGIN', 'LOGIN_MPIN', 'SIGNUP', 'LOGOUT'].includes(auditMeta.action)
+    ) {
+      return next.handle().pipe(
+        catchError((err) => {
+          this.writeLog({
+            userId: this.resolveUserId(request, null),
+            action: `${auditMeta.action}_FAILED`,
+            module: auditMeta.module,
+            data: {
+              method,
+              url: path,
+              body: this.sanitizeBody(request.body),
+              statusCode: err?.status,
+              message: err?.message,
+            },
+            ipAddress: extractClientIp(request),
+            userAgent: request.headers['user-agent'],
+            deviceDetails: null,
+          });
+          return throwError(() => err);
+        }),
+      );
+    }
+
     const ipAddress = extractClientIp(request);
     const userAgent = request.headers['user-agent'];
 
@@ -52,39 +82,43 @@ export class AuditLogInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((response) => {
-        const userId = user?.id || extractUserIdFromResponse(response) || null;
         this.writeLog({
-          userId,
+          userId: this.resolveUserId(request, response),
           action: auditMeta.action,
           module: auditMeta.module,
           data: payload,
           ipAddress,
           userAgent,
-          deviceDetails: user?.deviceDetails || null,
+          deviceDetails: request.user?.deviceDetails || null,
         });
       }),
-      catchError((err) => {
-        if (
-          auditMeta.module === 'AUTH' &&
-          ['LOGIN', 'LOGIN_MPIN', 'SIGNUP'].includes(auditMeta.action)
-        ) {
-          this.writeLog({
-            userId: user?.id || null,
-            action: `${auditMeta.action}_FAILED`,
-            module: auditMeta.module,
-            data: {
-              ...payload,
-              statusCode: err?.status,
-              message: err?.message,
-            },
-            ipAddress,
-            userAgent,
-            deviceDetails: user?.deviceDetails || null,
-          });
-        }
-        return throwError(() => err);
-      }),
     );
+  }
+
+  private resolveUserId(request: any, response: any): string | null {
+    if (request.user?.id) {
+      return request.user.id;
+    }
+
+    const fromResponse = extractUserIdFromResponse(response);
+    if (fromResponse) {
+      return fromResponse;
+    }
+
+    const authHeader = request.headers?.authorization;
+    if (typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+
+    try {
+      const token = authHeader.slice(7);
+      const secret = this.configService.get<string>('jwt.accessSecret');
+      if (!secret) return null;
+      const payload = verify(token, secret) as { sub?: string };
+      return payload?.sub || null;
+    } catch {
+      return null;
+    }
   }
 
   private writeLog(dto: {

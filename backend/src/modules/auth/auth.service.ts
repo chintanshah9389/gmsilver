@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BcryptUtil } from '../../common/utils/bcrypt.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { MpinLoginDto } from './dto/mpin-login.dto';
@@ -41,7 +42,23 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
     private readonly usersService: UsersService,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
+
+  private trackAuth(
+    userId: string | null,
+    action: string,
+    data?: Record<string, unknown>,
+  ) {
+    this.auditLogsService
+      .create({
+        userId,
+        action,
+        module: 'AUTH',
+        data: data || null,
+      })
+      .catch((err) => console.error('Auth audit log error:', err));
+  }
 
   // ─── SIGNUP ───────────────────────────────────────────────────────
   async signup(dto: SignupDto) {
@@ -96,6 +113,8 @@ export class AuthService {
     // Notify admins about new signup
     await this.notificationsService.notifyAdminsNewUser(user.id, user.name);
 
+    this.trackAuth(user.id, 'SIGNUP', { email: user.email });
+
     return {
       message: 'Registration successful. Awaiting admin approval.',
       data: user,
@@ -135,6 +154,11 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
+    this.trackAuth(user.id, 'LOGIN', {
+      email: user.email,
+      method: 'password',
+    });
+
     return {
       message: 'Login successful',
       data: {
@@ -171,6 +195,11 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    this.trackAuth(user.id, 'LOGIN_MPIN', {
+      email: user.email,
+      method: 'mpin',
+    });
 
     return {
       message: 'MPIN login successful',
@@ -243,6 +272,8 @@ export class AuthService {
       where: { token: refreshToken, userId },
       data: { isRevoked: true },
     });
+
+    this.trackAuth(userId, 'LOGOUT');
 
     return { message: 'Logged out successfully' };
   }
