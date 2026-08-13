@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, ScrollView, StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Icon, Snackbar } from 'react-native-paper';
 import { useMyOrdersQuery } from '@/store/services/ordersApi';
@@ -114,7 +114,7 @@ export default function OrdersScreen({ navigation }: any) {
                     </Text>
                     <Text style={s.meta}>
                       {items.length} {items.length === 1 ? 'item' : 'items'}
-                      {item.createdAt ? `  ·  ${formatDate(item.createdAt)}` : ''}
+                      {item.createdAt ? `  ?  ${formatDate(item.createdAt)}` : ''}
                     </Text>
                   </View>
                   <View
@@ -205,14 +205,14 @@ const s = StyleSheet.create({
     paddingBottom: 10,
   },
   filterChip: {
-    borderRadius: 999,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.surface,
   },
-  filterChipOn: { backgroundColor: C.text, borderColor: C.text },
+  filterChipOn: { backgroundColor: C.primary, borderColor: C.primary },
   filterText: { color: C.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
   filterTextOn: { color: '#fff' },
   list: { paddingHorizontal: 16, paddingBottom: 110 },
@@ -262,7 +262,7 @@ const s = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: C.goldSoft,
     borderWidth: 1,
-    borderColor: 'rgba(196,165,116,0.28)',
+    borderColor: 'rgba(184,149,108,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,

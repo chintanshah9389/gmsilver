@@ -13,7 +13,6 @@ import { useProductsQuery } from '@/store/services/productsApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C, R } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
-import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ProductCard, { PRODUCT_GRID } from '@/components/ProductCard';
 import EmptyState from '@/components/EmptyState';
@@ -118,11 +117,10 @@ const s = StyleSheet.create({
     marginHorizontal: PAD,
     marginBottom: 14,
     backgroundColor: C.surface,
-    borderRadius: R.pill,
+    borderRadius: R.md,
     borderWidth: 1,
     borderColor: C.border,
     paddingHorizontal: 14,
-    ...E.softShadow,
   },
   searchIcon: { color: C.textMuted, fontSize: 16, marginRight: 8 },
   searchInput: { flex: 1, color: C.text, fontSize: 14, paddingVertical: 12 },

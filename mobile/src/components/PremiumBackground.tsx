@@ -1,6 +1,17 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { C } from '@/theme/colors';
+
+const { width: SW, height: SH } = Dimensions.get('window');
 
 type PremiumBackgroundVariant = 'main' | 'auth';
 
@@ -10,66 +21,102 @@ interface PremiumBackgroundProps {
 }
 
 /**
- * Clean luxury wash: soft ivory field + faint corner light.
- * Avoids stacked muddy orbs that compete with content.
+ * Crystal Origami field — folded geometric facets + soft iridescent gradients.
  */
 export default function PremiumBackground({
   variant = 'main',
   shimmer = false,
 }: PremiumBackgroundProps) {
   const isAuth = variant === 'auth';
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const pulse = useSharedValue(0);
+  const drift = useSharedValue(0);
 
   useEffect(() => {
-    if (!shimmer) return;
-
-    const loop = Animated.loop(
-      Animated.timing(shimmerAnim, {
-        toValue: 1,
-        duration: 5200,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }),
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 5200, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
     );
+    if (shimmer) {
+      drift.value = withRepeat(
+        withTiming(1, { duration: 4800, easing: Easing.inOut(Easing.quad) }),
+        -1,
+        false,
+      );
+    }
+  }, [pulse, drift, shimmer]);
 
-    loop.start();
-    return () => {
-      loop.stop();
-      shimmerAnim.setValue(0);
-    };
-  }, [shimmer, shimmerAnim]);
+  const foldStyle = useAnimatedStyle(() => ({
+    opacity: 0.55 + pulse.value * 0.25,
+    transform: [{ rotate: `${-18 + pulse.value * 2}deg` }],
+  }));
 
-  const shimmerOpacity = shimmerAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.04, 0.14, 0.04],
-  });
+  const fold2Style = useAnimatedStyle(() => ({
+    opacity: 0.4 + (1 - pulse.value) * 0.2,
+    transform: [{ rotate: `${24 - pulse.value * 3}deg` }],
+  }));
 
-  const shimmerX = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-280, 320],
-  });
+  const shimmerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(drift.value, [0, 0.5, 1], [0.05, 0.16, 0.05]),
+    transform: [
+      { translateX: interpolate(drift.value, [0, 1], [-SW * 0.35, SW * 0.85]) },
+      { rotate: '26deg' },
+    ],
+  }));
 
   return (
     <View pointerEvents="none" style={s.wrap}>
-      <View style={s.field} />
+      <LinearGradient
+        colors={[C.gradStart, C.bg, C.gradMid]}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Soft top champagne veil */}
-      <View style={[s.topVeil, isAuth && s.topVeilAuth]} />
+      {/* Origami fold A */}
+      <Animated.View style={[s.facet, isAuth ? s.facetAAuth : s.facetA, foldStyle]}>
+        <LinearGradient
+          colors={[C.facetA, 'rgba(232,241,255,0.15)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
 
-      {/* Single corner lights — kept very faint */}
-      <View style={[s.cornerLight, s.cornerTopRight, isAuth && s.cornerTopRightAuth]} />
-      <View style={[s.cornerLight, s.cornerBottomLeft, isAuth && s.cornerBottomLeftAuth]} />
+      {/* Origami fold B */}
+      <Animated.View style={[s.facet, isAuth ? s.facetBAuth : s.facetB, fold2Style]}>
+        <LinearGradient
+          colors={[C.facetB, 'rgba(243,232,216,0.2)', 'transparent']}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
+      {/* Origami fold C */}
+      <View style={[s.facet, s.facetC]}>
+        <LinearGradient
+          colors={[C.facetC, 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+
+      {/* Sharp crease lines */}
+      <View style={[s.crease, s.crease1]} />
+      <View style={[s.crease, s.crease2]} />
 
       {shimmer ? (
-        <Animated.View
-          style={[
-            s.shimmerBand,
-            {
-              opacity: shimmerOpacity,
-              transform: [{ translateX: shimmerX }, { rotate: '24deg' }],
-            },
-          ]}
-        />
+        <Animated.View style={[s.shimmerBand, shimmerStyle]}>
+          <LinearGradient
+            colors={['transparent', 'rgba(255,255,255,0.7)', 'transparent']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -81,56 +128,67 @@ const s = StyleSheet.create({
     backgroundColor: C.bg,
     overflow: 'hidden',
   },
-  field: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FBF9F6',
-  },
-  topVeil: {
+  facet: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '42%',
-    backgroundColor: 'rgba(255,252,248,0.85)',
+    overflow: 'hidden',
   },
-  topVeilAuth: {
-    height: '52%',
-    backgroundColor: 'rgba(255,253,250,0.92)',
+  facetA: {
+    top: -SH * 0.05,
+    right: -SW * 0.35,
+    width: SW * 1.1,
+    height: SW * 0.85,
+    borderBottomLeftRadius: SW * 0.4,
   },
-  cornerLight: {
+  facetAAuth: {
+    top: -SH * 0.02,
+    right: -SW * 0.3,
+    width: SW * 1.15,
+    height: SW * 0.9,
+    borderBottomLeftRadius: SW * 0.45,
+  },
+  facetB: {
+    bottom: -SH * 0.08,
+    left: -SW * 0.4,
+    width: SW * 1.15,
+    height: SW * 0.9,
+    borderTopRightRadius: SW * 0.5,
+  },
+  facetBAuth: {
+    bottom: -SH * 0.05,
+    left: -SW * 0.35,
+    width: SW * 1.2,
+    height: SW * 0.95,
+    borderTopRightRadius: SW * 0.55,
+  },
+  facetC: {
+    top: '42%',
+    right: -SW * 0.15,
+    width: SW * 0.55,
+    height: SW * 0.55,
+    borderRadius: 24,
+    transform: [{ rotate: '35deg' }],
+  },
+  crease: {
     position: 'absolute',
-    borderRadius: 999,
+    height: 1,
+    backgroundColor: 'rgba(15,23,42,0.05)',
   },
-  cornerTopRight: {
-    top: -120,
-    right: -90,
-    width: 260,
-    height: 260,
-    backgroundColor: 'rgba(196, 165, 116, 0.09)',
+  crease1: {
+    top: '28%',
+    left: -40,
+    width: SW * 0.7,
+    transform: [{ rotate: '-12deg' }],
   },
-  cornerTopRightAuth: {
-    width: 300,
-    height: 300,
-    backgroundColor: 'rgba(196, 165, 116, 0.13)',
-  },
-  cornerBottomLeft: {
-    bottom: -140,
-    left: -100,
-    width: 280,
-    height: 280,
-    backgroundColor: 'rgba(154, 149, 140, 0.07)',
-  },
-  cornerBottomLeftAuth: {
-    width: 320,
-    height: 320,
-    backgroundColor: 'rgba(154, 149, 140, 0.10)',
+  crease2: {
+    bottom: '22%',
+    right: -30,
+    width: SW * 0.65,
+    transform: [{ rotate: '18deg' }],
   },
   shimmerBand: {
     position: 'absolute',
-    top: -80,
-    width: 90,
-    height: '140%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 60,
+    top: -100,
+    width: 70,
+    height: '150%',
   },
 });

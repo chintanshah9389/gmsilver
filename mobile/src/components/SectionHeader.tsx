@@ -19,11 +19,14 @@ export default function SectionHeader({
   return (
     <View style={s.wrap}>
       <View style={s.copy}>
-        <Text style={s.title}>{title}</Text>
+        <View style={s.titleRow}>
+          <View style={s.dash} />
+          <Text style={s.title}>{title}</Text>
+        </View>
         {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
       </View>
       {onAction ? (
-        <ScalePressable onPress={onAction} scaleTo={0.96}>
+        <ScalePressable onPress={onAction} scaleTo={0.96} style={s.actionBtn}>
           <Text style={s.action}>{actionLabel}</Text>
         </ScalePressable>
       ) : null}
@@ -41,21 +44,36 @@ const s = StyleSheet.create({
     marginTop: 8,
   },
   copy: { flex: 1, paddingRight: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dash: {
+    width: 16,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: C.gold,
+  },
   title: {
     color: C.text,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: -0.2,
   },
   subtitle: {
     color: C.textMuted,
     fontSize: 12,
-    marginTop: 3,
+    marginTop: 4,
+    marginLeft: 24,
+  },
+  actionBtn: {
+    backgroundColor: C.primarySoft,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   action: {
-    color: C.goldDim,
-    fontSize: 13,
+    color: C.primary,
+    fontSize: 12,
     fontWeight: '700',
-    marginBottom: 2,
   },
 });

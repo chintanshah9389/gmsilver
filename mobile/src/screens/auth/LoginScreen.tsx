@@ -1,6 +1,5 @@
 ﻿import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
@@ -13,11 +12,10 @@ import { useAppDispatch } from '@/hooks/redux';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/lib/error-message';
 import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
 import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
 import AuthShell from '@/components/AuthShell';
-import ScalePressable from '@/components/ScalePressable';
+import GradientButton from '@/components/GradientButton';
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -97,26 +95,19 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={s.forgot}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <ScalePressable
-          style={[s.btn, s.btnPrimary]}
-          scaleTo={0.97}
+        <GradientButton
+          label="Sign In with Password"
           onPress={onLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={s.btnPrimaryText}>Sign In with Password</Text>
-          )}
-        </ScalePressable>
+          loading={isLoading}
+          style={s.btnGap}
+        />
 
-        <ScalePressable
-          style={[s.btn, s.btnSecondary]}
-          scaleTo={0.97}
+        <GradientButton
+          label="Back to MPIN login"
+          variant="secondary"
           onPress={() => navigation.navigate('MpinLogin')}
-        >
-          <Text style={s.btnSecondaryText}>Back to MPIN login</Text>
-        </ScalePressable>
+          style={s.btnGap}
+        />
       </AuthShell>
 
       <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
@@ -148,14 +139,10 @@ const s = StyleSheet.create({
   },
   pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
-  eyeText: { color: C.goldDim, fontSize: 12, fontWeight: '700' },
-  forgot: { color: C.goldDim, fontSize: 12, textAlign: 'right', marginBottom: 16 },
-  btn: { borderRadius: R.pill, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnPrimary: { backgroundColor: C.text, ...E.buttonShadow },
-  btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.4 },
-  btnSecondary: { borderWidth: 1, borderColor: C.border, backgroundColor: C.surface2 },
-  btnSecondaryText: { color: C.textSub, fontSize: 14, fontWeight: '600' },
+  forgot: { color: C.primaryDim, fontSize: 12, textAlign: 'right', marginBottom: 16, fontWeight: '600' },
+  eyeText: { color: C.primaryDim, fontSize: 12, fontWeight: '700' },
+  btnGap: { marginTop: 8 },
   footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: C.textSub, fontSize: 13 },
-  footerLink: { color: C.goldDim, fontSize: 13, fontWeight: '700' },
+  footerLink: { color: C.primaryDim, fontSize: 13, fontWeight: '700' },
 });

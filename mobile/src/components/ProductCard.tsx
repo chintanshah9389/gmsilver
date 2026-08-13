@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
 import ScalePressable from '@/components/ScalePressable';
@@ -31,18 +32,26 @@ export default function ProductCard({
   wished,
   width = PRODUCT_CARD_W,
 }: ProductCardProps) {
-  const imgH = width * 1.15;
+  const imgH = width * 1.22;
 
   return (
-    <ScalePressable style={[s.card, { width }, E.softShadow]} scaleTo={0.98} onPress={onPress}>
+    <ScalePressable style={[s.card, { width }]} scaleTo={0.98} onPress={onPress}>
       <View style={[s.imgWrap, { height: imgH }]}>
         {item.image1Url ? (
           <Image source={{ uri: item.image1Url }} style={s.img} resizeMode="cover" />
         ) : (
-          <View style={s.imgPlaceholder}>
-            <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? '✦'}</Text>
-          </View>
+          <LinearGradient colors={[C.facetA, C.facetB]} style={s.imgPlaceholder}>
+            <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? 'G'}</Text>
+          </LinearGradient>
         )}
+        <LinearGradient
+          colors={['transparent', 'rgba(15,23,42,0.35)']}
+          style={s.imgFade}
+        />
+        <LinearGradient
+          colors={[C.facetA, C.facetB]}
+          style={s.facetCorner}
+        />
         {onWish ? (
           <ScalePressable
             style={[s.wishBtn, wished && s.wishBtnActive]}
@@ -51,7 +60,7 @@ export default function ProductCard({
           >
             <Icon
               source={wished ? 'heart' : 'heart-outline'}
-              size={16}
+              size={15}
               color={wished ? C.error : C.textSub}
             />
           </ScalePressable>
@@ -61,7 +70,10 @@ export default function ProductCard({
         <Text style={s.name} numberOfLines={2}>
           {item.name}
         </Text>
-        <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
+        <View style={s.priceRow}>
+          <View style={s.priceDash} />
+          <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
+        </View>
       </View>
     </ScalePressable>
   );
@@ -72,10 +84,11 @@ export const PRODUCT_GRID = { PAD, GAP };
 const s = StyleSheet.create({
   card: {
     backgroundColor: C.surface,
-    borderRadius: R.md,
+    borderRadius: R.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: C.border,
+    ...E.cardShadow,
   },
   imgWrap: {
     width: '100%',
@@ -86,25 +99,38 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: C.surface3,
   },
-  imgInitial: { color: C.textMuted, fontSize: 36, fontWeight: '700' },
+  imgFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 48,
+  },
+  facetCorner: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 36,
+    height: 36,
+    borderBottomLeftRadius: 16,
+    opacity: 0.85,
+  },
+  imgInitial: { color: C.goldDim, fontSize: 34, fontWeight: '700' },
   wishBtn: {
     position: 'absolute',
     top: 10,
-    right: 10,
+    left: 10,
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
     ...E.softShadow,
   },
-  wishBtnActive: {
-    backgroundColor: '#FFF5F5',
-  },
-  body: { paddingHorizontal: 12, paddingVertical: 12 },
+  wishBtnActive: { backgroundColor: '#FFF5F5' },
+  body: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 14 },
   name: {
     color: C.text,
     fontSize: 13,
@@ -112,11 +138,22 @@ const s = StyleSheet.create({
     lineHeight: 18,
     minHeight: 36,
   },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  priceDash: {
+    width: 14,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: C.gold,
+  },
   price: {
     color: C.goldDim,
     fontSize: 15,
     fontWeight: '800',
-    marginTop: 6,
     letterSpacing: 0.2,
   },
 });

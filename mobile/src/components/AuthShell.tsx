@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
 import PremiumBackground from '@/components/PremiumBackground';
@@ -33,16 +34,26 @@ export default function AuthShell({ children, title, subtitle, footer }: AuthShe
         showsVerticalScrollIndicator={false}
       >
         <View style={s.brand}>
-          <View style={s.medallion}>
-            <View style={s.medallionInner}>
-              <Text style={s.logo}>GM</Text>
-            </View>
-          </View>
+          <LinearGradient
+            colors={[C.metalGradStart, C.metalGradEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.mark}
+          >
+            <Text style={s.markText}>GM</Text>
+          </LinearGradient>
           <Text style={s.brandName}>GM SILVER</Text>
-          <Text style={s.brandTag}>Fine silver catalog</Text>
+          <Text style={s.brandTag}>Crystal origami catalog</Text>
         </View>
 
         <View style={s.card}>
+          <LinearGradient
+            colors={[C.facetA, C.facetB]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={s.foldCorner}
+          />
+          <View style={s.foldEdge} />
           <Text style={s.title}>{title}</Text>
           {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
           <View style={s.body}>{children}</View>
@@ -58,51 +69,42 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingTop: 48,
     paddingBottom: 36,
     justifyContent: 'center',
   },
   brand: { alignItems: 'center', marginBottom: 22 },
-  medallion: {
+  mark: {
     width: 76,
     height: 76,
-    borderRadius: 38,
-    borderWidth: 1.5,
-    borderColor: C.gold,
+    borderRadius: 22,
+    transform: [{ rotate: '10deg' }],
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
     ...E.softShadow,
   },
-  medallionInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: C.surface2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  logo: {
-    color: C.text,
+  markText: {
+    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    transform: [{ rotate: '-10deg' }],
   },
   brandName: {
     color: C.text,
     fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 3.2,
+    letterSpacing: 3.5,
   },
   brandTag: {
-    color: C.textMuted,
+    color: C.accent,
     fontSize: 12,
     marginTop: 4,
-    letterSpacing: 0.4,
+    fontWeight: '600',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -110,19 +112,37 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     padding: 22,
+    overflow: 'hidden',
     ...E.cardShadow,
+  },
+  foldCorner: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 72,
+    height: 72,
+    borderBottomLeftRadius: 28,
+  },
+  foldEdge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 4,
+    height: '100%',
+    backgroundColor: C.gold,
   },
   title: {
     color: C.text,
     fontSize: 24,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: -0.3,
+    marginTop: 4,
   },
   subtitle: {
     color: C.textSub,
     fontSize: 13,
-    marginTop: 6,
-    lineHeight: 19,
+    marginTop: 8,
+    lineHeight: 20,
   },
   body: { marginTop: 20 },
   footer: { marginTop: 22, alignItems: 'center' },

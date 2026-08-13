@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  Dimensions,
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useProductsQuery, useCategoriesQuery } from '@/store/services/productsApi';
 import { useBannersQuery } from '@/store/services/bannersApi';
 import { useTopProductsWidgetQuery } from '@/store/services/homeWidgetsApi';
@@ -15,13 +17,22 @@ import { getErrorMessage } from '@/lib/error-message';
 import PremiumBackground from '@/components/PremiumBackground';
 import LuxCarousel, { LuxCarouselItem } from '@/components/LuxCarousel';
 import ProductCard, { PRODUCT_GRID } from '@/components/ProductCard';
-import CategoryChipRow from '@/components/CategoryChip';
 import SectionHeader from '@/components/SectionHeader';
 import MotionReveal from '@/components/MotionReveal';
+import ScalePressable from '@/components/ScalePressable';
 import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
 
 const { PAD, GAP } = PRODUCT_GRID;
+const { width: SW } = Dimensions.get('window');
+const FACET_W = Math.min(148, SW * 0.38);
+
+const FACET_COLORS: [string, string][] = [
+  [C.facetA, C.facetC],
+  [C.facetB, C.facetA],
+  [C.facetC, C.facetB],
+  [C.facetD, C.facetA],
+];
 
 export default function HomeScreen({ navigation }: any) {
   const { data, error, isError } = useProductsQuery({ page: 1, limit: 8 });
@@ -30,12 +41,11 @@ export default function HomeScreen({ navigation }: any) {
   const { data: catData } = useCategoriesQuery({ page: 1, limit: 20 });
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [search, setSearch] = useState('');
 
   const products = data?.data || [];
   const topProductsWidget = widgetData?.data;
-  const sectionTitle = topProductsWidget?.title || 'Curated for you';
-  const categories = (catData?.data || []).filter((c: any) => c.isActive !== false).slice(0, 12);
+  const sectionTitle = topProductsWidget?.title || 'Featured pieces';
+  const categories = (catData?.data || []).filter((c: any) => c.isActive !== false).slice(0, 10);
   const banners: any[] = bannerData?.data ?? [];
 
   useEffect(() => {
@@ -94,63 +104,68 @@ export default function HomeScreen({ navigation }: any) {
     navigation.navigate('Products');
   };
 
-  const onSearchSubmit = () => {
-    navigation.navigate('Products', {
-      screen: 'ProductList',
-      params: search.trim() ? { categoryName: 'Search' } : undefined,
-    });
-  };
-
   const ListHeader = () => (
     <>
-      <MotionReveal delay={20} duration={400} distance={16}>
-        <View style={styles.heroCopy}>
-          <Text style={styles.heroEyebrow}>FINE SILVER</Text>
-          <Text style={styles.heroTitle}>Discover timeless pieces</Text>
-        </View>
-      </MotionReveal>
-
+      {/* Banner slider on top */}
       {carouselItems.length > 0 ? (
-        <MotionReveal delay={60} duration={420} distance={14}>
+        <MotionReveal delay={10} duration={400} distance={12}>
           <View style={styles.carouselPad}>
             <LuxCarousel items={carouselItems} height={220} peek autoPlay />
           </View>
         </MotionReveal>
       ) : null}
 
-      <MotionReveal delay={100} duration={360} distance={12}>
-        <View style={styles.searchWrap}>
-          <Text style={styles.searchIcon}>⌕</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search jewelry…"
-            placeholderTextColor={C.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            onSubmitEditing={onSearchSubmit}
-            returnKeyType="search"
-            selectionColor={C.gold}
-          />
-        </View>
-      </MotionReveal>
+      {/* Collections */}
+      {categories.length > 0 ? (
+        <MotionReveal delay={60} duration={380} distance={12}>
+          <View style={styles.collectionsHead}>
+            <Text style={styles.collectionsTitle}>Collections</Text>
+            <ScalePressable onPress={() => navigation.navigate('Categories')} scaleTo={0.96}>
+              <Text style={styles.collectionsAll}>View all</Text>
+            </ScalePressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.facetRow}
+          >
+            {categories.map((item: any, i: number) => {
+              const colors = FACET_COLORS[i % FACET_COLORS.length];
+              return (
+                <ScalePressable
+                  key={item.id}
+                  style={styles.facetCard}
+                  scaleTo={0.97}
+                  onPress={() =>
+                    navigation.navigate('Categories', {
+                      screen: 'ProductList',
+                      params: { categoryId: item.id, categoryName: item.name },
+                    })
+                  }
+                >
+                  <LinearGradient
+                    colors={colors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.facetGrad}
+                  >
+                    <View style={styles.facetShine} />
+                    <Text style={styles.facetName} numberOfLines={2}>
+                      {item.name}
+                    </Text>
+                  </LinearGradient>
+                </ScalePressable>
+              );
+            })}
+          </ScrollView>
+        </MotionReveal>
+      ) : null}
 
-      <MotionReveal delay={130} duration={340} distance={10}>
-        <CategoryChipRow
-          items={categories}
-          onSelect={(item) =>
-            navigation.navigate('Categories', {
-              screen: 'ProductList',
-              params: { categoryId: item.id, categoryName: item.name },
-            })
-          }
-          onSeeAll={() => navigation.navigate('Categories')}
-        />
-      </MotionReveal>
-
-      <MotionReveal delay={160} duration={300} distance={8}>
+      {/* Products */}
+      <MotionReveal delay={100} duration={320} distance={10}>
         <SectionHeader
           title={sectionTitle}
-          subtitle="Trending pieces from the catalog"
+          subtitle="Handpicked from the atelier"
           onAction={handleViewMore}
         />
       </MotionReveal>
@@ -200,46 +215,61 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   listFlex: { flex: 1 },
-  listContent: { paddingBottom: 110 },
-  heroCopy: {
-    paddingHorizontal: 16,
-    paddingTop: 2,
-    paddingBottom: 10,
-  },
-  heroEyebrow: {
-    color: C.goldDim,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2.4,
-    marginBottom: 6,
-  },
-  heroTitle: {
-    color: C.text,
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-    lineHeight: 32,
-  },
-  searchWrap: {
+  listContent: { paddingBottom: 118 },
+  carouselPad: { marginTop: 4, marginBottom: 8 },
+  collectionsHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: C.surface,
-    borderRadius: R.pill,
-    borderWidth: 1,
-    borderColor: C.border,
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  collectionsTitle: {
+    color: C.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  collectionsAll: {
+    color: C.goldDim,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  facetRow: {
+    paddingHorizontal: 16,
+    gap: 12,
+    paddingBottom: 8,
+  },
+  facetCard: {
+    width: FACET_W,
+    height: 96,
+    borderRadius: R.md,
+    overflow: 'hidden',
     ...E.softShadow,
   },
-  searchIcon: { color: C.textMuted, fontSize: 16, marginRight: 8 },
-  searchInput: {
+  facetGrad: {
     flex: 1,
+    padding: 14,
+    justifyContent: 'flex-end',
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: R.md,
+  },
+  facetShine: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    borderBottomLeftRadius: 20,
+  },
+  facetName: {
     color: C.text,
     fontSize: 14,
-    paddingVertical: 12,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  carouselPad: { marginTop: 2, marginBottom: 6 },
   row: {
     paddingHorizontal: PAD,
     gap: GAP,

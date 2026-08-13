@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Icon } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';

@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   placeholderText: { color: C.textMuted, fontSize: 42, fontWeight: '700' },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(28,25,21,0.28)',
+    backgroundColor: 'rgba(20,21,22,0.32)',
   },
   badge: {
     position: 'absolute',
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.8,
   },
   textBox: {
@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   subtitle: {
@@ -325,14 +325,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: C.silverLt,
   },
   dotActive: {
-    width: 20,
-    backgroundColor: C.gold,
+    width: 18,
+    backgroundColor: C.primary,
   },
   emptyWrap: {
     marginHorizontal: 16,

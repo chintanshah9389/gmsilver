@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -91,7 +91,7 @@ export default function CartScreen({ navigation }: any) {
                   {item.product?.name}
                 </Text>
                 <Text style={s.itemPrice}>
-                  ₹{Number(item.product?.price || 0).toLocaleString()}
+                  ?{Number(item.product?.price || 0).toLocaleString()}
                 </Text>
                 <View style={s.qtyRow}>
                   <ScalePressable
@@ -108,7 +108,7 @@ export default function CartScreen({ navigation }: any) {
                       }
                     }}
                   >
-                    <Text style={s.qtyBtnText}>−</Text>
+                    <Text style={s.qtyBtnText}>-</Text>
                   </ScalePressable>
                   <Text style={s.qtyVal}>{item.quantity}</Text>
                   <ScalePressable
@@ -151,7 +151,7 @@ export default function CartScreen({ navigation }: any) {
         <View style={[s.footer, { bottom: Math.max(insets.bottom, 16) }]}>
           <View>
             <Text style={s.totalLabel}>Estimated total</Text>
-            <Text style={s.totalVal}>₹{total.toLocaleString()}</Text>
+            <Text style={s.totalVal}>?{total.toLocaleString()}</Text>
           </View>
           <ScalePressable
             style={s.checkoutBtn}
@@ -233,10 +233,11 @@ const s = StyleSheet.create({
   totalLabel: { color: C.textMuted, fontSize: 11, fontWeight: '600' },
   totalVal: { color: C.text, fontSize: 18, fontWeight: '800', marginTop: 2 },
   checkoutBtn: {
-    backgroundColor: C.text,
+    backgroundColor: C.primary,
     paddingHorizontal: 22,
     paddingVertical: 14,
     borderRadius: R.pill,
+    ...E.buttonShadow,
   },
   checkoutText: { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.3 },
 });

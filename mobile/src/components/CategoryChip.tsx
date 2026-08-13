@@ -1,6 +1,8 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { C, R } from '@/theme/colors';
+import { E } from '@/theme/effects';
 import ScalePressable from '@/components/ScalePressable';
 
 export type CategoryChipItem = {
@@ -14,6 +16,41 @@ type CategoryChipRowProps = {
   onSelect: (item: CategoryChipItem) => void;
   onSeeAll?: () => void;
 };
+
+function Chip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  if (active) {
+    return (
+      <ScalePressable scaleTo={0.96} onPress={onPress} style={s.chipActiveWrap}>
+        <LinearGradient
+          colors={[C.goldGradStart, C.goldGradEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.chipActive}
+        >
+          <Text style={s.chipTextActive} numberOfLines={1}>
+            {label}
+          </Text>
+        </LinearGradient>
+      </ScalePressable>
+    );
+  }
+
+  return (
+    <ScalePressable style={s.chip} scaleTo={0.96} onPress={onPress}>
+      <Text style={s.chipText} numberOfLines={1}>
+        {label}
+      </Text>
+    </ScalePressable>
+  );
+}
 
 export default function CategoryChipRow({
   items,
@@ -30,29 +67,16 @@ export default function CategoryChipRow({
       contentContainerStyle={s.row}
     >
       {onSeeAll ? (
-        <ScalePressable
-          style={[s.chip, !selectedId && s.chipActive]}
-          scaleTo={0.96}
-          onPress={onSeeAll}
-        >
-          <Text style={[s.chipText, !selectedId && s.chipTextActive]}>All</Text>
-        </ScalePressable>
+        <Chip label="All" active={!selectedId} onPress={onSeeAll} />
       ) : null}
-      {items.map((item) => {
-        const active = selectedId === item.id;
-        return (
-          <ScalePressable
-            key={item.id}
-            style={[s.chip, active && s.chipActive]}
-            scaleTo={0.96}
-            onPress={() => onSelect(item)}
-          >
-            <Text style={[s.chipText, active && s.chipTextActive]} numberOfLines={1}>
-              {item.name}
-            </Text>
-          </ScalePressable>
-        );
-      })}
+      {items.map((item) => (
+        <Chip
+          key={item.id}
+          label={item.name}
+          active={selectedId === item.id}
+          onPress={() => onSelect(item)}
+        />
+      ))}
     </ScrollView>
   );
 }
@@ -64,16 +88,23 @@ const s = StyleSheet.create({
     paddingBottom: 4,
   },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: R.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: R.sm,
     backgroundColor: C.surface,
     borderWidth: 1,
     borderColor: C.border,
+    ...E.softShadow,
+  },
+  chipActiveWrap: {
+    borderRadius: R.sm,
+    overflow: 'hidden',
+    ...E.softShadow,
   },
   chipActive: {
-    backgroundColor: C.text,
-    borderColor: C.text,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: R.sm,
   },
   chipText: {
     color: C.textSub,
@@ -82,6 +113,7 @@ const s = StyleSheet.create({
   },
   chipTextActive: {
     color: '#fff',
+    fontSize: 13,
     fontWeight: '700',
   },
 });

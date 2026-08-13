@@ -229,7 +229,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   saveBtn: {
-    backgroundColor: C.text,
+    backgroundColor: C.primary,
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: 'center',

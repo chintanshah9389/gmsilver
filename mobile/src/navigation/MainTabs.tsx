@@ -48,7 +48,7 @@ const tabStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconBoxActive: {
-    backgroundColor: C.text,
+    backgroundColor: C.primary,
   },
   label: {
     fontSize: 10,
@@ -56,7 +56,7 @@ const tabStyles = StyleSheet.create({
     marginTop: 3,
     fontWeight: '500',
   },
-  labelActive: { color: C.text, fontWeight: '700' },
+  labelActive: { color: C.primary, fontWeight: '700' },
 });
 
 const ICONS: Record<string, { idle: string; active: string }> = {

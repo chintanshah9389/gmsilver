@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Icon } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppSelector } from '@/hooks/redux';
 import { C, R } from '@/theme/colors';
@@ -15,14 +16,19 @@ export default function AppLogoHeader() {
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   return (
-    <View style={[s.wrap, { paddingTop: Math.max(insets.top, 8) }]}>
+    <View style={[s.wrap, { paddingTop: Math.max(insets.top, 10) }]}>
       <View style={s.left}>
-        <View style={s.logoBox}>
+        <LinearGradient
+          colors={[C.metalGradStart, C.metalGradEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.logoBox}
+        >
           <Text style={s.logoText}>GM</Text>
-        </View>
+        </LinearGradient>
         <View style={s.copy}>
-          <Text style={s.greeting}>Hello, {firstName}</Text>
-          <Text style={s.brand}>GM Silver</Text>
+          <Text style={s.greeting}>Welcome back</Text>
+          <Text style={s.brand}>{firstName}</Text>
         </View>
       </View>
 
@@ -60,7 +66,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: C.bg,
+    backgroundColor: 'transparent',
   },
   left: {
     flexDirection: 'row',
@@ -71,31 +77,34 @@ const s = StyleSheet.create({
   logoBox: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    borderWidth: 1.5,
-    borderColor: C.gold,
-    backgroundColor: C.surface,
+    borderRadius: 14,
+    transform: [{ rotate: '8deg' }],
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
     ...E.softShadow,
   },
   logoText: {
-    color: C.text,
-    fontSize: 13,
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
+    transform: [{ rotate: '-8deg' }],
   },
   copy: { flexShrink: 1 },
   greeting: {
     color: C.textMuted,
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   brand: {
     color: C.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: -0.2,
     marginTop: 1,
   },
   actions: {
@@ -106,7 +115,7 @@ const s = StyleSheet.create({
   actionBtn: {
     width: 40,
     height: 40,
-    borderRadius: R.pill,
+    borderRadius: R.sm,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

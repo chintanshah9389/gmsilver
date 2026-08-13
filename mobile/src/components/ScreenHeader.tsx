@@ -18,10 +18,10 @@ export default function ScreenHeader({
 }) {
   return (
     <View style={s.wrap}>
-      <View style={[s.header, !onBack && s.headerNoBack]}>
+      <View style={s.header}>
         {onBack ? (
           <ScalePressable style={s.backBtn} scaleTo={0.95} onPress={onBack}>
-            <Icon source="chevron-left" size={24} color={C.text} />
+            <Icon source="chevron-left" size={22} color={C.text} />
           </ScalePressable>
         ) : null}
         <View style={s.titles}>
@@ -51,13 +51,13 @@ const s = StyleSheet.create({
     borderColor: C.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    overflow: 'hidden',
     ...E.softShadow,
   },
-  headerNoBack: { paddingLeft: 16 },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: R.sm,
     borderWidth: 1,
     borderColor: C.border,
     alignItems: 'center',
@@ -66,13 +66,12 @@ const s = StyleSheet.create({
     backgroundColor: C.surface2,
   },
   titles: { flex: 1, minWidth: 0 },
-  title: { color: C.text, fontSize: 18, fontWeight: '800', letterSpacing: 0.2 },
+  title: { color: C.text, fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
   subtitle: {
     color: C.textMuted,
     fontSize: 11,
     marginTop: 2,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   right: { marginLeft: 8, flexShrink: 0 },
 });

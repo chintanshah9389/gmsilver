@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -214,7 +214,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         <MotionReveal delay={50} duration={440} distance={18} style={s.content}>
           <View style={s.namePriceRow}>
             <Text style={s.productName}>{product.name}</Text>
-            <Text style={s.productPrice}>₹{Number(product.price).toLocaleString()}</Text>
+            <Text style={s.productPrice}>?{Number(product.price).toLocaleString()}</Text>
           </View>
 
           {product.sku ? (
@@ -368,7 +368,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             {cartUnit === 'KG' ? (
               <Text style={s.convertHint}>
                 {hasWeight
-                  ? `≈ ${pieceQuantity} pcs  ·  ${weightGrams}g each`
+                  ? `? ${pieceQuantity} pcs  ?  ${weightGrams}g each`
                   : 'Weight not set for this product. Switch to Pieces.'}
               </Text>
             ) : (
@@ -385,7 +385,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={s.confirmBtnText}>
-                  Confirm · {pieceQuantity > 0 ? `${pieceQuantity} pcs` : '—'}
+                  Confirm ? {pieceQuantity > 0 ? `${pieceQuantity} pcs` : '?'}
                 </Text>
               )}
             </ScalePressable>
@@ -420,7 +420,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 52,
   },
-  headerBtn: {
+  headerbtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -450,7 +450,7 @@ const s = StyleSheet.create({
   thumb: {
     width: 56,
     height: 56,
-    borderRadius: R.sm,
+    borderRadius: R.pill,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -551,7 +551,7 @@ const s = StyleSheet.create({
     width: CART_BTN_W,
     height: CART_BTN_H,
     borderRadius: R.pill,
-    backgroundColor: C.text,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...E.buttonShadow,
@@ -637,7 +637,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
   },
   unitBtnActive: {
-    backgroundColor: 'rgba(216,194,154,0.22)',
+    backgroundColor: C.goldSoft,
     borderColor: C.goldDim,
   },
   unitIconWrap: {
@@ -658,7 +658,7 @@ const s = StyleSheet.create({
   unitBtnText: {
     color: C.textSub,
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.2,
   },
@@ -714,7 +714,7 @@ const s = StyleSheet.create({
   confirmBtn: {
     height: 50,
     borderRadius: 999,
-    backgroundColor: C.text,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...E.buttonShadow,

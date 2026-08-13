@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Icon, Snackbar } from 'react-native-paper';
 import {
@@ -7,9 +7,8 @@ import {
   useMarkReadMutation,
 } from '@/store/services/notificationsApi';
 import { getErrorMessage } from '@/lib/error-message';
-import { C } from '@/theme/colors';
+import { C, R } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
-import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
 import ScreenHeader from '@/components/ScreenHeader';
@@ -111,12 +110,43 @@ export default function NotificationsScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  markBtn: { backgroundColor: C.goldSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(196,165,116,0.3)' },
-  markBtnText: { color: C.goldDim, fontSize: 10, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
+  markBtn: {
+    backgroundColor: C.primarySoft,
+    borderRadius: R.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: C.borderHi,
+  },
+  markBtnText: {
+    color: C.text,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
   list: { paddingHorizontal: 16, paddingBottom: 110 },
-  card: { backgroundColor: C.surface, borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: C.border, flexDirection: 'row', gap: 10, ...E.softShadow },
-  cardUnread: { borderColor: 'rgba(196,165,116,0.35)', backgroundColor: 'rgba(196,165,116,0.06)' },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.gold, marginTop: 5 },
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cardUnread: {
+    borderColor: C.borderHi,
+    backgroundColor: C.surface2,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: C.primary,
+    marginTop: 5,
+  },
   notifTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   notifBody: { color: C.textSub, fontSize: 13, lineHeight: 18 },
   notifLink: { color: C.goldDim, fontSize: 11, marginTop: 8, fontWeight: '600' },
@@ -127,7 +157,7 @@ const s = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: C.goldSoft,
     borderWidth: 1,
-    borderColor: 'rgba(196,165,116,0.28)',
+    borderColor: 'rgba(184,149,108,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,

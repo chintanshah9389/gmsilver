@@ -126,10 +126,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  initial: { color: C.gold, fontSize: 36, fontWeight: '700' },
+  initial: { color: C.textMuted, fontSize: 36, fontWeight: '600' },
   scrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(28,25,21,0.32)',
+    backgroundColor: 'rgba(20,21,22,0.36)',
   },
   copy: {
     position: 'absolute',
@@ -137,6 +137,6 @@ const styles = StyleSheet.create({
     right: 14,
     bottom: 14,
   },
-  name: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  name: { color: '#fff', fontSize: 16, fontWeight: '700' },
   count: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 4 },
 });
