@@ -188,11 +188,26 @@ export class UsersService {
       data: { status: dto.status },
     });
 
-    if (
-      dto.status === UserStatus.APPROVED &&
-      user.status !== UserStatus.APPROVED
-    ) {
-      await this.notificationsService.notifyUserApproved(userId);
+    if (dto.status !== user.status) {
+      if (dto.status === UserStatus.APPROVED) {
+        this.notificationsService
+          .notifyUserApproved(userId)
+          .catch((err) =>
+            console.error(`User-approved push failed for ${userId}:`, err),
+          );
+      } else if (dto.status === UserStatus.REJECTED) {
+        this.notificationsService
+          .notifyUserRejected(userId)
+          .catch((err) =>
+            console.error(`User-rejected push failed for ${userId}:`, err),
+          );
+      } else if (dto.status === UserStatus.BLOCKED) {
+        this.notificationsService
+          .notifyUserBlocked(userId)
+          .catch((err) =>
+            console.error(`User-blocked push failed for ${userId}:`, err),
+          );
+      }
     }
 
     return { message: `User status updated to ${dto.status}` };

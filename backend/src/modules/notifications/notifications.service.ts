@@ -238,11 +238,35 @@ export class NotificationsService implements OnModuleInit {
 
   // ─── BUSINESS NOTIFICATIONS ───────────────────────────────────────
   async notifyUserApproved(userId: string) {
-    await this.sendToUser(
+    const result = await this.sendToUser(
       userId,
       'Account Approved! 🎉',
-      'Your GM Silver account has been approved. Start exploring our silver catalog.',
+      'Your permission has been approved. You can now sign in and start exploring our silver catalog.',
       NotificationType.USER_APPROVED,
+    );
+    if (result.skippedReason || result.failureCount > 0) {
+      this.logger.warn(
+        `Approval push for ${userId}: targeted=${result.tokensTargeted} ok=${result.successCount} skip=${result.skippedReason || '-'} errors=${result.errors.join('; ') || '-'}`,
+      );
+    }
+    return result;
+  }
+
+  async notifyUserRejected(userId: string) {
+    return this.sendToUser(
+      userId,
+      'Account Rejected',
+      'Your registration was not approved. Please contact support if you have questions.',
+      NotificationType.BROADCAST,
+    );
+  }
+
+  async notifyUserBlocked(userId: string) {
+    return this.sendToUser(
+      userId,
+      'Account Blocked',
+      'Your account has been blocked. Please contact support for more information.',
+      NotificationType.BROADCAST,
     );
   }
 

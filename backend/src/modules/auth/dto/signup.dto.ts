@@ -1,5 +1,13 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches, IsIn } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsIn,
+  IsOptional,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SECURITY_QUESTION_KEYS } from '../security-questions';
 
 export class SignupDto {
@@ -47,4 +55,12 @@ export class SignupDto {
   @MinLength(2)
   @MaxLength(100)
   securityAnswer: string;
+
+  @ApiPropertyOptional({
+    example: 'fcm_token_here',
+    description: 'Device FCM token so approval push can be delivered before first login',
+  })
+  @IsOptional()
+  @IsString()
+  fcmToken?: string;
 }

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSignupMutation } from '@/store/services/authApi';
+import { getFcmToken } from '@/services/pushNotifications';
 import { getErrorMessage } from '@/lib/error-message';
 import {
   confirmMpinError,
@@ -134,6 +135,8 @@ export default function SignupScreen({ navigation }: any) {
     setApiError('');
     if (!validateAll()) return;
     try {
+      // Save device token at signup — pending users cannot log in until approved
+      const fcmToken = await getFcmToken();
       await signup({
         name,
         email,
@@ -143,6 +146,7 @@ export default function SignupScreen({ navigation }: any) {
         confirmMpin,
         securityQuestion,
         securityAnswer: securityAnswer.trim(),
+        ...(fcmToken ? { fcmToken } : {}),
       }).unwrap();
       Alert.alert(
         'Account created',

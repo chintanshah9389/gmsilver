@@ -110,6 +110,11 @@ export class AuthService {
       },
     });
 
+    // Pending users cannot log in, so save FCM at signup for approval push
+    if (dto.fcmToken) {
+      await this.usersService.updateFcmToken(user.id, dto.fcmToken);
+    }
+
     // Notify admins/owners about new signup (non-blocking for registration)
     this.notificationsService
       .notifyAdminsNewUser(user.id, user.name)
