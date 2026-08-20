@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Icon } from 'react-native-paper';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { logout } from '@/store/slices/authSlice';
+import { clearRememberedSession } from '@/lib/remember-me';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
@@ -26,7 +27,7 @@ function MenuItem({
   return (
     <ScalePressable style={s.menuItem} scaleTo={0.985} onPress={onPress}>
       <View style={[s.menuIconBox, danger && s.menuIconBoxDanger]}>
-        <Icon source={icon} size={20} color={danger ? C.error : C.goldDim} />
+        <Icon source={icon} size={20} color={danger ? C.error : C.ruby} />
       </View>
       <View style={s.menuCopy}>
         <Text style={[s.menuLabel, danger && s.menuLabelDanger]}>{label}</Text>
@@ -113,7 +114,9 @@ export default function ProfileScreen({ navigation }: any) {
               <MenuItem
                 icon="logout"
                 label="Sign Out"
-                onPress={() => dispatch(logout())}
+                onPress={() => {
+                  void clearRememberedSession().finally(() => dispatch(logout()));
+                }}
                 danger
               />
             </View>

@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
-import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
+import { C } from '@/theme/colors';
+import { F } from '@/theme/typography';
 import ScalePressable from '@/components/ScalePressable';
 
 export default function ScreenHeader({
@@ -23,7 +23,9 @@ export default function ScreenHeader({
           <ScalePressable style={s.backBtn} scaleTo={0.95} onPress={onBack}>
             <Icon source="chevron-left" size={22} color={C.text} />
           </ScalePressable>
-        ) : null}
+        ) : (
+          <View style={s.backBtn} />
+        )}
         <View style={s.titles}>
           <Text style={s.title} numberOfLines={1}>
             {title}
@@ -34,44 +36,46 @@ export default function ScreenHeader({
             </Text>
           ) : null}
         </View>
-        {right ? <View style={s.right}>{right}</View> : null}
+        {right ? <View style={s.right}>{right}</View> : <View style={s.backBtn} />}
       </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  wrap: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
+  wrap: {
+    paddingHorizontal: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: C.surface,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    overflow: 'hidden',
-    ...E.softShadow,
+    paddingVertical: 6,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: R.sm,
-    borderWidth: 1,
-    borderColor: C.border,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    backgroundColor: C.surface2,
   },
-  titles: { flex: 1, minWidth: 0 },
-  title: { color: C.text, fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
+  titles: { flex: 1, minWidth: 0, alignItems: 'center' },
+  title: {
+    color: C.text,
+    fontSize: 22,
+    fontFamily: F.serif,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   subtitle: {
     color: C.textMuted,
     fontSize: 11,
     marginTop: 2,
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
   },
-  right: { marginLeft: 8, flexShrink: 0 },
+  right: { width: 40, alignItems: 'center', flexShrink: 0 },
 });

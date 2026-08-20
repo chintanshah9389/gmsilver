@@ -8,10 +8,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   scheme: 'gmsilver',
   userInterfaceStyle: 'light',
+  icon: './assets/icon.png',
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.gmsilver.app',
     googleServicesFile: './GoogleService-Info.plist',
+    icon: './assets/icon.png',
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
     },
@@ -21,7 +23,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     googleServicesFile: './google-services.json',
     permissions: ['android.permission.POST_NOTIFICATIONS'],
     adaptiveIcon: {
-      backgroundColor: '#F8F7F4',
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#FBF9F6',
     },
   },
   plugins: [

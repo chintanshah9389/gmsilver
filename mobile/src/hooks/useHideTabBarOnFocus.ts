@@ -1,33 +1,32 @@
 import { useCallback, useMemo } from 'react';
-import { Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
+import { C } from '@/theme/colors';
 
 export function getFloatingTabBarStyle(bottomInset: number) {
-  const bottom = Math.max(bottomInset, 8);
+  const pad = Math.max(bottomInset, 8);
   return {
     position: 'absolute' as const,
-    left: 16,
-    right: 16,
-    bottom,
-    height: 68,
-    borderRadius: R.xl,
-    backgroundColor: C.surface,
-    borderTopWidth: 0,
-    borderWidth: 1,
-    borderColor: C.borderHi,
-    paddingBottom: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 58 + pad,
+    borderRadius: 0,
+    backgroundColor: C.ivory,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.border,
+    borderWidth: 0,
+    paddingBottom: pad,
     paddingTop: 6,
-    ...E.floatShadow,
-    ...(Platform.OS === 'android' ? { elevation: 14 } : null),
+    elevation: 0,
+    shadowOpacity: 0,
   };
 }
 
-/** Space reserved by the floating tab bar (for sticky footers above it). */
-export function getTabBarClearance(bottomInset: number, gap = 10) {
-  return 68 + Math.max(bottomInset, 8) + gap;
+/** Space reserved by the tab bar (for sticky footers above it). */
+export function getTabBarClearance(bottomInset: number, gap = 8) {
+  return 58 + Math.max(bottomInset, 8) + gap;
 }
 
 function findTabNavigator(navigation: any) {

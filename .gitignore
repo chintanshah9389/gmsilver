@@ -11,6 +11,12 @@ pnpm-debug.log*
 !.env.example
 !.env.shared.example
 
+# Cursor MCP (contains API keys)
+.cursor/mcp.json
+
+# Stitch design exports
+.stitch/
+
 # Build
 .next/
 dist/

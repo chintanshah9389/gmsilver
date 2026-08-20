@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -8,9 +9,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { C, R } from '@/theme/colors';
 import { E } from '@/theme/effects';
+import { F } from '@/theme/typography';
 import PremiumBackground from '@/components/PremiumBackground';
 
 type AuthShellProps = {
@@ -26,34 +27,22 @@ export default function AuthShell({ children, title, subtitle, footer }: AuthShe
       style={s.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <PremiumBackground variant="auth" shimmer />
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+      <PremiumBackground variant="auth" />
+      <StatusBar barStyle="dark-content" backgroundColor={C.ivory} />
       <ScrollView
         contentContainerStyle={s.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={s.brand}>
-          <LinearGradient
-            colors={[C.metalGradStart, C.metalGradEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <Image
+            source={require('@/assets/gm-silver-mark.png')}
             style={s.mark}
-          >
-            <Text style={s.markText}>GM</Text>
-          </LinearGradient>
-          <Text style={s.brandName}>GM SILVER</Text>
-          <Text style={s.brandTag}>Crystal origami catalog</Text>
+            resizeMode="contain"
+          />
         </View>
 
         <View style={s.card}>
-          <LinearGradient
-            colors={[C.facetA, C.facetB]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={s.foldCorner}
-          />
-          <View style={s.foldEdge} />
           <Text style={s.title}>{title}</Text>
           {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
           <View style={s.body}>{children}</View>
@@ -66,84 +55,41 @@ export default function AuthShell({ children, title, subtitle, footer }: AuthShe
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: C.ivory },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 22,
-    paddingTop: 48,
+    paddingHorizontal: 24,
+    paddingTop: 36,
     paddingBottom: 36,
     justifyContent: 'center',
   },
-  brand: { alignItems: 'center', marginBottom: 22 },
+  brand: { alignItems: 'center', marginBottom: 28 },
   mark: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    transform: [{ rotate: '10deg' }],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
-    ...E.softShadow,
-  },
-  markText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    transform: [{ rotate: '-10deg' }],
-  },
-  brandName: {
-    color: C.text,
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 3.5,
-  },
-  brandTag: {
-    color: C.accent,
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '600',
+    width: 220,
+    height: 96,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: R.xl,
+    borderRadius: R.xs,
     borderWidth: 1,
     borderColor: C.border,
-    padding: 22,
-    overflow: 'hidden',
+    padding: 24,
     ...E.cardShadow,
-  },
-  foldCorner: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 72,
-    height: 72,
-    borderBottomLeftRadius: 28,
-  },
-  foldEdge: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 4,
-    height: '100%',
-    backgroundColor: C.gold,
   },
   title: {
     color: C.text,
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-    marginTop: 4,
+    fontSize: 28,
+    fontFamily: F.serif,
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
   subtitle: {
     color: C.textSub,
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 8,
-    lineHeight: 20,
+    lineHeight: 22,
+    fontFamily: F.sans,
   },
-  body: { marginTop: 20 },
+  body: { marginTop: 22 },
   footer: { marginTop: 22, alignItems: 'center' },
 });

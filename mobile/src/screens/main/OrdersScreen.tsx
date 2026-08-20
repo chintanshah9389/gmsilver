@@ -252,7 +252,7 @@ const s = StyleSheet.create({
   },
   moreThumbText: { color: C.textSub, fontSize: 11, fontWeight: '700' },
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  orderTotal: { color: C.goldDim, fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
+  orderTotal: { color: C.ruby, fontSize: 17, fontWeight: '700', letterSpacing: 0.2 },
   viewRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   viewText: { color: C.textSub, fontSize: 12, fontWeight: '600' },
   emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 8 },

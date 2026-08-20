@@ -1,8 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
+import { C } from '@/theme/colors';
+import { F } from '@/theme/typography';
 import ScalePressable from '@/components/ScalePressable';
 
 export type CategoryChipItem = {
@@ -26,26 +25,13 @@ function Chip({
   active: boolean;
   onPress: () => void;
 }) {
-  if (active) {
-    return (
-      <ScalePressable scaleTo={0.96} onPress={onPress} style={s.chipActiveWrap}>
-        <LinearGradient
-          colors={[C.goldGradStart, C.goldGradEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={s.chipActive}
-        >
-          <Text style={s.chipTextActive} numberOfLines={1}>
-            {label}
-          </Text>
-        </LinearGradient>
-      </ScalePressable>
-    );
-  }
-
   return (
-    <ScalePressable style={s.chip} scaleTo={0.96} onPress={onPress}>
-      <Text style={s.chipText} numberOfLines={1}>
+    <ScalePressable
+      style={[s.chip, active && s.chipActive]}
+      scaleTo={0.97}
+      onPress={onPress}
+    >
+      <Text style={[s.chipText, active && s.chipTextActive]} numberOfLines={1}>
         {label}
       </Text>
     </ScalePressable>
@@ -83,37 +69,27 @@ export default function CategoryChipRow({
 
 const s = StyleSheet.create({
   row: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: 24,
+    gap: 18,
     paddingBottom: 4,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: R.sm,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    ...E.softShadow,
-  },
-  chipActiveWrap: {
-    borderRadius: R.sm,
-    overflow: 'hidden',
-    ...E.softShadow,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
   },
   chipActive: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: R.sm,
+    borderBottomColor: C.ruby,
   },
   chipText: {
     color: C.textSub,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
   },
   chipTextActive: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
+    color: C.text,
   },
 });

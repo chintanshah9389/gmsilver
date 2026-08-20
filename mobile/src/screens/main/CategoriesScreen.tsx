@@ -19,6 +19,7 @@ import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
 import ScreenHeader from '@/components/ScreenHeader';
 import EmptyState from '@/components/EmptyState';
+import { getCategoryImageSource } from '@/lib/category-image';
 
 const { width: SW } = Dimensions.get('window');
 const COLS = 2;
@@ -75,17 +76,11 @@ export default function CategoriesScreen({ navigation }: any) {
                     })
                   }
                 >
-                  {item.imageUrl ? (
-                    <Image
-                      source={{ uri: item.imageUrl }}
-                      style={StyleSheet.absoluteFillObject}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles.placeholder}>
-                      <Text style={styles.initial}>{item.name?.[0]?.toUpperCase() ?? '✦'}</Text>
-                    </View>
-                  )}
+                  <Image
+                    source={getCategoryImageSource(item)}
+                    style={StyleSheet.absoluteFillObject}
+                    resizeMode="cover"
+                  />
                   <View style={styles.scrim} />
                   <View style={styles.copy}>
                     <Text style={styles.name} numberOfLines={2}>
@@ -120,13 +115,6 @@ const styles = StyleSheet.create({
     backgroundColor: C.surface3,
     ...E.softShadow,
   },
-  placeholder: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: C.surface2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  initial: { color: C.textMuted, fontSize: 36, fontWeight: '600' },
   scrim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(20,21,22,0.36)',

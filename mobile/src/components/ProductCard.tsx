@@ -1,14 +1,13 @@
 import React from 'react';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
 import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
+import { F } from '@/theme/typography';
 import ScalePressable from '@/components/ScalePressable';
 
 const { width: SW } = Dimensions.get('window');
-const PAD = 16;
-const GAP = 12;
+const PAD = 24;
+const GAP = 16;
 export const PRODUCT_CARD_W = (SW - PAD * 2 - GAP) / 2;
 
 type ProductCardProps = {
@@ -23,6 +22,7 @@ type ProductCardProps = {
   onWish?: () => void;
   wished?: boolean;
   width?: number;
+  variant?: 'grid' | 'editorial';
 };
 
 export default function ProductCard({
@@ -30,28 +30,23 @@ export default function ProductCard({
   onPress,
   onWish,
   wished,
-  width = PRODUCT_CARD_W,
+  width,
+  variant = 'editorial',
 }: ProductCardProps) {
-  const imgH = width * 1.22;
+  const editorial = variant === 'editorial';
+  const cardW = width ?? (editorial ? SW - PAD * 2 : PRODUCT_CARD_W);
+  const imgH = editorial ? cardW * 1.05 : cardW * 1.22;
 
   return (
-    <ScalePressable style={[s.card, { width }]} scaleTo={0.98} onPress={onPress}>
+    <ScalePressable style={[s.card, { width: cardW }]} scaleTo={0.99} onPress={onPress}>
       <View style={[s.imgWrap, { height: imgH }]}>
         {item.image1Url ? (
           <Image source={{ uri: item.image1Url }} style={s.img} resizeMode="cover" />
         ) : (
-          <LinearGradient colors={[C.facetA, C.facetB]} style={s.imgPlaceholder}>
+          <View style={s.imgPlaceholder}>
             <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? 'G'}</Text>
-          </LinearGradient>
+          </View>
         )}
-        <LinearGradient
-          colors={['transparent', 'rgba(15,23,42,0.35)']}
-          style={s.imgFade}
-        />
-        <LinearGradient
-          colors={[C.facetA, C.facetB]}
-          style={s.facetCorner}
-        />
         {onWish ? (
           <ScalePressable
             style={[s.wishBtn, wished && s.wishBtnActive]}
@@ -60,8 +55,8 @@ export default function ProductCard({
           >
             <Icon
               source={wished ? 'heart' : 'heart-outline'}
-              size={15}
-              color={wished ? C.error : C.textSub}
+              size={16}
+              color={wished ? C.ruby : C.textSub}
             />
           </ScalePressable>
         ) : null}
@@ -70,10 +65,7 @@ export default function ProductCard({
         <Text style={s.name} numberOfLines={2}>
           {item.name}
         </Text>
-        <View style={s.priceRow}>
-          <View style={s.priceDash} />
-          <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
-        </View>
+        <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
       </View>
     </ScalePressable>
   );
@@ -83,77 +75,53 @@ export const PRODUCT_GRID = { PAD, GAP };
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: C.surface,
-    borderRadius: R.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: C.border,
-    ...E.cardShadow,
+    backgroundColor: 'transparent',
   },
   imgWrap: {
     width: '100%',
-    backgroundColor: C.surface2,
+    backgroundColor: C.bg2,
+    borderRadius: R.xs,
+    overflow: 'hidden',
   },
   img: { width: '100%', height: '100%' },
   imgPlaceholder: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: C.bg2,
   },
-  imgFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 48,
+  imgInitial: {
+    color: C.textMuted,
+    fontSize: 34,
+    fontFamily: F.serif,
   },
-  facetCorner: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 36,
-    height: 36,
-    borderBottomLeftRadius: 16,
-    opacity: 0.85,
-  },
-  imgInitial: { color: C.goldDim, fontSize: 34, fontWeight: '700' },
   wishBtn: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    top: 12,
+    right: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...E.softShadow,
   },
   wishBtnActive: { backgroundColor: '#FFF5F5' },
-  body: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 14 },
+  body: { paddingTop: 12, paddingBottom: 6 },
   name: {
     color: C.text,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
     lineHeight: 18,
-    minHeight: 36,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
-  priceDash: {
-    width: 14,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: C.gold,
   },
   price: {
-    color: C.goldDim,
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.2,
+    color: C.ruby,
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 6,
+    fontFamily: F.sans,
   },
 });

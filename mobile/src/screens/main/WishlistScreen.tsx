@@ -54,6 +54,7 @@ export default function WishlistScreen({ navigation }: any) {
         renderItem={({ item, index }) => (
           <MotionReveal delay={Math.min(index * 20, 160)} duration={240} distance={8}>
             <ProductCard
+              variant="grid"
               item={{
                 id: item.productId,
                 name: item.product?.name,

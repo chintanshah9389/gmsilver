@@ -274,7 +274,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
           <View style={s.cartBtnInner}>
             <Icon source="cart-outline" size={18} color="#fff" />
-            <Text style={s.cartBtnText}>Add to Cart</Text>
+            <Text style={s.cartBtnText}>Add to Bag</Text>
           </View>
         </ScalePressable>
       </View>
@@ -420,7 +420,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 52,
   },
-  headerbtn: {
+  headerBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -456,7 +456,7 @@ const s = StyleSheet.create({
     borderColor: 'transparent',
   },
   thumbActive: {
-    borderColor: C.gold,
+    borderColor: C.ruby,
   },
   thumbImg: { width: '100%', height: '100%' },
 
@@ -478,13 +478,14 @@ const s = StyleSheet.create({
   },
   productName: {
     color: C.text,
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 26,
+    fontFamily: 'serif',
+    fontWeight: '500',
     flex: 1,
-    lineHeight: 28,
+    lineHeight: 32,
     letterSpacing: -0.2,
   },
-  productPrice: { color: C.goldDim, fontSize: 22, fontWeight: '800', letterSpacing: 0.2 },
+  productPrice: { color: C.ruby, fontSize: 20, fontWeight: '600', letterSpacing: 0.2 },
   skuBadge: {
     alignSelf: 'flex-start',
     backgroundColor: C.surface2,
@@ -535,26 +536,24 @@ const s = StyleSheet.create({
   wishBtn: {
     width: WISH_SIZE,
     height: WISH_SIZE,
-    borderRadius: R.md,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: C.borderHi,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: C.surface,
-    ...E.softShadow,
   },
   wishBtnActive: {
-    borderColor: 'rgba(196,92,92,0.4)',
-    backgroundColor: 'rgba(196,92,92,0.1)',
+    borderColor: C.ruby,
+    backgroundColor: C.accentSoft,
   },
   cartBtn: {
     width: CART_BTN_W,
     height: CART_BTN_H,
-    borderRadius: R.pill,
-    backgroundColor: C.primary,
+    borderRadius: 0,
+    backgroundColor: C.ruby,
     alignItems: 'center',
     justifyContent: 'center',
-    ...E.buttonShadow,
   },
   cartBtnInner: {
     flexDirection: 'row',
@@ -563,9 +562,10 @@ const s = StyleSheet.create({
   },
   cartBtnText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.4,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
   },
 
   sheetRoot: {

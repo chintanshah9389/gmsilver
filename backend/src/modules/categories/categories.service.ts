@@ -37,12 +37,29 @@ export class CategoriesService {
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
         include: {
           _count: { select: { products: true } },
+          products: {
+            where: { deletedAt: null, image1Url: { not: null } },
+            take: 1,
+            orderBy: { updatedAt: 'desc' },
+            select: { image1Url: true },
+          },
         },
       }),
       this.prisma.category.count({ where }),
     ]);
 
-    return createPaginatedResponse(categories, total, page, limit);
+    const enriched = categories.map((category) => {
+      const coverImageUrl =
+        category.imageUrl || category.products?.[0]?.image1Url || null;
+      const { products, ...rest } = category;
+      return {
+        ...rest,
+        coverImageUrl,
+        imageUrl: coverImageUrl,
+      };
+    });
+
+    return createPaginatedResponse(enriched, total, page, limit);
   }
 
   async findById(id: string) {

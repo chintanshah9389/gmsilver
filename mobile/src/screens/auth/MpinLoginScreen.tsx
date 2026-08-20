@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,11 +11,13 @@ import { useLoginWithMpinMutation } from '@/store/services/authApi';
 import { useAppDispatch } from '@/hooks/redux';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/lib/error-message';
-import { C, R } from '@/theme/colors';
+import { C } from '@/theme/colors';
 import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
+import { loadRememberMe, persistLogin } from '@/lib/remember-me';
 import AuthShell from '@/components/AuthShell';
 import GradientButton from '@/components/GradientButton';
+import RememberMeRow from '@/components/RememberMeRow';
 
 const digitsOnly = (value: string) => value.replace(/\D/g, '').slice(0, 6);
 
@@ -23,9 +25,19 @@ export default function MpinLoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const [identifier, setIdentifier] = useState('');
   const [mpin, setMpin] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
   const [loginWithMpin, { isLoading }] = useLoginWithMpinMutation();
+
+  useEffect(() => {
+    loadRememberMe().then((saved) => {
+      if (saved.enabled && saved.identifier) {
+        setIdentifier(saved.identifier);
+        setRememberMe(true);
+      }
+    });
+  }, []);
 
   const onSubmit = async () => {
     if (!identifier.trim()) {
@@ -46,6 +58,11 @@ export default function MpinLoginScreen({ navigation }: any) {
         ...(fcmToken ? { fcmToken } : {}),
       }).unwrap();
       dispatch(setAuth(res.data));
+      await persistLogin({
+        remember: rememberMe,
+        identifier,
+        session: res.data,
+      });
       if (res.data?.user?.id) {
         void registerDeviceForPush(res.data.user.id);
       }
@@ -94,9 +111,12 @@ export default function MpinLoginScreen({ navigation }: any) {
           selectionColor={C.gold}
         />
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotMpin')}>
-          <Text style={s.forgot}>Forgot MPIN?</Text>
-        </TouchableOpacity>
+        <RememberMeRow
+          checked={rememberMe}
+          onToggle={() => setRememberMe((v) => !v)}
+          forgotLabel="Forgot MPIN?"
+          onForgot={() => navigation.navigate('ForgotMpin')}
+        />
 
         <GradientButton
           label="Sign In"
@@ -130,17 +150,16 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: C.surface2,
+    backgroundColor: C.surface,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: R.md,
+    borderRadius: 0,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
     color: C.text,
     fontSize: 14,
     marginBottom: 16,
   },
-  forgot: { color: C.primaryDim, fontSize: 12, textAlign: 'right', marginBottom: 16, fontWeight: '600' },
   btnGap: { marginTop: 8 },
   footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: C.textSub, fontSize: 13 },

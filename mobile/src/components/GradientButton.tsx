@@ -5,10 +5,9 @@ import {
   Text,
   ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { C, R } from '@/theme/colors';
-import { E } from '@/theme/effects';
 import ScalePressable from '@/components/ScalePressable';
+import { F } from '@/theme/typography';
 
 type GradientButtonProps = {
   label: string;
@@ -16,7 +15,7 @@ type GradientButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'accent';
 };
 
 export default function GradientButton({
@@ -27,72 +26,59 @@ export default function GradientButton({
   style,
   variant = 'primary',
 }: GradientButtonProps) {
-  if (variant === 'secondary') {
-    return (
-      <ScalePressable
-        style={[s.secondary, style, disabled && s.disabled]}
-        scaleTo={0.97}
-        onPress={onPress}
-        disabled={disabled || loading}
-      >
-        <Text style={s.secondaryText}>{label}</Text>
-      </ScalePressable>
-    );
-  }
+  const isSecondary = variant === 'secondary';
+  const isAccent = variant === 'accent';
 
   return (
     <ScalePressable
-      style={[s.wrap, style, disabled && s.disabled]}
-      scaleTo={0.97}
+      style={[
+        s.wrap,
+        isSecondary && s.secondary,
+        isAccent && s.accent,
+        style,
+        disabled && s.disabled,
+      ]}
+      scaleTo={0.98}
       onPress={onPress}
       disabled={disabled || loading}
     >
-      <LinearGradient
-        colors={[C.goldGradStart, C.goldGradEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.gradient}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={s.label}>{label}</Text>
-        )}
-      </LinearGradient>
+      {loading ? (
+        <ActivityIndicator color={isSecondary ? C.text : '#fff'} size="small" />
+      ) : (
+        <Text style={[s.label, isSecondary && s.secondaryText]}>{label}</Text>
+      )}
     </ScalePressable>
   );
 }
 
 const s = StyleSheet.create({
   wrap: {
-    borderRadius: R.sm,
+    borderRadius: R.xs,
     overflow: 'hidden',
-    ...E.buttonShadow,
-  },
-  gradient: {
+    backgroundColor: C.primary,
     paddingVertical: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: R.sm,
+    minHeight: 50,
+  },
+  accent: {
+    backgroundColor: C.ruby,
+  },
+  secondary: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.primary,
   },
   label: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  secondary: {
-    borderRadius: R.sm,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: C.borderHi,
-    backgroundColor: C.surface,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
   },
   secondaryText: {
-    color: C.text,
-    fontSize: 14,
-    fontWeight: '700',
+    color: C.primary,
   },
-  disabled: { opacity: 0.6 },
+  disabled: { opacity: 0.55 },
 });

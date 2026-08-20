@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { C } from '@/theme/colors';
+import { F } from '@/theme/typography';
 import ScalePressable from '@/components/ScalePressable';
 
 type SectionHeaderProps = {
@@ -19,14 +20,11 @@ export default function SectionHeader({
   return (
     <View style={s.wrap}>
       <View style={s.copy}>
-        <View style={s.titleRow}>
-          <View style={s.dash} />
-          <Text style={s.title}>{title}</Text>
-        </View>
-        {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={s.eyebrow}>{subtitle}</Text> : null}
+        <Text style={s.title}>{title}</Text>
       </View>
       {onAction ? (
-        <ScalePressable onPress={onAction} scaleTo={0.96} style={s.actionBtn}>
+        <ScalePressable onPress={onAction} scaleTo={0.97} style={s.actionBtn}>
           <Text style={s.action}>{actionLabel}</Text>
         </ScalePressable>
       ) : null}
@@ -36,44 +34,41 @@ export default function SectionHeader({
 
 const s = StyleSheet.create({
   wrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    marginTop: 8,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    marginTop: 12,
   },
-  copy: { flex: 1, paddingRight: 12 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dash: {
-    width: 16,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: C.gold,
+  copy: { paddingRight: 12 },
+  eyebrow: {
+    color: C.ruby,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2.4,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
+    marginBottom: 6,
   },
   title: {
     color: C.text,
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 26,
+    fontFamily: F.serif,
+    fontWeight: '500',
     letterSpacing: -0.2,
   },
-  subtitle: {
-    color: C.textMuted,
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 24,
-  },
   actionBtn: {
-    backgroundColor: C.primarySoft,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    alignSelf: 'flex-start',
+    marginTop: 12,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   action: {
     color: C.primary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
   },
 });

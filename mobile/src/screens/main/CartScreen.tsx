@@ -158,7 +158,7 @@ export default function CartScreen({ navigation }: any) {
             scaleTo={0.97}
             onPress={() => navigation.navigate('Checkout')}
           >
-            <Text style={s.checkoutText}>Checkout</Text>
+            <Text style={s.checkoutText}>Checkout →</Text>
           </ScalePressable>
         </View>
       ) : null}
@@ -176,12 +176,12 @@ const s = StyleSheet.create({
   item: {
     flexDirection: 'row',
     backgroundColor: C.surface,
-    borderRadius: R.lg,
-    borderWidth: 1,
+    borderRadius: 0,
+    borderBottomWidth: 1,
     borderColor: C.border,
     overflow: 'hidden',
-    marginBottom: 12,
-    ...E.softShadow,
+    marginBottom: 0,
+    paddingVertical: 16,
   },
   thumb: { width: 96, height: 110 },
   thumbPlaceholder: {
@@ -194,7 +194,7 @@ const s = StyleSheet.create({
   thumbInitial: { color: C.textMuted, fontSize: 28, fontWeight: '700' },
   itemInfo: { flex: 1, padding: 14 },
   itemName: { color: C.text, fontSize: 14, fontWeight: '700', lineHeight: 19 },
-  itemPrice: { color: C.goldDim, fontSize: 16, fontWeight: '800', marginTop: 6 },
+  itemPrice: { color: C.ruby, fontSize: 15, fontWeight: '600', marginTop: 6 },
   qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 },
   qtyBtn: {
     width: 30,
@@ -236,8 +236,7 @@ const s = StyleSheet.create({
     backgroundColor: C.primary,
     paddingHorizontal: 22,
     paddingVertical: 14,
-    borderRadius: R.pill,
-    ...E.buttonShadow,
+    borderRadius: 0,
   },
-  checkoutText: { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.3 },
+  checkoutText: { color: '#fff', fontWeight: '700', fontSize: 12, letterSpacing: 1.6, textTransform: 'uppercase' },
 });

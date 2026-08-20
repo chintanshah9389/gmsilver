@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,20 +11,32 @@ import { useLoginMutation } from '@/store/services/authApi';
 import { useAppDispatch } from '@/hooks/redux';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/lib/error-message';
-import { C, R } from '@/theme/colors';
+import { C } from '@/theme/colors';
 import { getFcmToken, registerDeviceForPush } from '@/services/pushNotifications';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
+import { loadRememberMe, persistLogin } from '@/lib/remember-me';
 import AuthShell from '@/components/AuthShell';
 import GradientButton from '@/components/GradientButton';
+import RememberMeRow from '@/components/RememberMeRow';
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
+
+  useEffect(() => {
+    loadRememberMe().then((saved) => {
+      if (saved.enabled && saved.identifier) {
+        setIdentifier(saved.identifier);
+        setRememberMe(true);
+      }
+    });
+  }, []);
 
   const onLogin = async () => {
     if (!identifier.trim()) {
@@ -40,6 +52,11 @@ export default function LoginScreen({ navigation }: any) {
         ...(fcmToken ? { fcmToken } : {}),
       }).unwrap();
       dispatch(setAuth(res.data));
+      await persistLogin({
+        remember: rememberMe,
+        identifier,
+        session: res.data,
+      });
       if (res.data?.user?.id) {
         void registerDeviceForPush(res.data.user.id);
       }
@@ -91,9 +108,12 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={s.forgot}>Forgot password?</Text>
-        </TouchableOpacity>
+        <RememberMeRow
+          checked={rememberMe}
+          onToggle={() => setRememberMe((v) => !v)}
+          forgotLabel="Forgot password?"
+          onForgot={() => navigation.navigate('ForgotPassword')}
+        />
 
         <GradientButton
           label="Sign In with Password"
@@ -127,19 +147,18 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: C.surface2,
+    backgroundColor: C.surface,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: R.md,
+    borderRadius: 0,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
     color: C.text,
     fontSize: 14,
     marginBottom: 16,
   },
   pwWrap: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   eyeBtn: { paddingHorizontal: 12, paddingVertical: 12, marginLeft: 4 },
-  forgot: { color: C.primaryDim, fontSize: 12, textAlign: 'right', marginBottom: 16, fontWeight: '600' },
   eyeText: { color: C.primaryDim, fontSize: 12, fontWeight: '700' },
   btnGap: { marginTop: 8 },
   footer: { flexDirection: 'row', justifyContent: 'center' },

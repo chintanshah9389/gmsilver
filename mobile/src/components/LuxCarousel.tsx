@@ -72,6 +72,9 @@ function Slide({
   fullBleed: boolean;
 }) {
   const animStyle = useAnimatedStyle(() => {
+    if (fullBleed) {
+      return { transform: [{ scale: 1 }], opacity: 1 };
+    }
     const input = [
       (index - 1) * (slideW + gap),
       index * (slideW + gap),
@@ -258,7 +261,7 @@ export default function LuxCarousel({
         )}
       />
       {showDots && items.length > 1 ? (
-        <View style={styles.dots}>
+        <View style={[styles.dots, fullBleed && styles.dotsFullBleed]}>
           {items.map((_, i) => (
             <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
@@ -323,6 +326,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: 12,
+  },
+  dotsFullBleed: {
+    marginTop: 10,
   },
   dot: {
     width: 5,
