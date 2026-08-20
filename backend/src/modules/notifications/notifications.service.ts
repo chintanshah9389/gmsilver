@@ -246,21 +246,14 @@ export class NotificationsService implements OnModuleInit {
     );
   }
 
-  async notifyOrderCreated(ownersAndAdmins: boolean, orderId: string, customerName: string) {
-    await this.sendToRole(
-      'ADMIN',
-      'New Order Received 📦',
-      `${customerName} has placed a new order. Review and approve it.`,
-      NotificationType.ORDER_CREATED,
-      { orderId },
-    );
-    await this.sendToRole(
-      'OWNER',
-      'New Order Received 📦',
-      `${customerName} has placed a new order. Review and approve it.`,
-      NotificationType.ORDER_CREATED,
-      { orderId },
-    );
+  async notifyOrderCreated(_ownersAndAdmins: boolean, orderId: string, customerName: string) {
+    const title = 'New Order Received 📦';
+    const body = `${customerName} has placed a new order. Review and approve it.`;
+    const data = { orderId };
+    await Promise.all([
+      this.sendToRole('ADMIN', title, body, NotificationType.ORDER_CREATED, data),
+      this.sendToRole('OWNER', title, body, NotificationType.ORDER_CREATED, data),
+    ]);
   }
 
   async notifyOrderApproved(userId: string, orderId: string, orderNumber?: string) {
@@ -323,13 +316,14 @@ export class NotificationsService implements OnModuleInit {
   }
 
   async notifyAdminsNewUser(userId: string, userName: string) {
-    await this.sendToRole(
-      'ADMIN',
-      'New User Registration 👤',
-      `${userName} has registered and is pending approval.`,
-      NotificationType.BROADCAST,
-      { userId },
-    );
+    const title = 'New User Registration 👤';
+    const body = `${userName} has registered and is pending approval.`;
+    const data = { userId };
+    // Notify both ADMIN and OWNER so all staff get the alert
+    await Promise.all([
+      this.sendToRole('ADMIN', title, body, NotificationType.BROADCAST, data),
+      this.sendToRole('OWNER', title, body, NotificationType.BROADCAST, data),
+    ]);
   }
 
   // ─── GET USER NOTIFICATIONS ───────────────────────────────────────

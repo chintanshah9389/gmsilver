@@ -110,8 +110,10 @@ export class AuthService {
       },
     });
 
-    // Notify admins about new signup
-    await this.notificationsService.notifyAdminsNewUser(user.id, user.name);
+    // Notify admins/owners about new signup (non-blocking for registration)
+    this.notificationsService
+      .notifyAdminsNewUser(user.id, user.name)
+      .catch((err) => console.error('New-user push notification failed:', err));
 
     this.trackAuth(user.id, 'SIGNUP', { email: user.email });
 

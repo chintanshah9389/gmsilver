@@ -90,12 +90,12 @@ export class OrdersService {
     // Clear cart
     await this.prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
-    // Send notification to admins/owners
-    await this.notificationsService.notifyOrderCreated(
-      true,
-      order.id,
-      order.user.name,
-    );
+    // Push to admins/owners — do not fail the order if FCM is down
+    this.notificationsService
+      .notifyOrderCreated(true, order.id, order.user.name)
+      .catch((err) =>
+        this.logger.error(`New-order push notification failed for ${order.id}`, err),
+      );
 
     return { message: 'Order placed successfully', data: order };
   }
