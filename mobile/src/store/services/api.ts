@@ -28,6 +28,12 @@ export const api = createApi({
     'Notification',
     'Banner',
     'HomeWidget',
+    'AdminUser',
+    'AdminOrder',
+    'Analytics',
+    'AuditLog',
+    'InvoiceAdmin',
+    'NotificationAdmin',
   ],
   endpoints: () => ({}),
 });

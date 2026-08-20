@@ -11,8 +11,15 @@ import { C } from '@/theme/colors';
 import { F } from '@/theme/typography';
 import AppLogoHeader from '@/components/AppLogoHeader';
 import { getFloatingTabBarStyle } from '@/hooks/useHideTabBarOnFocus';
+import { useAppSelector } from '@/hooks/redux';
+import { isStaff } from '@/lib/roles';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+function AdminTabLazy(props: any) {
+  const { AdminTabStack } = require('./AdminTabStack');
+  return <AdminTabStack {...props} />;
+}
 
 const HIDE_TAB_ROUTES = new Set([
   'Cart',
@@ -20,6 +27,8 @@ const HIDE_TAB_ROUTES = new Set([
   'Wishlist',
   'OrderDetail',
   'Settings',
+  'AdminProductForm',
+  'AdminOrderDetail',
 ]);
 
 const TabIcon = ({
@@ -56,6 +65,7 @@ const ICONS: Record<string, { idle: string; active: string }> = {
   Products: { idle: 'diamond-stone', active: 'diamond-stone' },
   Categories: { idle: 'view-grid-outline', active: 'view-grid' },
   Order: { idle: 'package-variant-closed', active: 'package-variant' },
+  Admin: { idle: 'shield-outline', active: 'shield' },
 };
 
 const LABELS: Record<string, string> = {
@@ -63,6 +73,7 @@ const LABELS: Record<string, string> = {
   Products: 'Shop',
   Categories: 'Browse',
   Order: 'Orders',
+  Admin: 'Admin',
 };
 
 function tabBarForRoute(route: any, bottomInset: number) {
@@ -75,6 +86,8 @@ function tabBarForRoute(route: any, bottomInset: number) {
 
 export default function MainTabs() {
   const insets = useSafeAreaInsets();
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const showAdmin = isStaff(role);
 
   return (
     <Tab.Navigator
@@ -122,6 +135,20 @@ export default function MainTabs() {
           },
         })}
       />
+      {showAdmin ? (
+        <Tab.Screen
+          name="Admin"
+          component={AdminTabLazy}
+          options={({ route }) => ({
+            tabBarStyle: tabBarForRoute(route, insets.bottom),
+          })}
+          listeners={({ navigation }) => ({
+            tabPress: () => {
+              navigation.navigate('Admin', { screen: 'AdminHub' });
+            },
+          })}
+        />
+      ) : null}
     </Tab.Navigator>
   );
 }

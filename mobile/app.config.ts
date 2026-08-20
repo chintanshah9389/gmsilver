@@ -16,12 +16,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     icon: './assets/icon.png',
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
+      NSPhotoLibraryUsageDescription:
+        'GM Silver needs photo access to upload product, category, and banner images.',
+      NSCameraUsageDescription:
+        'GM Silver needs camera access to capture product images.',
     },
   },
   android: {
     package: 'com.gmsilver.app',
     googleServicesFile: './google-services.json',
-    permissions: ['android.permission.POST_NOTIFICATIONS'],
+    permissions: [
+      'android.permission.POST_NOTIFICATIONS',
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_EXTERNAL_STORAGE',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#FBF9F6',
@@ -30,6 +38,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     '@react-native-firebase/app',
     '@react-native-firebase/messaging',
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'GM Silver needs photo access to upload product, category, and banner images.',
+      },
+    ],
+    'expo-document-picker',
     [
       'expo-build-properties',
       {
