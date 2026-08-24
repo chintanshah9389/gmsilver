@@ -89,6 +89,8 @@ export class UsersService {
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
         { phone: { contains: search, mode: 'insensitive' } },
+        { companyName: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -102,6 +104,8 @@ export class UsersService {
           id: true,
           email: true,
           name: true,
+          companyName: true,
+          city: true,
           phone: true,
           role: true,
           status: true,
@@ -122,6 +126,8 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        companyName: true,
+        city: true,
         phone: true,
         role: true,
         status: true,

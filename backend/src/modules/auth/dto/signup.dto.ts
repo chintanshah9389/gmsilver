@@ -17,6 +17,18 @@ export class SignupDto {
   @MaxLength(100)
   name: string;
 
+  @ApiProperty({ example: 'Acme Jewellers' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(150)
+  companyName: string;
+
+  @ApiProperty({ example: 'Mumbai', description: 'City or destination' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  city: string;
+
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   email: string;

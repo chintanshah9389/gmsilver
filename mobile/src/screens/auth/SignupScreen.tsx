@@ -18,6 +18,8 @@ import { getFcmToken } from '@/services/pushNotifications';
 import { getErrorMessage } from '@/lib/error-message';
 import {
   confirmMpinError,
+  companyNameError,
+  cityError,
   emailError,
   mapApiErrorToSignupField,
   mpinError,
@@ -35,6 +37,8 @@ const digitsOnly = (value: string, max = 6) => value.replace(/\D/g, '').slice(0,
 
 type FieldKey =
   | 'name'
+  | 'companyName'
+  | 'city'
   | 'email'
   | 'phone'
   | 'password'
@@ -47,6 +51,8 @@ export default function SignupScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const [signup, { isLoading }] = useSignupMutation();
   const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [city, setCity] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -60,7 +66,7 @@ export default function SignupScreen({ navigation }: any) {
   const [apiError, setApiError] = useState('');
 
   const values = {
-    name, email, phone, password, mpin, confirmMpin, securityQuestion, securityAnswer,
+    name, companyName, city, email, phone, password, mpin, confirmMpin, securityQuestion, securityAnswer,
   };
   const latest = useRef(values);
   latest.current = values;
@@ -79,6 +85,8 @@ export default function SignupScreen({ navigation }: any) {
   const validateKey = (key: FieldKey, overrides?: Partial<typeof values>) => {
     const current = { ...latest.current, ...overrides };
     if (key === 'name') return nameError(current.name);
+    if (key === 'companyName') return companyNameError(current.companyName);
+    if (key === 'city') return cityError(current.city);
     if (key === 'email') return emailError(current.email);
     if (key === 'phone') return phoneError(current.phone);
     if (key === 'password') return passwordError(current.password);
@@ -96,6 +104,8 @@ export default function SignupScreen({ navigation }: any) {
   const updateField = (key: FieldKey, value: string) => {
     const setters: Record<FieldKey, (v: string) => void> = {
       name: setName,
+      companyName: setCompanyName,
+      city: setCity,
       email: setEmail,
       phone: setPhone,
       password: setPassword,
@@ -114,7 +124,7 @@ export default function SignupScreen({ navigation }: any) {
   };
 
   const fieldKeys: FieldKey[] = [
-    'name', 'email', 'phone', 'password', 'mpin', 'confirmMpin', 'securityQuestion', 'securityAnswer',
+    'name', 'companyName', 'city', 'email', 'phone', 'password', 'mpin', 'confirmMpin', 'securityQuestion', 'securityAnswer',
   ];
 
   const validateAll = () => {
@@ -124,7 +134,7 @@ export default function SignupScreen({ navigation }: any) {
       if (msg) next[key] = msg;
     });
     setTouched({
-      name: true, email: true, phone: true, password: true,
+      name: true, companyName: true, city: true, email: true, phone: true, password: true,
       mpin: true, confirmMpin: true, securityQuestion: true, securityAnswer: true,
     });
     setErrors(next);
@@ -139,6 +149,8 @@ export default function SignupScreen({ navigation }: any) {
       const fcmToken = await getFcmToken();
       await signup({
         name,
+        companyName,
+        city,
         email,
         phone,
         password,
@@ -200,6 +212,32 @@ export default function SignupScreen({ navigation }: any) {
               value={name}
               onChangeText={(v) => updateField('name', v)}
               onBlur={() => onBlurField('name')}
+              autoCapitalize="words"
+              selectionColor={C.gold}
+            />
+          </Field>
+
+          <Field label="Company Name" error={errors.companyName}>
+            <TextInput
+              style={[s.input, (errors.companyName ? s.inputError : undefined)]}
+              placeholder="Your company name"
+              placeholderTextColor={C.textMuted}
+              value={companyName}
+              onChangeText={(v) => updateField('companyName', v)}
+              onBlur={() => onBlurField('companyName')}
+              autoCapitalize="words"
+              selectionColor={C.gold}
+            />
+          </Field>
+
+          <Field label="City / Destination" error={errors.city}>
+            <TextInput
+              style={[s.input, (errors.city ? s.inputError : undefined)]}
+              placeholder="City or destination"
+              placeholderTextColor={C.textMuted}
+              value={city}
+              onChangeText={(v) => updateField('city', v)}
+              onBlur={() => onBlurField('city')}
               autoCapitalize="words"
               selectionColor={C.gold}
             />

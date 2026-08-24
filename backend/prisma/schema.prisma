@@ -70,6 +70,8 @@ model User {
   password          String
   mpin              String?
   name              String
+  companyName       String?    @map("company_name")
+  city              String?
   role              UserRole   @default(CUSTOMER)
   status            UserStatus @default(PENDING)
   fcmToken          String?    @map("fcm_token")

@@ -109,7 +109,7 @@ export default function LoginPage() {
           </Typography>
         </Box>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate>
           <TextField
             fullWidth
             label="Email Address"

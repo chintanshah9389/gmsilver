@@ -276,6 +276,20 @@ export default function UsersPage() {
       minWidth: 160,
     },
     {
+      field: 'companyName',
+      headerName: 'Company',
+      flex: 1,
+      minWidth: 140,
+      valueGetter: (params) => params.row.companyName || '-',
+    },
+    {
+      field: 'city',
+      headerName: 'City / Destination',
+      flex: 1,
+      minWidth: 140,
+      valueGetter: (params) => params.row.city || '-',
+    },
+    {
       field: 'email',
       headerName: 'Email',
       flex: 1.2,

@@ -94,6 +94,8 @@ export class ExcelService {
     const data = users.map((u) => ({
       ID: u.id,
       Name: u.name,
+      'Company Name': u.companyName || '',
+      'City / Destination': u.city || '',
       Email: u.email,
       Phone: u.phone || '',
       Role: u.role,

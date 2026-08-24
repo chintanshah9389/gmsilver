@@ -4,6 +4,18 @@ export function nameError(value: string): string {
   return '';
 }
 
+export function companyNameError(value: string): string {
+  if (!value.trim()) return 'Company name is required';
+  if (value.trim().length < 2) return 'Company name must be at least 2 characters';
+  return '';
+}
+
+export function cityError(value: string): string {
+  if (!value.trim()) return 'City / destination is required';
+  if (value.trim().length < 2) return 'City / destination must be at least 2 characters';
+  return '';
+}
+
 export function emailError(value: string): string {
   if (!value.trim()) return 'Email is required';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return 'Enter a valid email address';
@@ -72,6 +84,8 @@ export function mapApiErrorToSignupField(message: string): { field?: string; tex
   if (lower.includes('mobile number already') || lower.includes('phone already')) {
     return { field: 'phone', text: 'Mobile number is already registered' };
   }
+  if (lower.includes('company')) return { field: 'companyName', text };
+  if (lower.includes('city') || lower.includes('destination')) return { field: 'city', text };
   if (lower.includes('email')) return { field: 'email', text };
   if (lower.includes('mobile') || lower.includes('phone')) return { field: 'phone', text };
   if (lower.includes('mpin')) return { field: 'mpin', text };

@@ -186,6 +186,11 @@ export default function AdminUsersScreen({ navigation }: any) {
               <Text style={s.meta}>
                 {item.email} · {item.role}
               </Text>
+              {(item.companyName || item.city) ? (
+                <Text style={s.meta}>
+                  {[item.companyName, item.city].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
               <View style={s.actions}>
                 {canAdmin &&
                   STATUSES.filter((st) => st !== item.status).map((st) => (
