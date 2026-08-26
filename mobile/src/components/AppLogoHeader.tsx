@@ -29,14 +29,14 @@ export default function AppLogoHeader() {
         <ScalePressable
           style={s.sideBtn}
           scaleTo={0.92}
-          onPress={() => navigation.navigate('Products', { screen: 'Wishlist' })}
+          onPress={() => navigation.navigate('Categories', { screen: 'Wishlist' })}
         >
           <Icon source="heart-outline" size={20} color={C.text} />
         </ScalePressable>
         <ScalePressable
           style={s.sideBtn}
           scaleTo={0.92}
-          onPress={() => navigation.navigate('Products', { screen: 'Cart' })}
+          onPress={() => navigation.navigate('Categories', { screen: 'Cart' })}
         >
           <Icon source="shopping-outline" size={20} color={C.text} />
         </ScalePressable>

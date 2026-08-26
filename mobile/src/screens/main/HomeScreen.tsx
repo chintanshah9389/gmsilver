@@ -62,7 +62,7 @@ export default function HomeScreen({ navigation }: any) {
             ? undefined
             : () => {
                 if (banner.linkType === 'PRODUCT' && banner.linkId) {
-                  navigation.navigate('Products', {
+                  navigation.navigate('Categories', {
                     screen: 'ProductDetail',
                     params: { productId: banner.linkId },
                   });
@@ -79,7 +79,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const handleViewMore = () => {
     if (topProductsWidget?.linkType === 'PRODUCT' && topProductsWidget?.linkId) {
-      navigation.navigate('Products', {
+      navigation.navigate('Categories', {
         screen: 'ProductDetail',
         params: { productId: topProductsWidget.linkId },
       });
@@ -95,7 +95,7 @@ export default function HomeScreen({ navigation }: any) {
       });
       return;
     }
-    navigation.navigate('Products');
+    navigation.navigate('Categories');
   };
 
   const ListHeader = () => (
@@ -180,7 +180,7 @@ export default function HomeScreen({ navigation }: any) {
                 variant="editorial"
                 item={item}
                 onPress={() =>
-                  navigation.navigate('Products', {
+                  navigation.navigate('Categories', {
                     screen: 'ProductDetail',
                     params: { productId: item.id },
                   })

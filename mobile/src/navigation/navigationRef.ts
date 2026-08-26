@@ -13,14 +13,10 @@ export const linking: LinkingOptions<AppStackParamList> = {
     screens: {
       Tabs: {
         screens: {
-          Products: {
-            screens: {
-              ProductDetail: 'products/:productId',
-            },
-          },
           Categories: {
             screens: {
               ProductList: 'categories/:categoryId',
+              ProductDetail: 'products/:productId',
             },
           },
           Order: {
@@ -103,7 +99,7 @@ export function navigateFromPushData(data?: PushNavigationData | null) {
 
   if (productId) {
     navigationRef.navigate('Tabs', {
-      screen: 'Products',
+      screen: 'Categories',
       params: {
         screen: 'ProductDetail',
         params: { productId },

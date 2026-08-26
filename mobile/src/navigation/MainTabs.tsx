@@ -6,7 +6,7 @@ import { Icon } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList } from './types';
 import HomeScreen from '@/screens/main/HomeScreen';
-import { CategoriesTabStack, OrdersTabStack, ProductsTabStack } from './TabStacks';
+import { CategoriesTabStack, OrdersTabStack } from './TabStacks';
 import { C } from '@/theme/colors';
 import { F } from '@/theme/typography';
 import AppLogoHeader from '@/components/AppLogoHeader';
@@ -62,7 +62,6 @@ const tabStyles = StyleSheet.create({
 
 const ICONS: Record<string, { idle: string; active: string }> = {
   Home: { idle: 'home-outline', active: 'home' },
-  Products: { idle: 'diamond-stone', active: 'diamond-stone' },
   Categories: { idle: 'view-grid-outline', active: 'view-grid' },
   Order: { idle: 'package-variant-closed', active: 'package-variant' },
   Admin: { idle: 'shield-outline', active: 'shield' },
@@ -70,7 +69,6 @@ const ICONS: Record<string, { idle: string; active: string }> = {
 
 const LABELS: Record<string, string> = {
   Home: 'Home',
-  Products: 'Shop',
   Categories: 'Browse',
   Order: 'Orders',
   Admin: 'Admin',
@@ -109,13 +107,6 @@ export default function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen
-        name="Products"
-        component={ProductsTabStack}
-        options={({ route }) => ({
-          tabBarStyle: tabBarForRoute(route, insets.bottom),
-        })}
-      />
       <Tab.Screen
         name="Categories"
         component={CategoriesTabStack}

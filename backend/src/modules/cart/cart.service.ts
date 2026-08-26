@@ -109,7 +109,7 @@ export class CartService {
     });
 
     if (!product) {
-      throw new NotFoundException('Product not found or unavailable');
+      throw new NotFoundException('Product is out of stock or unavailable');
     }
 
     if (dto.quantity < 1) {

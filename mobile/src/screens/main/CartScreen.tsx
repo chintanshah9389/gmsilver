@@ -69,7 +69,7 @@ export default function CartScreen({ navigation }: any) {
             title="Your cart is empty"
             subtitle="Add silver pieces from the catalog to place an order"
             actionLabel="Continue shopping"
-            onAction={() => navigation.navigate('ProductList')}
+            onAction={() => navigation.navigate('Categories')}
           />
         }
         renderItem={({ item, index }) => (

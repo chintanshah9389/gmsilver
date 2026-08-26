@@ -295,7 +295,7 @@ export default function ProductsPage() {
     { field: 'price', headerName: 'Price', width: 120, valueGetter: (p) => `₹${Number(p.row.price).toLocaleString()}` },
     { field: 'purity', headerName: 'Purity', width: 100 },
     { field: 'sku', headerName: 'SKU', width: 130 },
-    { field: 'isAvailable', headerName: 'Availability', width: 130, renderCell: (p) => <Chip size='small' label={p.value ? 'Available' : 'Out'} color={p.value ? 'success' : 'warning'} /> },
+    { field: 'isAvailable', headerName: 'Availability', width: 140, renderCell: (p) => <Chip size='small' label={p.value ? 'In Stock' : 'Out of Stock'} color={p.value ? 'success' : 'warning'} /> },
     { field: 'pdfUrl', headerName: 'PDF', width: 70, sortable: false, renderCell: (p) => p.row.pdfUrl ? (
       <IconButton size='small' color='error' title='View PDF' onClick={() => window.open(p.row.pdfUrl, '_blank')}>
         <PictureAsPdf fontSize='small' />
@@ -374,6 +374,28 @@ export default function ProductsPage() {
             <TextField select SelectProps={{ native: true }} label='Category' value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
               <option value=''>Select category</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </TextField>
+            <TextField
+              select
+              SelectProps={{ native: true }}
+              label='Availability'
+              value={form.isAvailable}
+              onChange={(e) => setForm({ ...form, isAvailable: e.target.value })}
+              helperText='Out of Stock disables Add to Cart in the mobile app'
+            >
+              <option value='true'>Available (In Stock)</option>
+              <option value='false'>Out of Stock</option>
+            </TextField>
+            <TextField
+              select
+              SelectProps={{ native: true }}
+              label='Active'
+              value={form.isActive}
+              onChange={(e) => setForm({ ...form, isActive: e.target.value })}
+              helperText='Inactive products are hidden from the catalog'
+            >
+              <option value='true'>Active</option>
+              <option value='false'>Inactive</option>
             </TextField>
           </Box>
           <TextField fullWidth multiline minRows={3} label='Description' value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} sx={{ mt:2 }} />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   View,
@@ -50,6 +51,7 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
 
   const product = productRes?.data || productRes;
   const categories: any[] = catsRes?.data || [];
+  const inStock = form.isAvailable !== 'false';
 
   useEffect(() => {
     if (!product) return;
@@ -161,6 +163,19 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
             />
           </View>
         ))}
+
+        <View style={[s.row, { marginBottom: 12 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.label}>In stock</Text>
+            <Text style={s.meta}>
+              {inStock ? 'Add to Cart enabled' : 'Shows Out of Stock on mobile'}
+            </Text>
+          </View>
+          <Switch
+            value={inStock}
+            onValueChange={(v) => setForm((f) => ({ ...f, isAvailable: String(v) }))}
+          />
+        </View>
 
         <Text style={s.label}>Quick pick category</Text>
         {categories.slice(0, 12).map((c) => (

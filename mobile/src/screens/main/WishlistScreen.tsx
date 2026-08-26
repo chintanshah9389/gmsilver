@@ -48,7 +48,7 @@ export default function WishlistScreen({ navigation }: any) {
             title="Your wishlist is empty"
             subtitle="Save pieces you love while browsing the catalog"
             actionLabel="Browse products"
-            onAction={() => navigation.navigate('ProductList')}
+            onAction={() => navigation.navigate('Categories')}
           />
         }
         renderItem={({ item, index }) => (

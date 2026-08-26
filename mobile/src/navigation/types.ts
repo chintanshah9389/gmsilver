@@ -12,18 +12,12 @@ export type AuthStackParamList = {
   ResetMpin: undefined;
 };
 
-export type ProductStackParamList = {
-  ProductList: { categoryId?: string; categoryName?: string } | undefined;
-  ProductDetail: { productId: string };
-  Wishlist: undefined;
-  Cart: undefined;
-  Checkout: undefined;
-};
-
 export type CategoriesStackParamList = {
   Categories: undefined;
   ProductList: { categoryId?: string; categoryName?: string };
   ProductDetail: { productId: string };
+  Wishlist: undefined;
+  Cart: undefined;
   Checkout: undefined;
 };
 
@@ -56,7 +50,6 @@ export type AdminStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Products: NavigatorScreenParams<ProductStackParamList>;
   Categories: NavigatorScreenParams<CategoriesStackParamList>;
   Order: NavigatorScreenParams<OrdersStackParamList>;
   Admin: NavigatorScreenParams<AdminStackParamList>;

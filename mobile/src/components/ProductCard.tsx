@@ -17,6 +17,7 @@ type ProductCardProps = {
     price?: number | string;
     image1Url?: string | null;
     sku?: string;
+    isAvailable?: boolean;
   };
   onPress: () => void;
   onWish?: () => void;
@@ -36,17 +37,23 @@ export default function ProductCard({
   const editorial = variant === 'editorial';
   const cardW = width ?? (editorial ? SW - PAD * 2 : PRODUCT_CARD_W);
   const imgH = editorial ? cardW * 1.05 : cardW * 1.22;
+  const outOfStock = item.isAvailable === false;
 
   return (
     <ScalePressable style={[s.card, { width: cardW }]} scaleTo={0.99} onPress={onPress}>
       <View style={[s.imgWrap, { height: imgH }]}>
         {item.image1Url ? (
-          <Image source={{ uri: item.image1Url }} style={s.img} resizeMode="cover" />
+          <Image source={{ uri: item.image1Url }} style={[s.img, outOfStock && s.imgDimmed]} resizeMode="cover" />
         ) : (
           <View style={s.imgPlaceholder}>
             <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? 'G'}</Text>
           </View>
         )}
+        {outOfStock ? (
+          <View style={s.oosBadge}>
+            <Text style={s.oosBadgeText}>Out of Stock</Text>
+          </View>
+        ) : null}
         {onWish ? (
           <ScalePressable
             style={[s.wishBtn, wished && s.wishBtnActive]}
@@ -84,6 +91,24 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   img: { width: '100%', height: '100%' },
+  imgDimmed: { opacity: 0.55 },
+  oosBadge: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(27,28,26,0.78)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: R.xs,
+  },
+  oosBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
+  },
   imgPlaceholder: {
     flex: 1,
     alignItems: 'center',

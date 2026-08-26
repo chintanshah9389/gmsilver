@@ -51,6 +51,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const [cartUnit, setCartUnit] = useState<CartUnit>('PIECES');
   const [cartAmount, setCartAmount] = useState('1');
   const product = data?.data;
+  const inStock = product?.isAvailable !== false;
 
   const weightGrams = Number(product?.weight || 0);
   const hasWeight = weightGrams > 0;
@@ -82,6 +83,10 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   };
 
   const openCartSheet = () => {
+    if (product?.isAvailable === false) {
+      showSnack('This product is out of stock.');
+      return;
+    }
     setCartUnit('PIECES');
     setCartAmount('1');
     setCartSheetOpen(true);
@@ -241,8 +246,13 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             ) : null}
             {product.quantity != null ? (
               <View style={s.spec}>
-                <Text style={s.specVal}>{product.quantity}</Text>
-                <Text style={s.specKey}>In Stock</Text>
+                <Text style={s.specVal}>{inStock ? product.quantity : '—'}</Text>
+                <Text style={s.specKey}>{inStock ? 'In Stock' : 'Out of Stock'}</Text>
+              </View>
+            ) : !inStock ? (
+              <View style={s.spec}>
+                <Text style={s.specVal}>—</Text>
+                <Text style={s.specKey}>Out of Stock</Text>
               </View>
             ) : null}
           </View>
@@ -271,12 +281,21 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           />
         </ScalePressable>
 
-        <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
-          <View style={s.cartBtnInner}>
-            <Icon source="cart-outline" size={18} color="#fff" />
-            <Text style={s.cartBtnText}>Add to Bag</Text>
+        {inStock ? (
+          <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
+            <View style={s.cartBtnInner}>
+              <Icon source="cart-outline" size={18} color="#fff" />
+              <Text style={s.cartBtnText}>Add to Bag</Text>
+            </View>
+          </ScalePressable>
+        ) : (
+          <View style={[s.cartBtn, s.outOfStockBtn]}>
+            <View style={s.cartBtnInner}>
+              <Icon source="package-variant-closed" size={18} color={C.textMuted} />
+              <Text style={[s.cartBtnText, s.outOfStockText]}>Out of Stock</Text>
+            </View>
           </View>
-        </ScalePressable>
+        )}
       </View>
 
       <Modal
@@ -555,6 +574,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  outOfStockBtn: {
+    backgroundColor: C.bg3,
+    borderWidth: 1,
+    borderColor: C.borderHi,
+  },
   cartBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -566,6 +590,9 @@ const s = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.8,
     textTransform: 'uppercase',
+  },
+  outOfStockText: {
+    color: C.textMuted,
   },
 
   sheetRoot: {

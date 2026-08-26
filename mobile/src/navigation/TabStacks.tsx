@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   CategoriesStackParamList,
   OrdersStackParamList,
-  ProductStackParamList,
 } from './types';
 import ProductListScreen from '@/screens/main/ProductListScreen';
 import ProductDetailScreen from '@/screens/main/ProductDetailScreen';
@@ -19,25 +18,8 @@ import CartScreen from '@/screens/main/CartScreen';
 import ProfileScreen from '@/screens/main/ProfileScreen';
 import { C } from '@/theme/colors';
 
-const ProductStack = createNativeStackNavigator<ProductStackParamList>();
 const CategoriesStack = createNativeStackNavigator<CategoriesStackParamList>();
 const OrdersStack = createNativeStackNavigator<OrdersStackParamList>();
-
-export function ProductsTabStack() {
-  return (
-    <ProductStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
-      <ProductStack.Screen
-        name="ProductList"
-        component={ProductListScreen}
-        initialParams={{ categoryName: 'All Products' }}
-      />
-      <ProductStack.Screen name="ProductDetail" component={ProductDetailScreen} />
-      <ProductStack.Screen name="Wishlist" component={WishlistScreen} />
-      <ProductStack.Screen name="Cart" component={CartScreen} />
-      <ProductStack.Screen name="Checkout" component={CheckoutScreen} />
-    </ProductStack.Navigator>
-  );
-}
 
 export function CategoriesTabStack() {
   return (
@@ -45,6 +27,8 @@ export function CategoriesTabStack() {
       <CategoriesStack.Screen name="Categories" component={CategoriesScreen} />
       <CategoriesStack.Screen name="ProductList" component={ProductListScreen} />
       <CategoriesStack.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <CategoriesStack.Screen name="Wishlist" component={WishlistScreen} />
+      <CategoriesStack.Screen name="Cart" component={CartScreen} />
       <CategoriesStack.Screen name="Checkout" component={CheckoutScreen} />
     </CategoriesStack.Navigator>
   );
