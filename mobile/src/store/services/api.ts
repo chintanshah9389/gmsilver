@@ -4,7 +4,7 @@ import type { RootState } from '../index';
 // Prefer EXPO_PUBLIC_API_URL; always fall back to Railway for device builds.
 const baseUrl =
   process.env.EXPO_PUBLIC_API_URL ||
-  'https://gmsilver-production.up.railway.app/api/v1';
+  'https://charming-encouragement-production-dc0c.up.railway.app/api/v1';
 
 export const api = createApi({
   reducerPath: 'api',
