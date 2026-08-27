@@ -33,9 +33,11 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function OrderDetailScreen({ route, navigation }: any) {
   const { orderId } = route.params;
+  const [isFocused, setIsFocused] = useState(true);
   const { data, error, isError, isLoading, refetch } = useOrderByIdQuery(orderId, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
+    pollingInterval: isFocused ? 10000 : 0,
   });
   const [cancel, { isLoading: cancelling }] = useCancelOrderMutation();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -44,7 +46,9 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
+      setIsFocused(true);
       void refetch();
+      return () => setIsFocused(false);
     }, [refetch]),
   );
 

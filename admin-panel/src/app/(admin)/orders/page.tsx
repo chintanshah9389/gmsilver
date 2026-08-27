@@ -57,9 +57,9 @@ export default function OrdersPage() {
   const [totalRows, setTotalRows] = useState(0);
   const [paginationModel, setPaginationModel] = useState(defaultAdminPaginationModel);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (opts?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (!opts?.silent) setLoading(true);
       const res = await ordersApi.getAll({
         ...toApiPage(paginationModel),
         _t: Date.now(),
@@ -73,13 +73,23 @@ export default function OrdersPage() {
         return fresh || { ...current };
       });
     } catch (e: any) {
-      toast.error(e.response?.data?.message || 'Failed to fetch orders');
+      if (!opts?.silent) {
+        toast.error(e.response?.data?.message || 'Failed to fetch orders');
+      }
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   };
 
   useEffect(() => { fetchOrders(); }, [paginationModel.page, paginationModel.pageSize]);
+
+  // Keep status current while the orders page stays open (e.g. another admin updates).
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      void fetchOrders({ silent: true });
+    }, 10000);
+    return () => window.clearInterval(id);
+  }, [paginationModel.page, paginationModel.pageSize]);
 
   const updateStatus = async (id: string, status: string) => {
     try {

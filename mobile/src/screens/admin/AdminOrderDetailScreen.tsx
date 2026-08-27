@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { Snackbar } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import PremiumBackground from '@/components/PremiumBackground';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useOrderByIdQuery } from '@/store/services/ordersApi';
@@ -10,9 +11,22 @@ import { adminStyles as s } from './adminStyles';
 
 export default function AdminOrderDetailScreen({ navigation, route }: any) {
   const { orderId } = route.params;
-  const { data, error, isError, isLoading } = useOrderByIdQuery(orderId);
+  const [isFocused, setIsFocused] = useState(true);
+  const { data, error, isError, isLoading, refetch } = useOrderByIdQuery(orderId, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    pollingInterval: isFocused ? 10000 : 0,
+  });
   const [snack, setSnack] = useState('');
   const order = data?.data || data;
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      void refetch();
+      return () => setIsFocused(false);
+    }, [refetch]),
+  );
 
   useEffect(() => {
     if (isError && error) setSnack(getErrorMessage(error, 'Failed to load order.'));

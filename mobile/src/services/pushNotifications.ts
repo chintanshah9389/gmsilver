@@ -1,10 +1,41 @@
 import { Alert, PermissionsAndroid, Platform } from 'react-native';
 import { store } from '@/store';
+import { api } from '@/store/services/api';
 import { notificationsApi } from '@/store/services/notificationsApi';
 import {
   navigateFromPushData,
   PushNavigationData,
 } from '@/navigation/navigationRef';
+
+/** Keep order/notification screens in sync when a push arrives while already open. */
+function syncCachesFromPush(data: PushNavigationData | null) {
+  const orderId =
+    data?.orderId ||
+    (typeof data?.link === 'string' && data.link.startsWith('order:')
+      ? data.link.slice('order:'.length)
+      : undefined);
+  const orderRelated =
+    Boolean(orderId) ||
+    (typeof data?.type === 'string' && data.type.startsWith('ORDER_')) ||
+    (typeof data?.link === 'string' && data.link.startsWith('order:'));
+
+  const tags: Array<
+    | 'Notification'
+    | { type: 'Order'; id: string }
+    | { type: 'AdminOrder'; id: string }
+  > = ['Notification'];
+
+  if (orderRelated) {
+    tags.push({ type: 'Order', id: 'LIST' });
+    tags.push({ type: 'AdminOrder', id: 'LIST' });
+    if (orderId) {
+      tags.push({ type: 'Order', id: orderId });
+      tags.push({ type: 'AdminOrder', id: orderId });
+    }
+  }
+
+  store.dispatch(api.util.invalidateTags(tags));
+}
 
 type RemoteMessage = {
   messageId?: string;
@@ -146,6 +177,9 @@ export function initPushListeners() {
     const body = remoteMessage?.notification?.body || '';
     console.log('[push] Foreground message', title);
 
+    const data = getPushData(remoteMessage);
+    syncCachesFromPush(data);
+
     // System tray does not show while app is in foreground — surface it in-app.
     Alert.alert(title, body || undefined);
   });
@@ -158,14 +192,18 @@ export function initPushListeners() {
   });
 
   unsubscribeOpened = messaging().onNotificationOpenedApp((remoteMessage) => {
-    navigateFromPushData(getPushData(remoteMessage));
+    const data = getPushData(remoteMessage);
+    syncCachesFromPush(data);
+    navigateFromPushData(data);
   });
 
   messaging()
     .getInitialNotification()
     .then((remoteMessage) => {
       if (remoteMessage) {
-        navigateFromPushData(getPushData(remoteMessage));
+        const data = getPushData(remoteMessage);
+        syncCachesFromPush(data);
+        navigateFromPushData(data);
       }
     })
     .catch((error) => {

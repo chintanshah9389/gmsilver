@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import PremiumBackground from '@/components/PremiumBackground';
 import ScreenHeader from '@/components/ScreenHeader';
 import ScalePressable from '@/components/ScalePressable';
@@ -33,18 +34,31 @@ const NEXT: Record<string, string[]> = {
 
 export default function AdminOrdersScreen({ navigation }: any) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL');
+  const [isFocused, setIsFocused] = useState(true);
   const { data, error, isError, isFetching, refetch, isLoading } = useAdminOrdersQuery(
     {
       page: 1,
       limit: 100,
       status: filter === 'ALL' ? undefined : filter,
     },
-    { refetchOnMountOrArgChange: true, refetchOnFocus: true },
+    {
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      pollingInterval: isFocused ? 10000 : 0,
+    },
   );
   const [updateStatus] = useAdminUpdateOrderStatusMutation();
   const [deleteOrder] = useAdminDeleteOrderMutation();
   const [generateInvoice] = useAdminGenerateInvoiceMutation();
   const [snack, setSnack] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      void refetch();
+      return () => setIsFocused(false);
+    }, [refetch]),
+  );
 
   useEffect(() => {
     if (isError && error) setSnack(getErrorMessage(error, 'Failed to load orders.'));

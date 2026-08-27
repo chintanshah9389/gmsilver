@@ -30,9 +30,15 @@ function formatDate(value?: string) {
 }
 
 export default function OrdersScreen({ navigation }: any) {
+  const [isFocused, setIsFocused] = useState(true);
   const { data, error, isError, refetch } = useMyOrdersQuery(
     { page: 1, limit: 100 },
-    { refetchOnMountOrArgChange: true, refetchOnFocus: true },
+    {
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      // Keep status fresh while this screen stays open (push may not fire on web).
+      pollingInterval: isFocused ? 10000 : 0,
+    },
   );
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
@@ -41,7 +47,9 @@ export default function OrdersScreen({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
+      setIsFocused(true);
       void refetch();
+      return () => setIsFocused(false);
     }, [refetch]),
   );
 
