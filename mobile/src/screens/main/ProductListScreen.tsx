@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
-import { useProductsQuery } from '@/store/services/productsApi';
+import { PAGE_SIZE, useProductsQuery } from '@/store/services/productsApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
@@ -35,13 +35,27 @@ export default function ProductListScreen({ route, navigation }: any) {
   const categoryName = route.params?.categoryName ?? 'Products';
   const showInlineHeader = !!categoryId && navigation.canGoBack?.();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filter, setFilter] = useState<ProductFilterId>('all');
+  const [page, setPage] = useState(1);
+  const [snackMsg, setSnackMsg] = useState('');
+  const [snackVisible, setSnackVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [categoryId, filter, debouncedSearch]);
 
   const queryParams = useMemo(() => {
     const params: Record<string, string | number | undefined> = {
-      page: 1,
-      limit: 100,
+      page,
+      limit: PAGE_SIZE,
       categoryId,
+      search: debouncedSearch || undefined,
     };
 
     if (filter === 'indian') {
@@ -53,15 +67,15 @@ export default function ProductListScreen({ route, navigation }: any) {
     }
 
     return params;
-  }, [categoryId, filter]);
+  }, [categoryId, filter, page, debouncedSearch]);
 
   const { data, error, isError, isLoading, isFetching, refetch } = useProductsQuery(queryParams);
-  const [snackMsg, setSnackMsg] = useState('');
-  const [snackVisible, setSnackVisible] = useState(false);
-  const allProducts: any[] = data?.data || [];
-  const products = search
-    ? allProducts.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()))
-    : allProducts;
+  const products: any[] = data?.data || [];
+  const meta = data?.meta;
+  const total = meta?.total ?? products.length;
+  const hasNext = Boolean(meta?.hasNext);
+  const loadingMore = isFetching && page > 1;
+  const refreshing = isFetching && page === 1 && !isLoading;
 
   useEffect(() => {
     if (isError && error) {
@@ -70,6 +84,19 @@ export default function ProductListScreen({ route, navigation }: any) {
     }
   }, [error, isError]);
 
+  const onRefresh = useCallback(() => {
+    if (page === 1) {
+      refetch();
+      return;
+    }
+    setPage(1);
+  }, [page, refetch]);
+
+  const onEndReached = useCallback(() => {
+    if (!hasNext || isFetching || isLoading) return;
+    setPage((current) => current + 1);
+  }, [hasNext, isFetching, isLoading]);
+
   return (
     <View style={s.root}>
       <PremiumBackground />
@@ -77,7 +104,7 @@ export default function ProductListScreen({ route, navigation }: any) {
 
       <ScreenHeader
         title={showInlineHeader ? categoryName : 'The Collection'}
-        subtitle={`${products.length} pieces`}
+        subtitle={`${total} pieces`}
         onBack={showInlineHeader ? () => navigation.goBack() : undefined}
       />
 
@@ -99,11 +126,13 @@ export default function ProductListScreen({ route, navigation }: any) {
             value={search}
             onChangeText={setSearch}
             selectionColor={C.gold}
+            autoCorrect={false}
+            autoCapitalize="none"
           />
         </View>
       </MotionReveal>
 
-      {isLoading ? (
+      {isLoading && page === 1 ? (
         <View style={s.loader}>
           <ActivityIndicator color={C.gold} />
         </View>
@@ -114,10 +143,16 @@ export default function ProductListScreen({ route, navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
-          refreshing={isFetching && !isLoading}
-          onRefresh={refetch}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          removeClippedSubviews
           renderItem={({ item, index }) => (
-            <MotionReveal delay={Math.min(index * 20, 160)} duration={240} distance={8}>
+            <MotionReveal delay={Math.min(index * 12, 120)} duration={220} distance={8}>
               <ProductCard
                 variant="editorial"
                 item={item}
@@ -125,6 +160,13 @@ export default function ProductListScreen({ route, navigation }: any) {
               />
             </MotionReveal>
           )}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={s.footerLoader}>
+                <ActivityIndicator color={C.gold} />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <EmptyState
               icon="magnify"
@@ -146,6 +188,7 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   listFlex: { flex: 1 },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  footerLoader: { paddingVertical: 20, alignItems: 'center' },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -160,5 +203,5 @@ const s = StyleSheet.create({
   },
   searchIcon: { color: C.textMuted, fontSize: 16, marginRight: 8 },
   searchInput: { flex: 1, color: C.text, fontSize: 14, paddingVertical: 12 },
-  list: { paddingHorizontal: PAD, paddingBottom: 110, gap: 8 },
+  list: { paddingHorizontal: PAD, paddingBottom: 110, gap: 8, flexGrow: 1 },
 });

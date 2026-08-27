@@ -13,7 +13,7 @@ import { Snackbar } from 'react-native-paper';
 import PremiumBackground from '@/components/PremiumBackground';
 import ScreenHeader from '@/components/ScreenHeader';
 import ScalePressable from '@/components/ScalePressable';
-import { useProductsQuery } from '@/store/services/productsApi';
+import { PAGE_SIZE, useProductsQuery } from '@/store/services/productsApi';
 import {
   useAdminBulkDeleteProductsMutation,
   useAdminDeleteProductMutation,
@@ -32,21 +32,45 @@ export default function AdminProductsScreen({ navigation }: any) {
   const role = useAppSelector((st) => st.auth.user?.role);
   const canDelete = isAdmin(role);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
   const { data, error, isError, isFetching, refetch, isLoading } = useProductsQuery({
-    page: 1,
-    limit: 100,
-    search: search.trim() || undefined,
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+    includeInactive: 'true',
   });
   const [deleteProduct] = useAdminDeleteProductMutation();
   const [bulkDelete] = useAdminBulkDeleteProductsMutation();
   const [snack, setSnack] = useState('');
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
     if (isError && error) setSnack(getErrorMessage(error, 'Failed to load products.'));
   }, [error, isError]);
 
   const products: any[] = useMemo(() => data?.data || [], [data]);
+  const hasNext = Boolean(data?.meta?.hasNext);
+  const loadingMore = isFetching && page > 1;
+
+  const onRefresh = () => {
+    if (page === 1) refetch();
+    else setPage(1);
+  };
+
+  const onEndReached = () => {
+    if (!hasNext || isFetching || isLoading) return;
+    setPage((p) => p + 1);
+  };
 
   const toggle = (id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -65,6 +89,8 @@ export default function AdminProductsScreen({ navigation }: any) {
         onPress: async () => {
           try {
             await deleteProduct(id).unwrap();
+            setPage(1);
+            setSelected((prev) => prev.filter((x) => x !== id));
             setSnack('Product deleted');
           } catch (e) {
             setSnack(getErrorMessage(e, 'Failed to delete product.'));
@@ -89,6 +115,7 @@ export default function AdminProductsScreen({ navigation }: any) {
           try {
             await bulkDelete(selected).unwrap();
             setSelected([]);
+            setPage(1);
             setSnack('Products deleted');
           } catch (e) {
             setSnack(getErrorMessage(e, 'Failed to delete products.'));
@@ -124,14 +151,19 @@ export default function AdminProductsScreen({ navigation }: any) {
           </ScalePressable>
         ) : null}
       </View>
-      {isLoading ? (
+      {isLoading && page === 1 ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={C.ruby} />
       ) : (
         <FlatList
           data={products}
           keyExtractor={(item) => item.id}
           contentContainerStyle={s.padded}
-          refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} />}
+          refreshControl={<RefreshControl refreshing={isFetching && page === 1} onRefresh={onRefresh} />}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator style={{ marginVertical: 16 }} color={C.ruby} /> : null
+          }
           ListEmptyComponent={<Text style={s.empty}>No products</Text>}
           renderItem={({ item }) => {
             const img = item.image1Url || item.imageUrl || item.images?.[0]?.url;

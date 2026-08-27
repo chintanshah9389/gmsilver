@@ -30,6 +30,9 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [totalRows, setTotalRows] = useState(0);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
@@ -48,14 +51,15 @@ export default function ProductsPage() {
       setLoading(true);
       const [prodRes, catRes] = await Promise.all([
         productsApi.getAll({
-          page: 1,
-          limit: 200,
-          search: search || undefined,
+          page: paginationModel.page + 1,
+          limit: paginationModel.pageSize,
+          search: debouncedSearch || undefined,
           includeInactive: 'true',
         }),
         categoriesApi.getAll({ page: 1, limit: 200 }),
       ]);
-      setRows(prodRes.data.data);
+      setRows(prodRes.data.data || []);
+      setTotalRows(Number(prodRes.data.meta?.total || 0));
       setCategories(catRes.data.data);
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to fetch products');
@@ -64,7 +68,16 @@ export default function ProductsPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, [search]);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPaginationModel((prev) => (prev.page === 0 ? prev : { ...prev, page: 0 }));
+  }, [debouncedSearch]);
+
+  useEffect(() => { fetchData(); }, [debouncedSearch, paginationModel.page, paginationModel.pageSize]);
 
   useEffect(() => {
     setSelectedIds((prev) => prev.filter((id) => rows.some((row) => row.id === id)));
@@ -369,6 +382,11 @@ export default function ProductsPage() {
               disableRowSelectionOnClick
               rowSelectionModel={selectedIds}
               onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+              paginationMode='server'
+              rowCount={totalRows}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              pageSizeOptions={[50, 100]}
             />
           </Box>
         </CardContent>
