@@ -1,4 +1,4 @@
-import { Alert, PermissionsAndroid, Platform } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { store } from '@/store';
 import { api } from '@/store/services/api';
 import { notificationsApi } from '@/store/services/notificationsApi';
@@ -6,6 +6,8 @@ import {
   navigateFromPushData,
   PushNavigationData,
 } from '@/navigation/navigationRef';
+
+const ANDROID_CHANNEL_ID = 'gmsilver_default';
 
 /** Keep order/notification screens in sync when a push arrives while already open. */
 function syncCachesFromPush(data: PushNavigationData | null) {
@@ -45,6 +47,10 @@ type RemoteMessage = {
 
 let messagingModule: typeof import('@react-native-firebase/messaging').default | null =
   null;
+let notifeeModule: typeof import('@notifee/react-native').default | null = null;
+let AndroidImportance: typeof import('@notifee/react-native').AndroidImportance | null =
+  null;
+let EventType: typeof import('@notifee/react-native').EventType | null = null;
 
 function getMessaging() {
   if (Platform.OS === 'web') {
@@ -58,10 +64,25 @@ function getMessaging() {
   return messagingModule;
 }
 
+function getNotifee() {
+  if (Platform.OS === 'web') {
+    return null;
+  }
+  if (!notifeeModule) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const notifee = require('@notifee/react-native');
+    notifeeModule = notifee.default;
+    AndroidImportance = notifee.AndroidImportance;
+    EventType = notifee.EventType;
+  }
+  return notifeeModule;
+}
+
 let initialized = false;
 let unsubscribeOnMessage: (() => void) | undefined;
 let unsubscribeTokenRefresh: (() => void) | undefined;
 let unsubscribeOpened: (() => void) | undefined;
+let unsubscribeNotifee: (() => void) | undefined;
 
 function getPushData(remoteMessage: RemoteMessage | null): PushNavigationData | null {
   if (!remoteMessage?.data) {
@@ -78,6 +99,23 @@ function getPushData(remoteMessage: RemoteMessage | null): PushNavigationData | 
   };
 }
 
+function toStringData(
+  data?: Record<string, string | object>,
+): Record<string, string> {
+  if (!data) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === 'string') {
+      out[key] = value;
+    } else if (value != null) {
+      out[key] = String(value);
+    }
+  }
+  return out;
+}
+
 async function requestAndroidPostNotificationsPermission() {
   if (Platform.OS !== 'android' || Number(Platform.Version) < 33) {
     return true;
@@ -87,6 +125,51 @@ async function requestAndroidPostNotificationsPermission() {
     PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
   );
   return result === PermissionsAndroid.RESULTS.GRANTED;
+}
+
+/** Show a normal system notification while the app is in the foreground. */
+async function displayForegroundSystemNotification(
+  remoteMessage: RemoteMessage,
+) {
+  const notifee = getNotifee();
+  if (!notifee) {
+    return;
+  }
+
+  const title = remoteMessage.notification?.title || 'Notification';
+  const body = remoteMessage.notification?.body || '';
+  const data = toStringData(remoteMessage.data);
+
+  if (Platform.OS === 'android' && AndroidImportance) {
+    await notifee.createChannel({
+      id: ANDROID_CHANNEL_ID,
+      name: 'GM Silver',
+      importance: AndroidImportance.HIGH,
+      sound: 'default',
+      vibration: true,
+    });
+  }
+
+  await notifee.displayNotification({
+    title,
+    body,
+    data,
+    android: {
+      channelId: ANDROID_CHANNEL_ID,
+      pressAction: { id: 'default' },
+      importance: AndroidImportance?.HIGH,
+      sound: 'default',
+    },
+    ios: {
+      sound: 'default',
+      foregroundPresentationOptions: {
+        banner: true,
+        list: true,
+        sound: true,
+        badge: true,
+      },
+    },
+  });
 }
 
 export async function requestPushPermission(): Promise<boolean> {
@@ -172,17 +255,63 @@ export function initPushListeners() {
 
   initialized = true;
 
+  // iOS: also allow the OS to present FCM banners while app is open.
+  if (Platform.OS === 'ios') {
+    void messaging().setForegroundNotificationPresentationOptions({
+      alert: true,
+      badge: true,
+      sound: true,
+    });
+  }
+
   unsubscribeOnMessage = messaging().onMessage(async (remoteMessage) => {
     const title = remoteMessage?.notification?.title || 'Notification';
-    const body = remoteMessage?.notification?.body || '';
     console.log('[push] Foreground message', title);
 
     const data = getPushData(remoteMessage);
     syncCachesFromPush(data);
 
-    // System tray does not show while app is in foreground — surface it in-app.
-    Alert.alert(title, body || undefined);
+    // Android does not show tray notifications in foreground — display one ourselves.
+    // iOS uses setForegroundNotificationPresentationOptions above; Notifee is a
+    // fallback if the payload has no notification block.
+    if (Platform.OS === 'android') {
+      try {
+        await displayForegroundSystemNotification(remoteMessage);
+      } catch (error) {
+        console.warn('[push] Failed to display foreground notification', error);
+      }
+    } else if (
+      Platform.OS === 'ios' &&
+      !remoteMessage?.notification?.title &&
+      !remoteMessage?.notification?.body
+    ) {
+      try {
+        await displayForegroundSystemNotification(remoteMessage);
+      } catch (error) {
+        console.warn('[push] Failed to display foreground notification', error);
+      }
+    }
   });
+
+  const notifee = getNotifee();
+  if (notifee && EventType) {
+    unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
+      if (type !== EventType!.PRESS) {
+        return;
+      }
+      const raw = detail.notification?.data || {};
+      const data: PushNavigationData = {
+        orderId: typeof raw.orderId === 'string' ? raw.orderId : undefined,
+        productId: typeof raw.productId === 'string' ? raw.productId : undefined,
+        categoryId:
+          typeof raw.categoryId === 'string' ? raw.categoryId : undefined,
+        type: typeof raw.type === 'string' ? raw.type : undefined,
+        link: typeof raw.link === 'string' ? raw.link : undefined,
+      };
+      syncCachesFromPush(data);
+      navigateFromPushData(data);
+    });
+  }
 
   unsubscribeTokenRefresh = messaging().onTokenRefresh(async (token) => {
     const userId = store.getState().auth.user?.id;
@@ -215,8 +344,10 @@ export function teardownPushListeners() {
   unsubscribeOnMessage?.();
   unsubscribeTokenRefresh?.();
   unsubscribeOpened?.();
+  unsubscribeNotifee?.();
   unsubscribeOnMessage = undefined;
   unsubscribeTokenRefresh = undefined;
   unsubscribeOpened = undefined;
+  unsubscribeNotifee = undefined;
   initialized = false;
 }
