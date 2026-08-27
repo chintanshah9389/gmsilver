@@ -16,7 +16,7 @@ import {
 // Prefer EXPO_PUBLIC_API_URL; always fall back to Railway for device builds.
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
-  'https://charming-encouragement-production-dc0c.up.railway.app/api/v1';
+  'https://gmsilver-production.up.railway.app/api/v1';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
