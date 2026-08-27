@@ -433,9 +433,51 @@ export class StorageService {
       'image/webp': '.webp',
       'image/gif': '.gif',
       'application/pdf': '.pdf',
+      'application/vnd.android.package-archive': '.apk',
+      'application/octet-stream': '.apk',
     };
 
     return map[mimeType] || '';
+  }
+
+  /**
+   * Upload/replace the single latest Android APK used for in-app updates.
+   * Always written to the same key so older builds are overwritten.
+   */
+  async uploadLatestApk(buffer: Buffer, mimeType?: string): Promise<UploadResult> {
+    this.assertStorageConfigured();
+
+    const MAX_APK_SIZE = 200 * 1024 * 1024; // 200MB
+    if (buffer.length > MAX_APK_SIZE) {
+      throw new BadRequestException('APK size must not exceed 200MB');
+    }
+
+    const contentType =
+      mimeType === 'application/vnd.android.package-archive'
+        ? mimeType
+        : 'application/vnd.android.package-archive';
+    const storageKey = 'releases/gmsilver-latest.apk';
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: storageKey,
+      Body: buffer,
+      ContentType: contentType,
+      ContentDisposition: 'attachment; filename="gmsilver-latest.apk"',
+      CacheControl: 'no-cache, max-age=0, must-revalidate',
+    });
+
+    try {
+      await this.s3Client.send(command);
+    } catch (error: any) {
+      throw new BadRequestException(this.getStorageErrorMessage(error));
+    }
+
+    return {
+      url: `${this.publicUrl}/${storageKey}`,
+      storageKey,
+      bucket: this.bucket,
+    };
   }
 
   private isPlaceholderValue(value: string): boolean {

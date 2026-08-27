@@ -11,6 +11,7 @@ export type AppUpdateDecision =
       message: string;
       downloadUrl: string | null;
       latestVersionName: string;
+      distributionMode: 'DIRECT_APK' | 'PLAY_STORE';
     };
 
 function parseVersionCode(raw: string | number | null | undefined): number {
@@ -68,10 +69,21 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
     if (installed.platform === 'android') {
       const latestCode = parseVersionCode(cfg.android?.latestVersionCode);
       const minCode = parseVersionCode(cfg.android?.minVersionCode);
-      const apkUrl =
-        typeof cfg.android?.apkUrl === 'string' && cfg.android.apkUrl.trim()
-          ? cfg.android.apkUrl.trim()
-          : null;
+      const mode =
+        cfg.android?.distributionMode === 'PLAY_STORE'
+          ? 'PLAY_STORE'
+          : 'DIRECT_APK';
+      const downloadUrl =
+        typeof cfg.android?.downloadUrl === 'string' &&
+        cfg.android.downloadUrl.trim()
+          ? cfg.android.downloadUrl.trim()
+          : mode === 'PLAY_STORE'
+            ? typeof cfg.android?.playStoreUrl === 'string'
+              ? cfg.android.playStoreUrl.trim()
+              : null
+            : typeof cfg.android?.apkUrl === 'string'
+              ? cfg.android.apkUrl.trim()
+              : null;
       const forceFlag = Boolean(cfg.android?.forceUpdate);
       const latestName =
         cfg.android?.latestVersionName || String(latestCode);
@@ -88,8 +100,9 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
         status: 'update',
         force,
         message,
-        downloadUrl: apkUrl,
+        downloadUrl: downloadUrl || null,
         latestVersionName: latestName,
+        distributionMode: mode,
       };
     }
 
@@ -111,6 +124,7 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
         message,
         downloadUrl: storeUrl,
         latestVersionName: latestName,
+        distributionMode: 'DIRECT_APK',
       };
     }
 
@@ -128,19 +142,30 @@ export async function promptAppUpdateIfNeeded(): Promise<void> {
     return;
   }
 
+  const actionLabel =
+    decision.distributionMode === 'PLAY_STORE'
+      ? 'Open Play Store'
+      : decision.downloadUrl
+        ? 'Download & Install'
+        : 'OK';
+
   await new Promise<void>((resolve) => {
     const openDownload = () => {
       if (decision.downloadUrl) {
         void Linking.openURL(decision.downloadUrl).catch(() => {
           Alert.alert(
             'Update',
-            'Could not open the download link. Ask your admin for the latest APK.',
+            decision.distributionMode === 'PLAY_STORE'
+              ? 'Could not open Play Store. Please update from Google Play manually.'
+              : 'Could not open the download link. Ask your admin for the latest APK.',
           );
         });
       } else {
         Alert.alert(
           'Update',
-          'Download link is not configured yet. Please contact your admin.',
+          decision.distributionMode === 'PLAY_STORE'
+            ? 'Play Store link is not configured yet. Please contact your admin.'
+            : 'Download link is not configured yet. Please contact your admin.',
         );
       }
       resolve();
@@ -152,7 +177,7 @@ export async function promptAppUpdateIfNeeded(): Promise<void> {
       onPress?: () => void;
     }> = [
       {
-        text: decision.downloadUrl ? 'Download & Install' : 'OK',
+        text: actionLabel,
         onPress: openDownload,
       },
     ];

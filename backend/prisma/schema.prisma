@@ -461,6 +461,10 @@ model AppReleaseConfig {
   androidLatestVersionCode Int     @default(2) @map("android_latest_version_code")
   androidMinVersionCode    Int     @default(1) @map("android_min_version_code")
   androidApkUrl            String? @map("android_apk_url")
+  androidApkStorageKey     String? @map("android_apk_storage_key")
+  /// DIRECT_APK = open hosted APK URL; PLAY_STORE = open Play Store listing
+  androidDistributionMode  String  @default("DIRECT_APK") @map("android_distribution_mode")
+  androidPlayStoreUrl      String? @map("android_play_store_url")
   androidForceUpdate       Boolean @default(false) @map("android_force_update")
 
   iosLatestVersionName String  @default("1.0.1") @map("ios_latest_version_name")

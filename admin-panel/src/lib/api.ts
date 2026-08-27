@@ -216,6 +216,11 @@ export const homeWidgetsApi = {
 export const appConfigApi = {
   getAdmin: () => api.get('/app-config/admin'),
   update: (data: any) => api.put('/app-config', data),
+  uploadApk: (data: FormData) =>
+    api.post('/app-config/android-apk', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
+    }),
 };
 
 export const auditLogsApi = {

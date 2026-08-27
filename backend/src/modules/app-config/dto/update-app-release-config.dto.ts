@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -27,11 +28,23 @@ export class UpdateAppReleaseConfigDto {
   androidMinVersionCode?: number;
 
   @ApiPropertyOptional({
-    example: 'https://example.com/gmsilver-1.0.1.apk',
+    example: 'https://example.com/gmsilver-latest.apk',
   })
   @IsOptional()
   @IsString()
   androidApkUrl?: string | null;
+
+  @ApiPropertyOptional({ enum: ['DIRECT_APK', 'PLAY_STORE'] })
+  @IsOptional()
+  @IsIn(['DIRECT_APK', 'PLAY_STORE'])
+  androidDistributionMode?: 'DIRECT_APK' | 'PLAY_STORE';
+
+  @ApiPropertyOptional({
+    example: 'https://play.google.com/store/apps/details?id=com.gmsilver.app',
+  })
+  @IsOptional()
+  @IsString()
+  androidPlayStoreUrl?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
