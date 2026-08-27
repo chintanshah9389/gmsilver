@@ -4,8 +4,10 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as path from 'path';
@@ -172,6 +174,85 @@ export class StorageService {
     } catch (error: any) {
       throw new BadRequestException(this.getStorageErrorMessage(error));
     }
+  }
+
+  /**
+   * Delete every object under a prefix (e.g. products/sku-1/).
+   * Returns keys that were successfully deleted and keys that failed.
+   */
+  async deletePrefix(prefix: string): Promise<{
+    deleted: string[];
+    failed: Array<{ storageKey: string; reason: string }>;
+  }> {
+    this.assertStorageConfigured();
+
+    const normalizedPrefix = prefix.replace(/^\/+|\/+$/g, '');
+    if (!normalizedPrefix) {
+      return { deleted: [], failed: [] };
+    }
+
+    const listPrefix = `${normalizedPrefix}/`;
+    const deleted: string[] = [];
+    const failed: Array<{ storageKey: string; reason: string }> = [];
+    let continuationToken: string | undefined;
+
+    do {
+      const listed = await this.s3Client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: listPrefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      const keys = (listed.Contents || [])
+        .map((item) => item.Key)
+        .filter((key): key is string => Boolean(key));
+
+      for (let i = 0; i < keys.length; i += 1000) {
+        const chunk = keys.slice(i, i + 1000);
+        try {
+          const result = await this.s3Client.send(
+            new DeleteObjectsCommand({
+              Bucket: this.bucket,
+              Delete: {
+                Objects: chunk.map((Key) => ({ Key })),
+                Quiet: true,
+              },
+            }),
+          );
+
+          const errored = new Set(
+            (result.Errors || [])
+              .map((err) => err.Key)
+              .filter((key): key is string => Boolean(key)),
+          );
+
+          for (const key of chunk) {
+            if (errored.has(key)) {
+              const match = (result.Errors || []).find((err) => err.Key === key);
+              failed.push({
+                storageKey: key,
+                reason: match?.Message || 'Failed to delete object',
+              });
+            } else {
+              deleted.push(key);
+            }
+          }
+        } catch (error: any) {
+          for (const key of chunk) {
+            failed.push({
+              storageKey: key,
+              reason: this.getStorageErrorMessage(error),
+            });
+          }
+        }
+      }
+
+      continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    return { deleted, failed };
   }
 
   // ─── REPLACE FILE ──────────────────────────────────────────────────

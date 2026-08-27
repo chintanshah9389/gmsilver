@@ -333,42 +333,101 @@ export class ProductsService {
     }
 
     const productWithAssets = product as any;
+    const imageFolder = this.buildProductImageFolder(product.sku, product.id);
 
-    const storageKeys = Array.from(
+    const knownStorageKeys = Array.from(
       new Set(
         [
           productWithAssets.image1StorageKey,
           productWithAssets.image2StorageKey,
           productWithAssets.image3StorageKey,
           productWithAssets.pdfStorageKey,
+          this.extractStorageKeyFromUrl(productWithAssets.image1Url),
+          this.extractStorageKeyFromUrl(productWithAssets.image2Url),
+          this.extractStorageKeyFromUrl(productWithAssets.image3Url),
+          this.extractStorageKeyFromUrl(productWithAssets.pdfUrl),
         ].filter((key): key is string => Boolean(key)),
       ),
     );
+
+    const productNotifications = await this.prisma.notification.findMany({
+      where: {
+        type: 'NEW_PRODUCT',
+        data: {
+          path: ['productId'],
+          equals: id,
+        },
+      },
+      select: { id: true },
+    });
+    const notificationIds = productNotifications.map((n) => n.id);
 
     await this.prisma.$transaction([
       this.prisma.wishlist.deleteMany({ where: { productId: id } }),
       this.prisma.cartItem.deleteMany({ where: { productId: id } }),
       this.prisma.orderItem.deleteMany({ where: { productId: id } }),
+      this.prisma.banner.updateMany({
+        where: { linkType: 'PRODUCT', linkId: id },
+        data: { linkType: 'NONE', linkId: null },
+      }),
+      this.prisma.homeWidget.updateMany({
+        where: { linkType: 'PRODUCT', linkId: id },
+        data: { linkType: 'NONE', linkId: null },
+      }),
+      ...(notificationIds.length > 0
+        ? [
+            this.prisma.notificationLog.deleteMany({
+              where: { notificationId: { in: notificationIds } },
+            }),
+            this.prisma.notification.deleteMany({
+              where: { id: { in: notificationIds } },
+            }),
+          ]
+        : []),
       this.prisma.product.delete({ where: { id } }),
     ]);
 
-    const deleteResults = await Promise.allSettled(
-      storageKeys.map((key) => this.storageService.deleteFile(key)),
-    );
+    const failedDeletes: Array<{ storageKey: string; productId: string; reason: string }> = [];
+    const deletedKeys = new Set<string>();
 
-    const failedDeletes = deleteResults.flatMap((result, index) => {
-      if (result.status === 'rejected') {
-        return [
-          {
-            storageKey: storageKeys[index],
+    // Remove every object under the product folder (images, pdfs, replaced orphans).
+    try {
+      const prefixResult = await this.storageService.deletePrefix(imageFolder);
+      prefixResult.deleted.forEach((key) => deletedKeys.add(key));
+      for (const failed of prefixResult.failed) {
+        failedDeletes.push({
+          storageKey: failed.storageKey,
+          productId: id,
+          reason: failed.reason,
+        });
+      }
+    } catch (error) {
+      // Fall back to known keys if prefix listing/delete fails.
+      failedDeletes.push(
+        ...knownStorageKeys.map((storageKey) => ({
+          storageKey,
+          productId: id,
+          reason: this.getErrorMessage(error),
+        })),
+      );
+    }
+
+    const remainingKeys = knownStorageKeys.filter((key) => !deletedKeys.has(key));
+    if (remainingKeys.length > 0) {
+      const deleteResults = await Promise.allSettled(
+        remainingKeys.map((key) => this.storageService.deleteFile(key)),
+      );
+
+      deleteResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedDeletes.push({
+            storageKey: remainingKeys[index],
             productId: id,
             reason: this.getErrorMessage(result.reason),
-          },
-        ];
-      }
-
-      return [];
-    });
+          });
+        }
+      });
+    }
 
     if (failedDeletes.length > 0) {
       await this.storageDeleteCleanupService.queueFailedDeletes(failedDeletes);
@@ -416,6 +475,26 @@ export class ProductsService {
 
   private buildProductPdfFolder(sku?: string | null, productId?: string): string {
     return `${this.buildProductImageFolder(sku, productId)}/documents`;
+  }
+
+  private extractStorageKeyFromUrl(url?: string | null): string | null {
+    if (!url) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(url);
+      const key = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
+      return key || null;
+    } catch {
+      const withoutQuery = url.split('?')[0];
+      const marker = '/products/';
+      const idx = withoutQuery.indexOf(marker);
+      if (idx >= 0) {
+        return withoutQuery.slice(idx + 1);
+      }
+      return null;
+    }
   }
 
   private sanitizeFolderPart(value?: string | null): string {
