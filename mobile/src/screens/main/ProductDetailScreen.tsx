@@ -16,7 +16,11 @@ import {
 import { Icon, Snackbar } from 'react-native-paper';
 import { useProductByIdQuery } from '@/store/services/productsApi';
 import { useAddToCartMutation } from '@/store/services/cartApi';
-import { useAddWishlistMutation } from '@/store/services/wishlistApi';
+import {
+  useWishlistQuery,
+  useAddWishlistMutation,
+  useRemoveWishlistMutation,
+} from '@/store/services/wishlistApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C, R } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
@@ -42,16 +46,20 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const tabClearance = getTabBarClearance(insets.bottom);
   const { data, error, isError, isLoading } = useProductByIdQuery(productId);
   const [addToCart, { isLoading: addingCart }] = useAddToCartMutation();
+  const { data: wishlistData } = useWishlistQuery();
   const [addWishlist, { isLoading: addingWish }] = useAddWishlistMutation();
+  const [removeWishlist, { isLoading: removingWish }] = useRemoveWishlistMutation();
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackbarVisible] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
-  const [wished, setWished] = useState(false);
   const [cartSheetOpen, setCartSheetOpen] = useState(false);
   const [cartUnit, setCartUnit] = useState<CartUnit>('PIECES');
   const [cartAmount, setCartAmount] = useState('1');
   const product = data?.data;
   const inStock = product?.isAvailable !== false;
+  const wishlistItems: any[] = wishlistData?.data || [];
+  const wished = wishlistItems.some((item) => item.productId === productId);
+  const wishBusy = addingWish || removingWish;
 
   const weightGrams = Number(product?.weight || 0);
   const hasWeight = weightGrams > 0;
@@ -271,12 +279,16 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         <ScalePressable
           style={[s.wishBtn, wished && s.wishBtnActive]}
           scaleTo={0.95}
-          disabled={addingWish}
+          disabled={wishBusy}
           onPress={async () => {
             try {
-              await addWishlist(productId).unwrap();
-              setWished(true);
-              showSnack('Added to wishlist');
+              if (wished) {
+                await removeWishlist(productId).unwrap();
+                showSnack('Removed from wishlist');
+              } else {
+                await addWishlist(productId).unwrap();
+                showSnack('Added to wishlist');
+              }
             } catch (e) {
               showSnack(getErrorMessage(e, 'Failed.'));
             }

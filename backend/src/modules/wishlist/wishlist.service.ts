@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -39,7 +39,9 @@ export class WishlistService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const normalizedItems = items.map((item) => ({
+    const normalizedItems = items
+      .filter((item) => item.product && item.product.isActive)
+      .map((item) => ({
       ...item,
       product: {
         ...item.product,
@@ -90,7 +92,7 @@ export class WishlistService {
     });
 
     if (existing) {
-      throw new ConflictException('Product already in wishlist');
+      return { message: 'Already in wishlist', data: existing };
     }
 
     const item = await this.prisma.wishlist.create({

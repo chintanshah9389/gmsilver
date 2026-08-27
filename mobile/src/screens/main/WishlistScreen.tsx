@@ -13,7 +13,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 const { PAD, GAP } = PRODUCT_GRID;
 
 export default function WishlistScreen({ navigation }: any) {
-  const { data, error, isError } = useWishlistQuery();
+  const { data, error, isError, isLoading, refetch } = useWishlistQuery();
   const [remove] = useRemoveWishlistMutation();
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
@@ -21,7 +21,7 @@ export default function WishlistScreen({ navigation }: any) {
 
   useEffect(() => {
     if (isError && error) {
-      setSnackMsg(getErrorMessage(error, 'Failed.'));
+      setSnackMsg(getErrorMessage(error, 'Failed to load wishlist.'));
       setSnackVisible(true);
     }
   }, [error, isError]);
@@ -36,19 +36,25 @@ export default function WishlistScreen({ navigation }: any) {
         onBack={() => navigation.goBack()}
       />
       <FlatList
-        data={items}
+        data={isError ? [] : items}
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={s.list}
-        columnWrapperStyle={items.length ? s.row : undefined}
+        columnWrapperStyle={!isError && items.length ? s.row : undefined}
         showsVerticalScrollIndicator={false}
+        refreshing={isLoading}
+        onRefresh={refetch}
         ListEmptyComponent={
           <EmptyState
-            icon="heart-outline"
-            title="Your wishlist is empty"
-            subtitle="Save pieces you love while browsing the catalog"
-            actionLabel="Browse products"
-            onAction={() => navigation.navigate('Categories')}
+            icon={isError ? 'alert-circle-outline' : 'heart-outline'}
+            title={isError ? 'Couldn’t load wishlist' : 'Your wishlist is empty'}
+            subtitle={
+              isError
+                ? getErrorMessage(error, 'Pull to retry or check your connection.')
+                : 'Save pieces you love while browsing the catalog'
+            }
+            actionLabel={isError ? 'Try again' : 'Browse products'}
+            onAction={() => (isError ? refetch() : navigation.navigate('Categories'))}
           />
         }
         renderItem={({ item, index }) => (
@@ -62,7 +68,14 @@ export default function WishlistScreen({ navigation }: any) {
                 image1Url: item.product?.image1Url,
               }}
               wished
-              onWish={() => remove(item.productId)}
+              onWish={async () => {
+                try {
+                  await remove(item.productId).unwrap();
+                } catch (e) {
+                  setSnackMsg(getErrorMessage(e, 'Failed to remove.'));
+                  setSnackVisible(true);
+                }
+              }}
               onPress={() =>
                 navigation.navigate('ProductDetail', { productId: item.productId })
               }

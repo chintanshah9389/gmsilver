@@ -50,7 +50,9 @@ export class CartService {
       },
     });
 
-    const normalizedItems = (cartWithDetails?.items || []).map((item) => ({
+    const normalizedItems = (cartWithDetails?.items || [])
+      .filter((item) => item.product && item.product.isActive)
+      .map((item) => ({
       ...item,
       product: {
         ...item.product,
@@ -104,15 +106,20 @@ export class CartService {
 
   async addItem(userId: string, dto: AddToCartDto) {
     const product = await this.prisma.product.findFirst({
-      where: { id: dto.productId, isActive: true, isAvailable: true },
+      where: { id: dto.productId },
     });
 
-    if (!product) {
-      throw new NotFoundException('Product is out of stock or unavailable');
+    if (!product || !product.isActive) {
+      throw new NotFoundException('Product not found');
     }
 
-    if (dto.quantity < 1) {
-      throw new BadRequestException('Quantity must be at least 1');
+    if (!product.isAvailable) {
+      throw new BadRequestException('Product is out of stock');
+    }
+
+    const quantity = Number(dto.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      throw new BadRequestException('Quantity must be a whole number of at least 1');
     }
 
     const cart = await this.getOrCreateCart(userId);
@@ -124,7 +131,7 @@ export class CartService {
     if (existingItem) {
       const updated = await this.prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + dto.quantity },
+        data: { quantity: existingItem.quantity + quantity },
       });
       return { message: 'Cart updated', data: updated };
     }
@@ -133,7 +140,7 @@ export class CartService {
       data: {
         cartId: cart.id,
         productId: dto.productId,
-        quantity: dto.quantity,
+        quantity,
       },
     });
 

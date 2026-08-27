@@ -12,22 +12,23 @@ import { Snackbar } from 'react-native-paper';
 import { PAGE_SIZE, useProductsQuery } from '@/store/services/productsApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
+import { F } from '@/theme/typography';
 import PremiumBackground from '@/components/PremiumBackground';
 import MotionReveal from '@/components/MotionReveal';
 import ProductCard, { PRODUCT_GRID } from '@/components/ProductCard';
 import EmptyState from '@/components/EmptyState';
 import ScreenHeader from '@/components/ScreenHeader';
-import CategoryChipRow, { CategoryChipItem } from '@/components/CategoryChip';
+import ScalePressable from '@/components/ScalePressable';
 
 const { PAD } = PRODUCT_GRID;
 
 type ProductFilterId = 'all' | 'indian' | 'imported' | 'in_stock';
 
-const PRODUCT_FILTERS: CategoryChipItem[] = [
-  { id: 'all', name: 'All' },
-  { id: 'indian', name: 'Indian' },
-  { id: 'imported', name: 'Imported' },
-  { id: 'in_stock', name: 'In stock' },
+const PRODUCT_FILTERS: { id: ProductFilterId; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'indian', label: 'Indian' },
+  { id: 'imported', label: 'Imported' },
+  { id: 'in_stock', label: 'In stock' },
 ];
 
 export default function ProductListScreen({ route, navigation }: any) {
@@ -109,26 +110,38 @@ export default function ProductListScreen({ route, navigation }: any) {
       />
 
       <MotionReveal delay={40} duration={300} distance={8}>
-        <CategoryChipRow
-          items={PRODUCT_FILTERS}
-          selectedId={filter}
-          onSelect={(item) => setFilter(item.id as ProductFilterId)}
-        />
-      </MotionReveal>
+        <View style={s.toolbar}>
+          <View style={s.searchWrap}>
+            <Text style={s.searchIcon}>⌕</Text>
+            <TextInput
+              style={s.searchInput}
+              placeholder="Search jewelry…"
+              placeholderTextColor={C.textMuted}
+              value={search}
+              onChangeText={setSearch}
+              selectionColor={C.gold}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </View>
 
-      <MotionReveal delay={60} duration={320} distance={10}>
-        <View style={s.searchWrap}>
-          <Text style={s.searchIcon}>⌕</Text>
-          <TextInput
-            style={s.searchInput}
-            placeholder="Search for jewelry…"
-            placeholderTextColor={C.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            selectionColor={C.gold}
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
+          <View style={s.filterRow}>
+            {PRODUCT_FILTERS.map((item) => {
+              const active = filter === item.id;
+              return (
+                <ScalePressable
+                  key={item.id}
+                  style={[s.filterChip, active && s.filterChipOn]}
+                  scaleTo={0.97}
+                  onPress={() => setFilter(item.id)}
+                >
+                  <Text style={[s.filterText, active && s.filterTextOn]} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </ScalePressable>
+              );
+            })}
+          </View>
         </View>
       </MotionReveal>
 
@@ -189,19 +202,56 @@ const s = StyleSheet.create({
   listFlex: { flex: 1 },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   footerLoader: { paddingVertical: 20, alignItems: 'center' },
+  toolbar: {
+    paddingHorizontal: PAD,
+    marginBottom: 12,
+    gap: 10,
+  },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: PAD,
-    marginTop: 10,
-    marginBottom: 14,
     backgroundColor: C.surface,
-    borderRadius: 0,
     borderWidth: 1,
     borderColor: C.border,
     paddingHorizontal: 14,
   },
   searchIcon: { color: C.textMuted, fontSize: 16, marginRight: 8 },
-  searchInput: { flex: 1, color: C.text, fontSize: 14, paddingVertical: 12 },
+  searchInput: {
+    flex: 1,
+    color: C.text,
+    fontSize: 14,
+    paddingVertical: 12,
+    fontFamily: F.sans,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  filterChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.surface,
+  },
+  filterChipOn: {
+    backgroundColor: C.primary,
+    borderColor: C.primary,
+  },
+  filterText: {
+    color: C.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    fontFamily: F.sans,
+  },
+  filterTextOn: {
+    color: '#FFFFFF',
+  },
   list: { paddingHorizontal: PAD, paddingBottom: 110, gap: 8, flexGrow: 1 },
 });

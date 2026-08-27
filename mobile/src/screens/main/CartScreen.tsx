@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function CartScreen({ navigation }: any) {
   useHideTabBarOnFocus();
   const insets = useSafeAreaInsets();
-  const { data, error, isError } = useCartQuery();
+  const { data, error, isError, isLoading, refetch } = useCartQuery();
   const [updateQty] = useUpdateCartItemMutation();
   const [removeItem] = useRemoveCartItemMutation();
   const [snackMsg, setSnackMsg] = useState('');
@@ -59,17 +59,23 @@ export default function CartScreen({ navigation }: any) {
       />
 
       <FlatList
-        data={items}
+        data={isError ? [] : items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
+        refreshing={isLoading}
+        onRefresh={refetch}
         ListEmptyComponent={
           <EmptyState
-            icon="cart-outline"
-            title="Your cart is empty"
-            subtitle="Add silver pieces from the catalog to place an order"
-            actionLabel="Continue shopping"
-            onAction={() => navigation.navigate('Categories')}
+            icon={isError ? 'alert-circle-outline' : 'cart-outline'}
+            title={isError ? 'Couldn’t load cart' : 'Your cart is empty'}
+            subtitle={
+              isError
+                ? getErrorMessage(error, 'Pull to retry or check your connection.')
+                : 'Add silver pieces from the catalog to place an order'
+            }
+            actionLabel={isError ? 'Try again' : 'Continue shopping'}
+            onAction={() => (isError ? refetch() : navigation.navigate('Categories'))}
           />
         }
         renderItem={({ item, index }) => (
@@ -91,7 +97,7 @@ export default function CartScreen({ navigation }: any) {
                   {item.product?.name}
                 </Text>
                 <Text style={s.itemPrice}>
-                  ?{Number(item.product?.price || 0).toLocaleString()}
+                  ₹{Number(item.product?.price || 0).toLocaleString()}
                 </Text>
                 <View style={s.qtyRow}>
                   <ScalePressable
