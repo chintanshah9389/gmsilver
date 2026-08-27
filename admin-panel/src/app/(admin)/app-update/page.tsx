@@ -206,8 +206,30 @@ export default function AppUpdatePage() {
                 }
               />
             }
-            label="Enable update checks"
+            label="Enable update popup"
           />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>
+            Off = no update dialog on app open. On = check for newer builds.
+          </Typography>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.androidForceUpdate}
+                disabled={loading || !form.enabled}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    androidForceUpdate: e.target.checked,
+                  }))
+                }
+              />
+            }
+            label="Update required (force)"
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>
+            Off = soft update (Later + Download). On = Update Required (no Later).
+          </Typography>
 
           <Typography variant="subtitle1" fontWeight={600}>
             Android release
@@ -333,22 +355,6 @@ export default function AppUpdatePage() {
               placeholder="https://play.google.com/store/apps/details?id=com.gmsilver.app"
             />
           )}
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={form.androidForceUpdate}
-                disabled={loading}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    androidForceUpdate: e.target.checked,
-                  }))
-                }
-              />
-            }
-            label="Force update (no Later button)"
-          />
 
           <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 1 }}>
             iOS (optional)
