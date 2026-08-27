@@ -11,9 +11,10 @@ export class CreateProductDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: '5500.00' })
+  @ApiPropertyOptional({ example: '5500.00', description: 'Optional; blank/omitted defaults to 0' })
+  @IsOptional()
   @IsString()
-  price: string;
+  price?: string;
 
   @ApiPropertyOptional({ example: '10.000' })
   @IsOptional()

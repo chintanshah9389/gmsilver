@@ -133,6 +133,7 @@ export class ProductsService {
 
     const normalizedSku = this.normalizeSku(dto.sku);
     await this.assertSkuUnique(normalizedSku);
+    const parsedPrice = this.parsePrice(dto.price);
     const parsedQuantity = dto.quantity !== undefined ? Number.parseInt(dto.quantity, 10) : 0;
 
     if (Number.isNaN(parsedQuantity) || parsedQuantity < 0) {
@@ -144,7 +145,7 @@ export class ProductsService {
       data: {
         name: dto.name,
         description: dto.description,
-        price: parseFloat(dto.price),
+        price: parsedPrice,
         weight: dto.weight ? parseFloat(dto.weight) : undefined,
         purity: dto.purity,
         sku: normalizedSku,
@@ -278,7 +279,7 @@ export class ProductsService {
 
     if (dto.name) updateData.name = dto.name;
     if (dto.description !== undefined) updateData.description = dto.description;
-    if (dto.price) updateData.price = parseFloat(dto.price);
+    if (dto.price !== undefined) updateData.price = this.parsePrice(dto.price);
     if (dto.weight) updateData.weight = parseFloat(dto.weight);
     if (dto.purity) updateData.purity = dto.purity;
     if (dto.sku !== undefined) {
@@ -421,8 +422,22 @@ export class ProductsService {
       .replace(/^-|-$/g, '');
   }
 
+  private parsePrice(price?: string): number {
+    if (price === undefined || price === null || String(price).trim() === '') {
+      return 0;
+    }
+
+    const parsed = Number.parseFloat(String(price));
+    if (Number.isNaN(parsed) || parsed < 0) {
+      throw new BadRequestException('Price must be a valid non-negative number');
+    }
+
+    return parsed;
+  }
+
+  /** Trim only — no format/case transform; uniqueness is enforced separately. */
   private normalizeSku(sku?: string): string {
-    const normalized = sku?.trim().toUpperCase();
+    const normalized = sku?.trim() ?? '';
 
     if (!normalized) {
       throw new BadRequestException('SKU is required');
