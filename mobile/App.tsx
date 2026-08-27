@@ -10,7 +10,12 @@ import { C } from '@/theme/colors';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAppDispatch } from '@/hooks/redux';
 import { setAuth } from '@/store/slices/authSlice';
-import { loadRememberMe } from '@/lib/remember-me';
+import {
+  clearRememberedSession,
+  loadRememberMe,
+  persistLogin,
+} from '@/lib/remember-me';
+import { API_BASE_URL } from '@/store/services/api';
 
 function AppProviders() {
   const dispatch = useAppDispatch();
@@ -18,16 +23,56 @@ function AppProviders() {
 
   useEffect(() => {
     let cancelled = false;
-    loadRememberMe()
-      .then((saved) => {
-        if (cancelled) return;
-        if (saved.enabled && saved.session?.accessToken) {
+
+    (async () => {
+      try {
+        const saved = await loadRememberMe();
+        if (!saved.enabled || !saved.session?.refreshToken || !saved.session.user) {
+          return;
+        }
+
+        // Prefer a fresh access token so cart/wishlist work after app reopen.
+        try {
+          const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: saved.session.refreshToken }),
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const tokens = json?.data;
+            if (tokens?.accessToken && tokens?.refreshToken) {
+              const session = {
+                user: saved.session.user,
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+              };
+              if (!cancelled) {
+                dispatch(setAuth(session));
+              }
+              await persistLogin({
+                remember: true,
+                identifier: saved.identifier || saved.session.user.email,
+                session,
+              });
+              return;
+            }
+          } else {
+            await clearRememberedSession();
+            return;
+          }
+        } catch {
+          // Network error — fall through to stored access token if present.
+        }
+
+        if (!cancelled && saved.session.accessToken) {
           dispatch(setAuth(saved.session));
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setReady(true);
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
     };

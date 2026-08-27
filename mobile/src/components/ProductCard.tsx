@@ -40,41 +40,52 @@ export default function ProductCard({
   const outOfStock = item.isAvailable === false;
 
   return (
-    <ScalePressable style={[s.card, { width: cardW }]} scaleTo={0.99} onPress={onPress}>
-      <View style={[s.imgWrap, { height: imgH }]}>
-        {item.image1Url ? (
-          <Image source={{ uri: item.image1Url }} style={[s.img, outOfStock && s.imgDimmed]} resizeMode="cover" />
-        ) : (
-          <View style={s.imgPlaceholder}>
-            <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? 'G'}</Text>
-          </View>
-        )}
-        {outOfStock ? (
-          <View style={s.oosBadge}>
-            <Text style={s.oosBadgeText}>Out of Stock</Text>
-          </View>
-        ) : null}
-        {onWish ? (
-          <ScalePressable
-            style={[s.wishBtn, wished && s.wishBtnActive]}
-            scaleTo={0.9}
-            onPress={onWish}
-          >
-            <Icon
-              source={wished ? 'heart' : 'heart-outline'}
-              size={16}
-              color={wished ? C.ruby : C.textSub}
+    <View style={[s.card, { width: cardW }]}>
+      <ScalePressable scaleTo={0.99} onPress={onPress}>
+        <View style={[s.imgWrap, { height: imgH }]}>
+          {item.image1Url ? (
+            <Image
+              source={{ uri: item.image1Url }}
+              style={[s.img, outOfStock && s.imgDimmed]}
+              resizeMode="cover"
             />
-          </ScalePressable>
-        ) : null}
-      </View>
-      <View style={s.body}>
-        <Text style={s.name} numberOfLines={2}>
-          {item.name}
-        </Text>
-        <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
-      </View>
-    </ScalePressable>
+          ) : (
+            <View style={s.imgPlaceholder}>
+              <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? 'G'}</Text>
+            </View>
+          )}
+          {outOfStock ? (
+            <View style={s.oosBadge}>
+              <Text style={s.oosBadgeText}>Out of Stock</Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={s.body}>
+          <Text style={s.name} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
+        </View>
+      </ScalePressable>
+
+      {onWish ? (
+        <ScalePressable
+          style={[s.wishBtn, wished && s.wishBtnActive]}
+          scaleTo={0.9}
+          onPress={(e) => {
+            // Web: keep heart tap from also opening the product.
+            (e as { stopPropagation?: () => void })?.stopPropagation?.();
+            onWish();
+          }}
+        >
+          <Icon
+            source={wished ? 'heart' : 'heart-outline'}
+            size={16}
+            color={wished ? C.ruby : C.textSub}
+          />
+        </ScalePressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -83,6 +94,7 @@ export const PRODUCT_GRID = { PAD, GAP };
 const s = StyleSheet.create({
   card: {
     backgroundColor: 'transparent',
+    position: 'relative',
   },
   imgWrap: {
     width: '100%',
@@ -130,6 +142,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
   wishBtnActive: { backgroundColor: '#FFF5F5' },
   body: { paddingTop: 12, paddingBottom: 6 },

@@ -324,9 +324,9 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         animationType="slide"
         onRequestClose={closeCartSheet}
       >
-        <View style={s.sheetRoot}>
+        <View style={s.sheetRoot} pointerEvents="box-none">
           <Pressable style={s.sheetBackdrop} onPress={closeCartSheet} />
-          <View style={s.sheetCard}>
+          <View style={s.sheetCard} pointerEvents="auto">
             <View style={s.sheetHandle} />
             <Text style={s.sheetTitle}>Add to Cart</Text>
             <Text style={s.sheetSub} numberOfLines={1}>
@@ -622,6 +622,7 @@ const s = StyleSheet.create({
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(31,39,51,0.45)',
+    zIndex: 0,
   },
   sheetCard: {
     backgroundColor: C.surface,
@@ -632,6 +633,8 @@ const s = StyleSheet.create({
     paddingBottom: 28,
     borderTopWidth: 1,
     borderColor: C.borderHi,
+    zIndex: 1,
+    elevation: 8,
     ...E.cardShadow,
   },
   sheetHandle: {

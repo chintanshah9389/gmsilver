@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import {
+  CommonActions,
+  getFocusedRouteNameFromRoute,
+} from '@react-navigation/native';
 import { Icon } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList } from './types';
@@ -113,6 +116,21 @@ export default function MainTabs() {
         options={({ route }) => ({
           tabBarStyle: tabBarForRoute(route, insets.bottom),
         })}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Always open collections/categories root (not last product/cart/wishlist).
+            e.preventDefault();
+            navigation.dispatch(
+              CommonActions.navigate({
+                name: 'Categories',
+                state: {
+                  routes: [{ name: 'Categories' }],
+                  index: 0,
+                },
+              }),
+            );
+          },
+        })}
       />
       <Tab.Screen
         name="Order"
@@ -121,8 +139,17 @@ export default function MainTabs() {
           tabBarStyle: tabBarForRoute(route, insets.bottom),
         })}
         listeners={({ navigation }) => ({
-          tabPress: () => {
-            navigation.navigate('Order', { screen: 'Orders' });
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.dispatch(
+              CommonActions.navigate({
+                name: 'Order',
+                state: {
+                  routes: [{ name: 'Orders' }],
+                  index: 0,
+                },
+              }),
+            );
           },
         })}
       />
@@ -134,8 +161,17 @@ export default function MainTabs() {
             tabBarStyle: tabBarForRoute(route, insets.bottom),
           })}
           listeners={({ navigation }) => ({
-            tabPress: () => {
-              navigation.navigate('Admin', { screen: 'AdminHub' });
+            tabPress: (e) => {
+              e.preventDefault();
+              navigation.dispatch(
+                CommonActions.navigate({
+                  name: 'Admin',
+                  state: {
+                    routes: [{ name: 'AdminHub' }],
+                    index: 0,
+                  },
+                }),
+              );
             },
           })}
         />

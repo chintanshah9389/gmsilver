@@ -35,9 +35,17 @@ export function getErrorMessage(error: unknown, fallback: string) {
     msg !== 'true' &&
     msg !== 'false' &&
     !/^\d{3}$/.test(msg) &&
-    !['Conflict', 'Bad Request', 'Unauthorized', 'Forbidden', 'Not Found', 'Internal Server Error'].includes(msg)
+    !['Conflict', 'Bad Request', 'Not Found', 'Internal Server Error'].includes(msg)
   );
 
-  return unique[0] || fallback;
+  const first = unique[0];
+  if (!first) return fallback;
+  if (first === 'Unauthorized' || /unauthorized/i.test(first)) {
+    return 'Session expired. Please sign in again.';
+  }
+  if (first === 'Forbidden') {
+    return 'You do not have permission to do that.';
+  }
+  return first;
 }
 
