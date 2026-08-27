@@ -21,7 +21,7 @@ npm run start:dev
 
 ## API Docs
 
-https://gmsilver-production.up.railway.app/api/docs
+https://charming-encouragement-production-dc0c.up.railway.app/api/docs
 
 ## Core Modules
 

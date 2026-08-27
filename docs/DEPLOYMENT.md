@@ -8,6 +8,11 @@
 
 ## 2. Backend Deployment (Railway)
 
+**Single production API URL (use everywhere):**
+`https://charming-encouragement-production-dc0c.up.railway.app/api/v1`
+
+Admin panel (local + Railway) and the mobile app must all use this same URL so they share one database.
+
 1. Create a Railway service with root directory `backend`.
 2. Build command:
 
@@ -35,13 +40,21 @@ npm run railway:start
 - FIREBASE_PROJECT_ID
 - FIREBASE_CLIENT_EMAIL
 - FIREBASE_PRIVATE_KEY
-- CORS_ORIGINS
+- CORS_ORIGINS (must include `http://localhost:3000` and the Railway admin URL)
 
-## 3. Admin Panel Deployment (Vercel)
+## 3. Admin Panel Deployment (Railway)
+
+1. Root directory: `admin-panel`
+2. Set build-time variable:
+   `NEXT_PUBLIC_API_URL=https://charming-encouragement-production-dc0c.up.railway.app/api/v1`
+3. Redeploy after changing `NEXT_PUBLIC_*` (restart alone is not enough).
+4. Local admin `.env` must use the **same** `NEXT_PUBLIC_API_URL`.
+
+## 3b. Admin Panel Deployment (Vercel) — optional
 
 1. Import admin-panel folder as a separate Vercel project.
 2. Build command: npm run build
-3. Set NEXT_PUBLIC_API_URL to backend production URL.
+3. Set NEXT_PUBLIC_API_URL to the same production API URL above.
 4. Deploy.
 
 ## 4. Database Migrations
