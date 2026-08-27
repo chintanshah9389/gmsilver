@@ -32,6 +32,7 @@ import {
   TableChart,
   Logout,
   ViewCarousel,
+  SystemUpdateAlt,
 } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
@@ -68,6 +69,7 @@ const navGroups = [
   {
     label: 'System',
     items: [
+      { label: 'App Update', icon: <SystemUpdateAlt />, href: '/app-update' },
       { label: 'Audit Logs',  icon: <Security />,     href: '/audit-logs' },
       { label: 'Import/Export', icon: <TableChart />, href: '/excel' },
     ],

@@ -16,6 +16,7 @@ import {
   persistLogin,
 } from '@/lib/remember-me';
 import { API_BASE_URL } from '@/store/services/api';
+import { promptAppUpdateIfNeeded } from '@/services/appUpdate';
 
 function AppProviders() {
   const dispatch = useAppDispatch();
@@ -26,6 +27,11 @@ function AppProviders() {
 
     (async () => {
       try {
+        // Check for a newer APK / store build before unlocking the UI.
+        if (!cancelled) {
+          await promptAppUpdateIfNeeded();
+        }
+
         const saved = await loadRememberMe();
         if (!saved.enabled || !saved.session?.refreshToken || !saved.session.user) {
           return;

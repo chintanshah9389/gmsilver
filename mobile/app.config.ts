@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.gmsilver.app',
     googleServicesFile: './google-services.json',
+    versionCode: 1,
     permissions: [
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.READ_MEDIA_IMAGES',

@@ -452,3 +452,26 @@ model HomeWidget {
   @@index([key, isActive])
   @@map("home_widgets")
 }
+
+/// Singleton row (id = "default") controlling mobile force/soft update prompts.
+model AppReleaseConfig {
+  id String @id @default("default")
+
+  androidLatestVersionName String  @default("1.0.0") @map("android_latest_version_name")
+  androidLatestVersionCode Int     @default(1) @map("android_latest_version_code")
+  androidMinVersionCode    Int     @default(1) @map("android_min_version_code")
+  androidApkUrl            String? @map("android_apk_url")
+  androidForceUpdate       Boolean @default(false) @map("android_force_update")
+
+  iosLatestVersionName String  @default("1.0.0") @map("ios_latest_version_name")
+  iosStoreUrl          String? @map("ios_store_url")
+  iosForceUpdate       Boolean @default(false) @map("ios_force_update")
+
+  message String  @default("A new version of GM Silver is available. Please update to continue.")
+  enabled Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_release_config")
+}

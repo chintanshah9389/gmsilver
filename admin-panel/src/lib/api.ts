@@ -213,6 +213,11 @@ export const homeWidgetsApi = {
   updateTopProducts: (data: any) => api.put('/home-widgets/top-products', data),
 };
 
+export const appConfigApi = {
+  getAdmin: () => api.get('/app-config/admin'),
+  update: (data: any) => api.put('/app-config', data),
+};
+
 export const auditLogsApi = {
   getAll: (params?: any) => api.get('/audit-logs', { params }),
   getUsers: () => api.get('/audit-logs/users'),
