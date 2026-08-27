@@ -91,16 +91,40 @@ export default function CartScreen({ navigation }: any) {
                 <Text style={s.itemName} numberOfLines={2}>
                   {item.product?.name}
                 </Text>
+                <Text style={s.unitLabel}>
+                  {item.unit === 'KG'
+                    ? `${Number(item.unitAmount || 0)} kg  ·  ${item.quantity} pcs`
+                    : `${item.quantity} pcs`}
+                </Text>
                 <View style={s.qtyRow}>
                   <ScalePressable
                     style={s.qtyBtn}
                     scaleTo={0.92}
                     onPress={async () => {
                       try {
-                        await updateQty({
-                          productId: item.productId,
-                          quantity: Math.max(1, item.quantity - 1),
-                        }).unwrap();
+                        if (item.unit === 'KG') {
+                          const weightGrams = Number(item.product?.weight || 0);
+                          const nextAmount = Math.max(
+                            0.1,
+                            Math.round((Number(item.unitAmount || 0.1) - 0.1) * 10) / 10,
+                          );
+                          const nextQty =
+                            weightGrams > 0
+                              ? Math.max(1, Math.round((nextAmount * 1000) / weightGrams))
+                              : Math.max(1, item.quantity - 1);
+                          await updateQty({
+                            productId: item.productId,
+                            quantity: nextQty,
+                            unit: 'KG',
+                            unitAmount: nextAmount,
+                          }).unwrap();
+                        } else {
+                          await updateQty({
+                            productId: item.productId,
+                            quantity: Math.max(1, item.quantity - 1),
+                            unit: 'PIECES',
+                          }).unwrap();
+                        }
                       } catch (e) {
                         showSnack(getErrorMessage(e, 'Failed.'));
                       }
@@ -108,16 +132,37 @@ export default function CartScreen({ navigation }: any) {
                   >
                     <Text style={s.qtyBtnText}>-</Text>
                   </ScalePressable>
-                  <Text style={s.qtyVal}>{item.quantity}</Text>
+                  <Text style={s.qtyVal}>
+                    {item.unit === 'KG'
+                      ? `${Number(item.unitAmount || 0)} kg`
+                      : item.quantity}
+                  </Text>
                   <ScalePressable
                     style={s.qtyBtn}
                     scaleTo={0.92}
                     onPress={async () => {
                       try {
-                        await updateQty({
-                          productId: item.productId,
-                          quantity: item.quantity + 1,
-                        }).unwrap();
+                        if (item.unit === 'KG') {
+                          const weightGrams = Number(item.product?.weight || 0);
+                          const nextAmount =
+                            Math.round((Number(item.unitAmount || 0) + 0.1) * 10) / 10;
+                          const nextQty =
+                            weightGrams > 0
+                              ? Math.max(1, Math.round((nextAmount * 1000) / weightGrams))
+                              : item.quantity + 1;
+                          await updateQty({
+                            productId: item.productId,
+                            quantity: nextQty,
+                            unit: 'KG',
+                            unitAmount: nextAmount,
+                          }).unwrap();
+                        } else {
+                          await updateQty({
+                            productId: item.productId,
+                            quantity: item.quantity + 1,
+                            unit: 'PIECES',
+                          }).unwrap();
+                        }
                       } catch (e) {
                         showSnack(getErrorMessage(e, 'Failed.'));
                       }
@@ -188,6 +233,12 @@ const s = StyleSheet.create({
   thumbInitial: { color: C.textMuted, fontSize: 28, fontWeight: '700' },
   itemInfo: { flex: 1, padding: 14 },
   itemName: { color: C.text, fontSize: 14, fontWeight: '700', lineHeight: 19 },
+  unitLabel: {
+    color: C.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
   qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 },
   qtyBtn: {
     width: 30,
@@ -201,7 +252,7 @@ const s = StyleSheet.create({
   },
   qtyBtnText: { color: C.text, fontSize: 16, fontWeight: '700' },
   qtyVal: {
-    minWidth: 24,
+    minWidth: 48,
     textAlign: 'center',
     color: C.text,
     fontWeight: '800',

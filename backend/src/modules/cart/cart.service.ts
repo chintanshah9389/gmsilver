@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { CartUnit } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
@@ -53,38 +54,40 @@ export class CartService {
     const normalizedItems = (cartWithDetails?.items || [])
       .filter((item) => item.product && item.product.isActive)
       .map((item) => ({
-      ...item,
-      product: {
-        ...item.product,
-        imageUrl: item.product.image1Url,
-        images: [
-          item.product.image1Url
-            ? {
-                imageUrl: item.product.image1Url,
-                storageKey: item.product.image1StorageKey,
-                isPrimary: true,
-                sortOrder: 0,
-              }
-            : null,
-          item.product.image2Url
-            ? {
-                imageUrl: item.product.image2Url,
-                storageKey: item.product.image2StorageKey,
-                isPrimary: false,
-                sortOrder: 1,
-              }
-            : null,
-          item.product.image3Url
-            ? {
-                imageUrl: item.product.image3Url,
-                storageKey: item.product.image3StorageKey,
-                isPrimary: false,
-                sortOrder: 2,
-              }
-            : null,
-        ].filter(Boolean),
-      },
-    }));
+        ...item,
+        unit: item.unit || CartUnit.PIECES,
+        unitAmount: Number(item.unitAmount ?? item.quantity),
+        product: {
+          ...item.product,
+          imageUrl: item.product.image1Url,
+          images: [
+            item.product.image1Url
+              ? {
+                  imageUrl: item.product.image1Url,
+                  storageKey: item.product.image1StorageKey,
+                  isPrimary: true,
+                  sortOrder: 0,
+                }
+              : null,
+            item.product.image2Url
+              ? {
+                  imageUrl: item.product.image2Url,
+                  storageKey: item.product.image2StorageKey,
+                  isPrimary: false,
+                  sortOrder: 1,
+                }
+              : null,
+            item.product.image3Url
+              ? {
+                  imageUrl: item.product.image3Url,
+                  storageKey: item.product.image3StorageKey,
+                  isPrimary: false,
+                  sortOrder: 2,
+                }
+              : null,
+          ].filter(Boolean),
+        },
+      }));
 
     const subtotal = normalizedItems.reduce((sum, item) => {
       return sum + Number(item.product.price) * item.quantity;
@@ -122,6 +125,16 @@ export class CartService {
       throw new BadRequestException('Quantity must be a whole number of at least 1');
     }
 
+    const unit = dto.unit === CartUnit.KG ? CartUnit.KG : CartUnit.PIECES;
+    const unitAmount =
+      dto.unitAmount != null && Number(dto.unitAmount) > 0
+        ? Number(dto.unitAmount)
+        : unit === CartUnit.KG
+          ? Number(product.weight || 0) > 0
+            ? (quantity * Number(product.weight)) / 1000
+            : quantity
+          : quantity;
+
     const cart = await this.getOrCreateCart(userId);
 
     const existingItem = await this.prisma.cartItem.findUnique({
@@ -129,9 +142,21 @@ export class CartService {
     });
 
     if (existingItem) {
+      const nextQty = existingItem.quantity + quantity;
+      const nextUnit = unit;
+      const nextUnitAmount =
+        nextUnit === CartUnit.KG
+          ? Number(existingItem.unit === CartUnit.KG ? existingItem.unitAmount : 0) +
+            unitAmount
+          : nextQty;
+
       const updated = await this.prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
+        data: {
+          quantity: nextQty,
+          unit: nextUnit,
+          unitAmount: nextUnitAmount,
+        },
       });
       return { message: 'Cart updated', data: updated };
     }
@@ -141,6 +166,8 @@ export class CartService {
         cartId: cart.id,
         productId: dto.productId,
         quantity,
+        unit,
+        unitAmount,
       },
     });
 
@@ -160,15 +187,34 @@ export class CartService {
 
     const item = await this.prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
+      include: { product: { select: { weight: true } } },
     });
 
     if (!item) {
       throw new NotFoundException('Item not found in cart');
     }
 
+    const unit = dto.unit || item.unit || CartUnit.PIECES;
+    let unitAmount =
+      dto.unitAmount != null && Number(dto.unitAmount) > 0
+        ? Number(dto.unitAmount)
+        : Number(item.unitAmount ?? dto.quantity);
+
+    if (unit === CartUnit.PIECES) {
+      unitAmount = dto.quantity;
+    } else if (dto.unitAmount == null) {
+      const weightGrams = Number(item.product?.weight || 0);
+      unitAmount =
+        weightGrams > 0 ? (dto.quantity * weightGrams) / 1000 : dto.quantity;
+    }
+
     const updated = await this.prisma.cartItem.update({
       where: { id: item.id },
-      data: { quantity: dto.quantity },
+      data: {
+        quantity: dto.quantity,
+        unit,
+        unitAmount,
+      },
     });
 
     return { message: 'Cart item updated', data: updated };

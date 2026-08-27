@@ -65,11 +65,13 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const wishBusy = addingWish || removingWish;
   const cartBusy = addingCart || updatingCart || removingCart;
 
-  const cartLineQty = useMemo(() => {
+  const cartLine = useMemo(() => {
     const items: any[] = cartData?.data?.items || [];
-    const line = items.find((item) => item.productId === productId);
-    return Number(line?.quantity || 0);
+    return items.find((item) => item.productId === productId) || null;
   }, [cartData, productId]);
+  const cartLineQty = Number(cartLine?.quantity || 0);
+  const cartLineUnit = cartLine?.unit === 'KG' ? 'KG' : 'PIECES';
+  const cartLineUnitAmount = Number(cartLine?.unitAmount || cartLineQty || 0);
 
   const weightGrams = Number(product?.weight || 0);
   const hasWeight = weightGrams > 0;
@@ -125,11 +127,16 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     }
 
     try {
-      await addToCart({ productId, quantity: pieceQuantity }).unwrap();
+      await addToCart({
+        productId,
+        quantity: pieceQuantity,
+        unit: cartUnit,
+        unitAmount: parsedAmount,
+      }).unwrap();
       setCartSheetOpen(false);
       showSnack(
         cartUnit === 'KG'
-          ? `Added ${pieceQuantity} pcs (~${parsedAmount} kg) to cart`
+          ? `Added ${parsedAmount} kg (~${pieceQuantity} pcs) to cart`
           : `Added ${pieceQuantity} pcs to cart`,
       );
     } catch (e) {
@@ -148,14 +155,45 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     setCartAmount(String(next));
   };
 
-  const changeCartQty = async (nextQty: number) => {
+  const changeCartQty = async (delta: number) => {
     try {
+      if (cartLineUnit === 'KG') {
+        const weightGrams = Number(product?.weight || 0);
+        const nextAmount = Math.max(
+          0.1,
+          Math.round((cartLineUnitAmount + delta * 0.1) * 10) / 10,
+        );
+        const nextQty =
+          weightGrams > 0
+            ? Math.max(1, Math.round((nextAmount * 1000) / weightGrams))
+            : Math.max(1, cartLineQty + delta);
+
+        if (delta < 0 && cartLineUnitAmount <= 0.1) {
+          await removeCartItem(productId).unwrap();
+          showSnack('Removed from cart');
+          return;
+        }
+
+        await updateCartItem({
+          productId,
+          quantity: nextQty,
+          unit: 'KG',
+          unitAmount: nextAmount,
+        }).unwrap();
+        return;
+      }
+
+      const nextQty = cartLineQty + delta;
       if (nextQty < 1) {
         await removeCartItem(productId).unwrap();
         showSnack('Removed from cart');
         return;
       }
-      await updateCartItem({ productId, quantity: nextQty }).unwrap();
+      await updateCartItem({
+        productId,
+        quantity: nextQty,
+        unit: 'PIECES',
+      }).unwrap();
     } catch (e) {
       showSnack(getErrorMessage(e, 'Failed to update cart.'));
     }
@@ -327,20 +365,30 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 style={s.stepperBtn}
                 scaleTo={0.92}
                 disabled={cartBusy}
-                onPress={() => changeCartQty(cartLineQty - 1)}
+                onPress={() => changeCartQty(-1)}
               >
                 <Icon
-                  source={cartLineQty <= 1 ? 'delete-outline' : 'minus'}
+                  source={
+                    cartLineUnit === 'KG'
+                      ? cartLineUnitAmount <= 0.1
+                        ? 'delete-outline'
+                        : 'minus'
+                      : cartLineQty <= 1
+                        ? 'delete-outline'
+                        : 'minus'
+                  }
                   size={20}
                   color={C.text}
                 />
               </ScalePressable>
-              <Text style={s.stepperQty}>{cartLineQty}</Text>
+              <Text style={s.stepperQty}>
+                {cartLineUnit === 'KG' ? `${cartLineUnitAmount} kg` : cartLineQty}
+              </Text>
               <ScalePressable
                 style={s.stepperBtn}
                 scaleTo={0.92}
                 disabled={cartBusy}
-                onPress={() => changeCartQty(cartLineQty + 1)}
+                onPress={() => changeCartQty(1)}
               >
                 <Icon source="plus" size={20} color={C.text} />
               </ScalePressable>

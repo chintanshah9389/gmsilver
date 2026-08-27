@@ -64,6 +64,11 @@ enum ProductOrigin {
   IMPORTED
 }
 
+enum CartUnit {
+  PIECES
+  KG
+}
+
 // ─────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────
@@ -206,8 +211,10 @@ model Cart {
 }
 
 model CartItem {
-  id       String @id @default(uuid())
-  quantity Int    @default(1)
+  id         String   @id @default(uuid())
+  quantity   Int      @default(1)
+  unit       CartUnit @default(PIECES)
+  unitAmount Decimal  @default(1) @db.Decimal(12, 3) @map("unit_amount")
 
   cartId String @map("cart_id")
   cart   Cart   @relation(fields: [cartId], references: [id])

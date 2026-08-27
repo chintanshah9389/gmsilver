@@ -6,18 +6,26 @@ export const cartApi = api.injectEndpoints({
       query: () => ({ url: '/cart' }),
       providesTags: ['Cart'],
     }),
-    addToCart: builder.mutation<any, { productId: string; quantity: number }>({
+    addToCart: builder.mutation<
+      any,
+      { productId: string; quantity: number; unit?: 'PIECES' | 'KG'; unitAmount?: number }
+    >({
       query: (body) => ({ url: '/cart/items', method: 'POST', body }),
       invalidatesTags: ['Cart'],
     }),
     updateCartItem: builder.mutation<
       any,
-      { productId: string; quantity: number }
+      {
+        productId: string;
+        quantity: number;
+        unit?: 'PIECES' | 'KG';
+        unitAmount?: number;
+      }
     >({
-      query: ({ productId, quantity }) => ({
+      query: ({ productId, quantity, unit, unitAmount }) => ({
         url: `/cart/items/${productId}`,
         method: 'PUT',
-        body: { quantity },
+        body: { quantity, unit, unitAmount },
       }),
       invalidatesTags: ['Cart'],
     }),
