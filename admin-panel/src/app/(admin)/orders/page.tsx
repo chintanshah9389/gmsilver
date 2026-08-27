@@ -103,7 +103,7 @@ export default function OrdersPage() {
       setRows((prev) =>
         prev.map((row) => (row.id === id ? { ...row, status: nextStatus } : row)),
       );
-      setSelectedOrder((current) =>
+      setSelectedOrder((current: any | null) =>
         current?.id === id ? { ...current, status: nextStatus } : current,
       );
 
