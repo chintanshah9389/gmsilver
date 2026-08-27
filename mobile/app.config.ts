@@ -1,9 +1,9 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
+import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'GM Silver',
-  slug: 'gmsilver-mobile',
+  slug: 'gmsilver-app',
   version: '1.0.0',
   orientation: 'portrait',
   scheme: 'gmsilver',
@@ -19,6 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
+      ITSAppUsesNonExemptEncryption: false,
       NSPhotoLibraryUsageDescription:
         'GM Silver needs photo access to upload product, category, and banner images.',
       NSCameraUsageDescription:
@@ -71,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   extra: {
     eas: {
-      projectId: 'gmsilver-mobile',
+      projectId: '08cb5af3-ae20-4fb5-ba16-f8cf898826cb',
     },
   },
 });

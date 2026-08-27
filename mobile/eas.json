@@ -14,11 +14,18 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://charming-encouragement-production-dc0c.up.railway.app/api/v1"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://charming-encouragement-production-dc0c.up.railway.app/api/v1"
+      }
     }
   },
   "submit": {

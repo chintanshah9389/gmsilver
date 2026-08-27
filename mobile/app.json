@@ -1,4 +1,9 @@
 {
   "name": "GMSilverMobile",
-  "displayName": "GM Silver"
+  "displayName": "GM Silver",
+  "extra": {
+    "eas": {
+      "projectId": "e69295ed-b278-4773-a6d8-7236bf6eaa22"
+    }
+  }
 }
