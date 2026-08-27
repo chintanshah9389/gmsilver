@@ -2,16 +2,20 @@
 
 ## Firebase push setup
 
-**Android first:** follow [`ANDROID_PUSH_SETUP.md`](./ANDROID_PUSH_SETUP.md).
+**Android:** follow [`ANDROID_PUSH_SETUP.md`](./ANDROID_PUSH_SETUP.md).
 
-1. Create Android app in Firebase with ID `com.gmsilver.app` (iOS later).
+**iOS:** follow [`IOS_PUSH_SETUP.md`](./IOS_PUSH_SETUP.md).
+
+1. Create Android + iOS apps in Firebase with ID `com.gmsilver.app`.
 2. Download configs and place at:
    - `google-services.json`
-   - (later) `GoogleService-Info.plist`
+   - `GoogleService-Info.plist`
    (start from `*.example` if needed; real files are gitignored)
-3. Ensure backend has `FIREBASE_*` env vars (see `docs/DEPLOYMENT.md`).
-4. Native Android project is already generated under `android/`.
-5. Run on a **physical Android device**.
+3. Upload an APNs Auth Key (`.p8`) to Firebase Cloud Messaging (iOS).
+4. Ensure backend has `FIREBASE_*` env vars (see `docs/DEPLOYMENT.md`).
+5. Native Android project is already generated under `android/`.
+6. Build iOS via EAS from Windows (`eas.json`), or on a Mac with Xcode.
+7. Run / install on a **physical device**.
 
 ## Run Local
 

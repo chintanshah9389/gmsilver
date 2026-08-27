@@ -14,6 +14,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: 'com.gmsilver.app',
     googleServicesFile: './GoogleService-Info.plist',
     icon: './assets/icon.png',
+    entitlements: {
+      'aps-environment': 'production',
+    },
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
       NSPhotoLibraryUsageDescription:
@@ -37,7 +40,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     '@react-native-firebase/app',
-    '@react-native-firebase/messaging',
+    [
+      '@react-native-firebase/messaging',
+      {
+        ios_foreground_presentation_options: [
+          'badge',
+          'sound',
+          'list',
+          'banner',
+        ],
+      },
+    ],
     [
       'expo-image-picker',
       {
