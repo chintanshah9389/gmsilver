@@ -22,4 +22,8 @@ export class ProductFiltersDto {
   @ApiPropertyOptional({ enum: ['price_asc', 'price_desc', 'name', 'newest'] })
   @IsOptional() @IsString() sortBy?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() purity?: string;
+  @ApiPropertyOptional({ enum: ['INDIAN', 'IMPORTED'] })
+  @IsOptional()
+  @IsString()
+  origin?: string;
 }

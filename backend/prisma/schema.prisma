@@ -59,6 +59,11 @@ enum BannerLinkType {
   NONE
 }
 
+enum ProductOrigin {
+  INDIAN
+  IMPORTED
+}
+
 // ─────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────
@@ -131,6 +136,7 @@ model Product {
   price            Decimal  @db.Decimal(10, 2)
   weight           Decimal? @db.Decimal(10, 3)
   purity           String?
+  origin           ProductOrigin @default(INDIAN)
   sku              String?  @unique
   image1Url        String?  @map("image1_url")
   image1StorageKey String?  @map("image1_storage_key")
@@ -156,6 +162,7 @@ model Product {
 
   @@index([categoryId])
   @@index([isAvailable, isActive])
+  @@index([origin])
   @@index([sku])
   @@map("products")
 }

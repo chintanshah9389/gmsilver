@@ -150,7 +150,8 @@ export default function AdminProductsScreen({ navigation }: any) {
                   <View style={{ flex: 1 }}>
                     <Text style={s.title}>{item.name}</Text>
                     <Text style={s.meta}>
-                      {item.sku} · {money(item.price)}
+                      {item.sku} · {item.origin === 'IMPORTED' ? 'Imported' : 'Indian'} ·{' '}
+                      {money(item.price)}
                     </Text>
                   </View>
                 </View>

@@ -244,6 +244,14 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 <Text style={s.specKey}>Weight</Text>
               </View>
             ) : null}
+            {product.origin ? (
+              <View style={s.spec}>
+                <Text style={s.specVal}>
+                  {product.origin === 'IMPORTED' ? 'Imported' : 'Indian'}
+                </Text>
+                <Text style={s.specKey}>Origin</Text>
+              </View>
+            ) : null}
             {product.quantity != null ? (
               <View style={s.spec}>
                 <Text style={s.specVal}>{inStock ? product.quantity : '—'}</Text>

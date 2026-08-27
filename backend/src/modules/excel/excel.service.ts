@@ -23,6 +23,7 @@ export class ExcelService {
       Price: Number(p.price),
       Weight: p.weight ? Number(p.weight) : '',
       Purity: p.purity || '',
+      Origin: p.origin === 'IMPORTED' ? 'Imported' : 'Indian',
       SKU: p.sku || '',
       Available: p.isAvailable ? 'Yes' : 'No',
       Active: p.isActive ? 'Yes' : 'No',
@@ -67,6 +68,7 @@ export class ExcelService {
             price: parseFloat(row.Price),
             weight: row.Weight ? parseFloat(row.Weight) : null,
             purity: row.Purity ? String(row.Purity) : null,
+            origin: this.parseOrigin(row.Origin),
             sku: row.SKU ? String(row.SKU) : null,
             categoryId: String(row['Category ID']),
             isAvailable: row.Available?.toLowerCase() !== 'no',
@@ -137,6 +139,22 @@ export class ExcelService {
     }));
 
     return this.generateExcel(data, 'Orders');
+  }
+
+  private parseOrigin(value?: string): 'INDIAN' | 'IMPORTED' {
+    const normalized = String(value || '')
+      .trim()
+      .toUpperCase();
+
+    if (!normalized || normalized === 'INDIAN' || normalized === 'INDIA') {
+      return 'INDIAN';
+    }
+
+    if (normalized === 'IMPORTED' || normalized === 'IMPORT') {
+      return 'IMPORTED';
+    }
+
+    throw new BadRequestException(`Invalid Origin "${value}". Use Indian or Imported.`);
   }
 
   // ─── GENERATE EXCEL ────────────────────────────────────────────────

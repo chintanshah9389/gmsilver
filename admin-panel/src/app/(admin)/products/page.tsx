@@ -40,7 +40,7 @@ export default function ProductsPage() {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<Array<string | null>>([null, null, null]);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [form, setForm] = useState<any>({
-    name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0'
+    name: '', description: '', price: '', weight: '', purity: '', origin: 'INDIAN', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0'
   });
 
   const fetchData = async () => {
@@ -88,7 +88,7 @@ export default function ProductsPage() {
     setImageFiles([null, null, null]);
     setImagePreviewUrls([null, null, null]);
     setPdfFile(null);
-    setForm({ name: '', description: '', price: '', weight: '', purity: '', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0' });
+    setForm({ name: '', description: '', price: '', weight: '', purity: '', origin: 'INDIAN', sku: '', categoryId: '', isAvailable: 'true', isActive: 'true', quantity: '0' });
   };
 
   const getExistingImages = (product: any): Array<{ imageUrl: string }> => {
@@ -275,6 +275,7 @@ export default function ProductsPage() {
       price: String(row.price),
       weight: row.weight ? String(row.weight) : '',
       purity: row.purity || '',
+      origin: row.origin === 'IMPORTED' ? 'IMPORTED' : 'INDIAN',
       sku: row.sku || '',
       categoryId: row.categoryId,
       isAvailable: String(row.isAvailable),
@@ -299,6 +300,12 @@ export default function ProductsPage() {
     { field: 'category', headerName: 'Category', width: 150, valueGetter: (p) => p.row.category?.name || '-' },
     { field: 'price', headerName: 'Price', width: 120, valueGetter: (p) => `₹${Number(p.row.price).toLocaleString()}` },
     { field: 'purity', headerName: 'Purity', width: 100 },
+    {
+      field: 'origin',
+      headerName: 'Origin',
+      width: 110,
+      valueGetter: (p) => (p.row.origin === 'IMPORTED' ? 'Imported' : 'Indian'),
+    },
     { field: 'sku', headerName: 'SKU', width: 130 },
     { field: 'isActive', headerName: 'Active', width: 100, renderCell: (p) => <Chip size='small' label={p.value ? 'Yes' : 'No'} color={p.value ? 'success' : 'default'} /> },
     { field: 'isAvailable', headerName: 'Availability', width: 140, renderCell: (p) => <Chip size='small' label={p.value ? 'In Stock' : 'Out of Stock'} color={p.value ? 'success' : 'warning'} /> },
@@ -376,6 +383,17 @@ export default function ProductsPage() {
             <TextField label='Price' value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} helperText='Optional — leave blank for 0' />
             <TextField label='Weight (g)' value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
             <TextField label='Purity' value={form.purity} onChange={(e) => setForm({ ...form, purity: e.target.value })} />
+            <TextField
+              select
+              required
+              SelectProps={{ native: true }}
+              label='Origin'
+              value={form.origin || 'INDIAN'}
+              onChange={(e) => setForm({ ...form, origin: e.target.value })}
+            >
+              <option value='INDIAN'>Indian</option>
+              <option value='IMPORTED'>Imported</option>
+            </TextField>
             <TextField label='Quantity' type='number' inputProps={{ min: 0 }} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
             <TextField select SelectProps={{ native: true }} label='Category' value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
               <option value=''>Select category</option>

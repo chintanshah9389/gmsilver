@@ -38,6 +38,10 @@ export class ProductsService {
       where.isAvailable = filters.isAvailable === 'true';
     }
 
+    if (filters.origin === 'INDIAN' || filters.origin === 'IMPORTED') {
+      where.origin = filters.origin;
+    }
+
     if (filters.minPrice || filters.maxPrice) {
       where.price = {};
       if (filters.minPrice) where.price.gte = parseFloat(filters.minPrice);
@@ -144,6 +148,7 @@ export class ProductsService {
     await this.assertSkuUnique(normalizedSku);
     const parsedPrice = this.parsePrice(dto.price);
     const parsedQuantity = dto.quantity !== undefined ? Number.parseInt(dto.quantity, 10) : 0;
+    const origin = this.parseOrigin(dto.origin);
 
     if (Number.isNaN(parsedQuantity) || parsedQuantity < 0) {
       throw new BadRequestException('Quantity must be a non-negative number');
@@ -157,6 +162,7 @@ export class ProductsService {
         price: parsedPrice,
         weight: dto.weight ? parseFloat(dto.weight) : undefined,
         purity: dto.purity,
+        origin,
         sku: normalizedSku,
         categoryId: dto.categoryId,
         isAvailable: dto.isAvailable !== 'false',
@@ -291,6 +297,7 @@ export class ProductsService {
     if (dto.price !== undefined) updateData.price = this.parsePrice(dto.price);
     if (dto.weight) updateData.weight = parseFloat(dto.weight);
     if (dto.purity) updateData.purity = dto.purity;
+    if (dto.origin !== undefined) updateData.origin = this.parseOrigin(dto.origin);
     if (dto.sku !== undefined) {
       const normalizedSku = this.normalizeSku(dto.sku);
       await this.assertSkuUnique(normalizedSku, id);
@@ -508,6 +515,20 @@ export class ProductsService {
       .replace(/[^a-z0-9-_]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  private parseOrigin(origin?: string): 'INDIAN' | 'IMPORTED' {
+    const normalized = origin?.trim().toUpperCase();
+
+    if (!normalized) {
+      return 'INDIAN';
+    }
+
+    if (normalized === 'INDIAN' || normalized === 'IMPORTED') {
+      return normalized;
+    }
+
+    throw new BadRequestException('Origin must be INDIAN or IMPORTED');
   }
 
   private applyActiveFilter(where: any, filters: ProductFiltersDto) {

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsNotEmpty, IsNumberString } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNotEmpty, IsNumberString, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -25,6 +25,11 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   purity?: string;
+
+  @ApiPropertyOptional({ enum: ['INDIAN', 'IMPORTED'], example: 'INDIAN' })
+  @IsOptional()
+  @IsIn(['INDIAN', 'IMPORTED'])
+  origin?: string;
 
   @ApiProperty({ example: 'SC-10G-999' })
   @IsString()

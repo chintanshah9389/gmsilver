@@ -42,6 +42,7 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
     price: '',
     weight: '',
     purity: '',
+    origin: 'INDIAN',
     sku: '',
     categoryId: '',
     quantity: '0',
@@ -61,6 +62,7 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
       price: String(product.price ?? ''),
       weight: product.weight != null ? String(product.weight) : '',
       purity: product.purity || '',
+      origin: product.origin === 'IMPORTED' ? 'IMPORTED' : 'INDIAN',
       sku: product.sku || '',
       categoryId: product.categoryId || product.category?.id || '',
       quantity: String(product.quantity ?? 0),
@@ -174,6 +176,22 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
           <Switch
             value={inStock}
             onValueChange={(v) => setForm((f) => ({ ...f, isAvailable: String(v) }))}
+          />
+        </View>
+
+        <Text style={s.label}>Origin</Text>
+        <View style={[s.row, { gap: 8, marginBottom: 12 }]}>
+          <GradientButton
+            label={form.origin === 'INDIAN' ? '✓ Indian' : 'Indian'}
+            variant={form.origin === 'INDIAN' ? 'accent' : 'secondary'}
+            style={{ flex: 1 }}
+            onPress={() => setForm((f) => ({ ...f, origin: 'INDIAN' }))}
+          />
+          <GradientButton
+            label={form.origin === 'IMPORTED' ? '✓ Imported' : 'Imported'}
+            variant={form.origin === 'IMPORTED' ? 'accent' : 'secondary'}
+            style={{ flex: 1 }}
+            onPress={() => setForm((f) => ({ ...f, origin: 'IMPORTED' }))}
           />
         </View>
 
