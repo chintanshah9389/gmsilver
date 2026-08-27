@@ -11,16 +11,16 @@ export class AppConfigService {
   private defaults() {
     return {
       id: DEFAULT_ID,
-      androidLatestVersionName: '1.0.0',
-      androidLatestVersionCode: 1,
+      androidLatestVersionName: '1.0.1',
+      androidLatestVersionCode: 2,
       androidMinVersionCode: 1,
       androidApkUrl: null as string | null,
       androidForceUpdate: false,
-      iosLatestVersionName: '1.0.0',
+      iosLatestVersionName: '1.0.1',
       iosStoreUrl: null as string | null,
       iosForceUpdate: false,
       message:
-        'A new version of GM Silver is available. Please update to continue.',
+        'A new version of GM Silver is available. Please download and install the latest APK.',
       enabled: true,
     };
   }
