@@ -3,10 +3,12 @@ import {
   BadRequestException,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateUserCredentialsDto } from './dto/update-user-credentials.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserStatus } from '@prisma/client';
@@ -265,6 +267,33 @@ export class UsersService {
     }
 
     return { message: `User status updated to ${dto.status}` };
+  }
+
+  async updateRole(
+    userId: string,
+    dto: UpdateUserRoleDto,
+    actorId: string,
+  ) {
+    if (userId === actorId) {
+      throw new ForbiddenException('You cannot change your own role');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role === dto.role) {
+      return { message: `User role is already ${dto.role}` };
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: dto.role },
+    });
+
+    return { message: `User role updated to ${dto.role}` };
   }
 
   async updateCredentials(userId: string, dto: UpdateUserCredentialsDto) {

@@ -98,6 +98,8 @@ export const usersApi = {
   getById: (id: string) => api.get(`/users/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/users/${id}/status`, { status }),
+  updateRole: (id: string, role: string) =>
+    api.patch(`/users/${id}/role`, { role }),
   updateCredentials: (
     id: string,
     data: {

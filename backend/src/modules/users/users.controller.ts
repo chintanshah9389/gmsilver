@@ -19,6 +19,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateUserCredentialsDto } from './dto/update-user-credentials.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -78,6 +79,17 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user status (Admin only)' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateUserStatusDto) {
     return this.usersService.updateStatus(id, dto);
+  }
+
+  @Patch(':id/role')
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Update user role (Admin/Owner)' })
+  updateRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto,
+    @CurrentUser('id') actorId: string,
+  ) {
+    return this.usersService.updateRole(id, dto, actorId);
   }
 
   @Patch(':id/credentials')

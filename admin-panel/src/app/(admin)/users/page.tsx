@@ -197,6 +197,19 @@ export default function UsersPage() {
     }
   };
 
+  const updateRole = async (role: string) => {
+    if (!selectedUser) return;
+    try {
+      await usersApi.updateRole(selectedUser.id, role);
+      toast.success(`User role updated to ${role}`);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update user role');
+    } finally {
+      handleMenuClose();
+    }
+  };
+
   const openCredentialsDialog = () => {
     if (!selectedUser) return;
     setCredentialsUserId(selectedUser.id);
@@ -420,6 +433,21 @@ export default function UsersPage() {
           <Block fontSize="small" sx={{ mr: 1 }} />
           Block
         </MenuItem>
+        {selectedUser?.role !== 'CUSTOMER' && (
+          <MenuItem onClick={() => updateRole('CUSTOMER')}>
+            Set role: Customer
+          </MenuItem>
+        )}
+        {selectedUser?.role !== 'ADMIN' && (
+          <MenuItem onClick={() => updateRole('ADMIN')}>
+            Set role: Admin
+          </MenuItem>
+        )}
+        {selectedUser?.role !== 'OWNER' && (
+          <MenuItem onClick={() => updateRole('OWNER')}>
+            Set role: Owner
+          </MenuItem>
+        )}
         <MenuItem onClick={openCredentialsDialog}>
           Update Password / MPIN
         </MenuItem>
