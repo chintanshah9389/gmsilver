@@ -33,11 +33,14 @@ const NEXT: Record<string, string[]> = {
 
 export default function AdminOrdersScreen({ navigation }: any) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL');
-  const { data, error, isError, isFetching, refetch, isLoading } = useAdminOrdersQuery({
-    page: 1,
-    limit: 100,
-    status: filter === 'ALL' ? undefined : filter,
-  });
+  const { data, error, isError, isFetching, refetch, isLoading } = useAdminOrdersQuery(
+    {
+      page: 1,
+      limit: 100,
+      status: filter === 'ALL' ? undefined : filter,
+    },
+    { refetchOnMountOrArgChange: true, refetchOnFocus: true },
+  );
   const [updateStatus] = useAdminUpdateOrderStatusMutation();
   const [deleteOrder] = useAdminDeleteOrderMutation();
   const [generateInvoice] = useAdminGenerateInvoiceMutation();
@@ -57,9 +60,11 @@ export default function AdminOrdersScreen({ navigation }: any) {
         onPress: async () => {
           try {
             await updateStatus({ id, status }).unwrap();
+            await refetch();
             setSnack(`Order set to ${status}`);
           } catch (e) {
             setSnack(getErrorMessage(e, 'Failed to update order.'));
+            await refetch();
           }
         },
       },

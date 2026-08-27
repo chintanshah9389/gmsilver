@@ -60,13 +60,17 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await ordersApi.getAll(toApiPage(paginationModel));
+      const res = await ordersApi.getAll({
+        ...toApiPage(paginationModel),
+        _t: Date.now(),
+      });
       const nextRows = res.data.data || [];
       setRows(nextRows);
       setTotalRows(Number(res.data.meta?.total || 0));
       setSelectedOrder((current: any | null) => {
         if (!current) return current;
-        return nextRows.find((row: any) => row.id === current.id) || current;
+        const fresh = nextRows.find((row: any) => row.id === current.id);
+        return fresh || { ...current };
       });
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to fetch orders');
@@ -83,6 +87,15 @@ export default function OrdersPage() {
       const result = res.data?.data || res.data;
       const push = result?.push;
       const label = status.toLowerCase();
+      const nextStatus = result?.status || status;
+
+      // Update UI immediately so the grid/dialog don't keep the old status.
+      setRows((prev) =>
+        prev.map((row) => (row.id === id ? { ...row, status: nextStatus } : row)),
+      );
+      setSelectedOrder((current) =>
+        current?.id === id ? { ...current, status: nextStatus } : current,
+      );
 
       if (push?.successCount > 0) {
         toast.success(`Order ${label}. Customer notified.`);
@@ -98,6 +111,7 @@ export default function OrdersPage() {
       await fetchOrders();
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Status update failed');
+      await fetchOrders();
     }
   };
 

@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, ScrollView, StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Icon, Snackbar } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { useMyOrdersQuery } from '@/store/services/ordersApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
@@ -29,11 +30,20 @@ function formatDate(value?: string) {
 }
 
 export default function OrdersScreen({ navigation }: any) {
-  const { data, error, isError } = useMyOrdersQuery({ page: 1, limit: 100 });
+  const { data, error, isError, refetch } = useMyOrdersQuery(
+    { page: 1, limit: 100 },
+    { refetchOnMountOrArgChange: true, refetchOnFocus: true },
+  );
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL');
   const orders: any[] = data?.data || [];
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
 
   useEffect(() => {
     if (isError && error) {

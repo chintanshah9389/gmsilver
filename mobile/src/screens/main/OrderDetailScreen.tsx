@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import { Icon, Snackbar } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   useOrderByIdQuery,
   useCancelOrderMutation,
@@ -32,11 +33,20 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function OrderDetailScreen({ route, navigation }: any) {
   const { orderId } = route.params;
-  const { data, error, isError, isLoading } = useOrderByIdQuery(orderId);
+  const { data, error, isError, isLoading, refetch } = useOrderByIdQuery(orderId, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+  });
   const [cancel, { isLoading: cancelling }] = useCancelOrderMutation();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const order = data?.data;
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
 
   useEffect(() => {
     if (isError && error) {
