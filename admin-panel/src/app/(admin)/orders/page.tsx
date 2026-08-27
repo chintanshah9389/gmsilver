@@ -33,10 +33,6 @@ import {
 } from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
-function formatMoney(value: unknown) {
-  return `₹${Number(value || 0).toLocaleString('en-IN')}`;
-}
-
 function itemSummary(items: any[] = []) {
   if (!items.length) return '—';
   return items
@@ -182,7 +178,6 @@ export default function OrdersPage() {
       ),
     },
     { field: 'status', headerName: 'Status', width: 120, renderCell: (p) => <Chip size='small' label={p.value} color={statusColor(p.value)} /> },
-    { field: 'grandTotal', headerName: 'Total', width: 120, valueGetter: (p) => formatMoney(p.row.grandTotal) },
     { field: 'createdAt', headerName: 'Date', width: 120, valueGetter: (p) => new Date(p.row.createdAt).toLocaleDateString('en-IN') },
     {
       field: 'actions', headerName: 'Actions', width: 280, sortable: false,
@@ -349,12 +344,9 @@ export default function OrdersPage() {
                       <Typography variant='caption' color='text.secondary'>{meta}</Typography>
                     ) : null}
                     <Typography variant='body2' color='text.secondary'>
-                      Qty {item.quantity} · {formatMoney(item.rate)} each
+                      Qty {item.quantity}
                     </Typography>
                   </Box>
-                  <Typography fontWeight={700}>
-                    {formatMoney(item.amount ?? Number(item.rate) * Number(item.quantity))}
-                  </Typography>
                 </Box>
               );
             })}
@@ -364,18 +356,9 @@ export default function OrdersPage() {
           </Box>
 
           <Divider sx={{ my: 2, borderColor: 'rgba(192,192,192,0.08)' }} />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography color='text.secondary'>Subtotal</Typography>
-            <Typography>{formatMoney(selectedOrder?.totalAmount)}</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-            <Typography color='text.secondary'>GST</Typography>
-            <Typography>{formatMoney(selectedOrder?.gstAmount)}</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography fontWeight={700}>Grand total</Typography>
-            <Typography fontWeight={800}>{formatMoney(selectedOrder?.grandTotal)}</Typography>
-          </Box>
+          {selectedOrder?.notes ? (
+            <Typography variant='body2' color='text.secondary'>Notes: {selectedOrder.notes}</Typography>
+          ) : null}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: 'wrap' }}>
           <Button onClick={() => setSelectedOrder(null)}>Close</Button>

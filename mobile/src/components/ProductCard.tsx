@@ -64,7 +64,6 @@ export default function ProductCard({
           <Text style={s.name} numberOfLines={2}>
             {item.name}
           </Text>
-          <Text style={s.price}>₹{Number(item.price || 0).toLocaleString()}</Text>
         </View>
       </ScalePressable>
 
@@ -154,12 +153,5 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
     fontFamily: F.sans,
     lineHeight: 18,
-  },
-  price: {
-    color: C.ruby,
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 6,
-    fontFamily: F.sans,
   },
 });

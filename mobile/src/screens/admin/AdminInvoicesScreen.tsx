@@ -10,10 +10,6 @@ import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import { adminStyles as s } from './adminStyles';
 
-function money(v: unknown) {
-  return `Rs. ${Number(v || 0).toLocaleString()}`;
-}
-
 export default function AdminInvoicesScreen({ navigation }: any) {
   const { data, error, isError, isFetching, refetch, isLoading } = useAdminOrdersQuery({
     page: 1,
@@ -72,9 +68,7 @@ export default function AdminInvoicesScreen({ navigation }: any) {
           renderItem={({ item }) => (
             <View style={s.card}>
               <Text style={s.title}>Invoice · Order #{item.orderNumber}</Text>
-              <Text style={s.meta}>
-                {item.customer || '-'} · {money(item.total)}
-              </Text>
+              <Text style={s.meta}>{item.customer || '-'}</Text>
               <View style={s.actions}>
                 <ScalePressable
                   style={[s.actionBtn, s.actionBtnDanger]}

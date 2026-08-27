@@ -85,6 +85,32 @@ function tabBarForRoute(route: any, bottomInset: number) {
   return getFloatingTabBarStyle(bottomInset);
 }
 
+/** Reset one tab's nested stack to a single root screen; keep other tabs intact. */
+function resetTabToRoot(tabName: string, rootScreen: string) {
+  return (state: any) => {
+    const routes = state.routes.map((route: any) =>
+      route.name === tabName
+        ? {
+            ...route,
+            state: {
+              routes: [{ name: rootScreen }],
+              index: 0,
+            },
+          }
+        : route,
+    );
+    const index = Math.max(
+      0,
+      routes.findIndex((route: any) => route.name === tabName),
+    );
+    return CommonActions.reset({
+      ...state,
+      routes,
+      index,
+    });
+  };
+}
+
 export default function MainTabs() {
   const insets = useSafeAreaInsets();
   const role = useAppSelector((state) => state.auth.user?.role);
@@ -114,21 +140,15 @@ export default function MainTabs() {
         name="Categories"
         component={CategoriesTabStack}
         options={({ route }) => ({
+          // Remount when leaving Browse so returning starts at collections.
+          unmountOnBlur: true,
           tabBarStyle: tabBarForRoute(route, insets.bottom),
         })}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Always open collections/categories root (not last product/cart/wishlist).
+            // Always open collections root — never restore last product/cart/wishlist.
             e.preventDefault();
-            navigation.dispatch(
-              CommonActions.navigate({
-                name: 'Categories',
-                state: {
-                  routes: [{ name: 'Categories' }],
-                  index: 0,
-                },
-              }),
-            );
+            navigation.dispatch(resetTabToRoot('Categories', 'Categories'));
           },
         })}
       />
@@ -141,15 +161,7 @@ export default function MainTabs() {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.dispatch(
-              CommonActions.navigate({
-                name: 'Order',
-                state: {
-                  routes: [{ name: 'Orders' }],
-                  index: 0,
-                },
-              }),
-            );
+            navigation.dispatch(resetTabToRoot('Order', 'Orders'));
           },
         })}
       />
@@ -163,15 +175,7 @@ export default function MainTabs() {
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               e.preventDefault();
-              navigation.dispatch(
-                CommonActions.navigate({
-                  name: 'Admin',
-                  state: {
-                    routes: [{ name: 'AdminHub' }],
-                    index: 0,
-                  },
-                }),
-              );
+              navigation.dispatch(resetTabToRoot('Admin', 'AdminHub'));
             },
           })}
         />

@@ -39,7 +39,6 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    price: '',
     weight: '',
     purity: '',
     origin: 'INDIAN',
@@ -59,7 +58,6 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
     setForm({
       name: product.name || '',
       description: product.description || '',
-      price: String(product.price ?? ''),
       weight: product.weight != null ? String(product.weight) : '',
       purity: product.purity || '',
       origin: product.origin === 'IMPORTED' ? 'IMPORTED' : 'INDIAN',
@@ -89,8 +87,8 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
   };
 
   const onSave = async () => {
-    if (!form.name.trim() || !form.price.trim() || !form.sku.trim() || !form.categoryId) {
-      setSnack('Name, price, SKU and category are required.');
+    if (!form.name.trim() || !form.sku.trim() || !form.categoryId) {
+      setSnack('Name, SKU and category are required.');
       return;
     }
     const body = new FormData();
@@ -142,7 +140,6 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
           [
             ['name', 'Name'],
             ['sku', 'SKU'],
-            ['price', 'Price'],
             ['weight', 'Weight'],
             ['purity', 'Purity'],
             ['quantity', 'Quantity'],
@@ -160,7 +157,7 @@ export default function AdminProductFormScreen({ navigation, route }: any) {
               onChangeText={(v) => setForm((f) => ({ ...f, [key]: v }))}
               multiline={key === 'description'}
               keyboardType={
-                key === 'price' || key === 'quantity' || key === 'weight' ? 'decimal-pad' : 'default'
+                key === 'quantity' || key === 'weight' ? 'decimal-pad' : 'default'
               }
             />
           </View>

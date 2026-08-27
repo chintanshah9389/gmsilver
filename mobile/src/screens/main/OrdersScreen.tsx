@@ -19,10 +19,6 @@ const STATUS_COLOR: Record<string, string> = {
 
 const FILTERS = ['ALL', 'PENDING', 'APPROVED', 'COMPLETED', 'CANCELLED'] as const;
 
-function formatMoney(value: unknown) {
-  return `Rs. ${Number(value || 0).toLocaleString()}`;
-}
-
 function formatDate(value?: string) {
   if (!value) return '';
   return new Date(value).toLocaleDateString('en-IN', {
@@ -143,7 +139,6 @@ export default function OrdersScreen({ navigation }: any) {
                 ) : null}
 
                 <View style={s.cardBottom}>
-                  <Text style={s.orderTotal}>{formatMoney(item.grandTotal)}</Text>
                   <View style={s.viewRow}>
                     <Text style={s.viewText}>View details</Text>
                     <Icon source="chevron-right" size={16} color={C.silver} />
@@ -251,8 +246,7 @@ const s = StyleSheet.create({
     borderColor: C.border,
   },
   moreThumbText: { color: C.textSub, fontSize: 11, fontWeight: '700' },
-  cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  orderTotal: { color: C.ruby, fontSize: 17, fontWeight: '700', letterSpacing: 0.2 },
+  cardBottom: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   viewRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   viewText: { color: C.textSub, fontSize: 12, fontWeight: '600' },
   emptyWrap: { alignItems: 'center', paddingTop: 80, gap: 8 },

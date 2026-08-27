@@ -95,7 +95,7 @@ export default function HomeScreen({ navigation }: any) {
       });
       return;
     }
-    navigation.navigate('Categories');
+    navigation.navigate('Categories', { screen: 'Categories' });
   };
 
   const ListHeader = () => (
@@ -112,7 +112,10 @@ export default function HomeScreen({ navigation }: any) {
         <MotionReveal delay={60} duration={380} distance={12}>
           <View style={styles.collectionsHead}>
             <Text style={styles.collectionsTitle}>Curated Collections</Text>
-            <ScalePressable onPress={() => navigation.navigate('Categories')} scaleTo={0.96}>
+            <ScalePressable
+              onPress={() => navigation.navigate('Categories', { screen: 'Categories' })}
+              scaleTo={0.96}
+            >
               <Text style={styles.collectionsAll}>View all →</Text>
             </ScalePressable>
           </View>

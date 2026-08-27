@@ -8,10 +8,6 @@ import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import { adminStyles as s } from './adminStyles';
 
-function money(v: unknown) {
-  return `Rs. ${Number(v || 0).toLocaleString()}`;
-}
-
 export default function AdminDashboardScreen({ navigation }: any) {
   const { data, error, isError, isFetching, refetch, isLoading } = useAdminDashboardQuery();
   const [snack, setSnack] = useState('');
@@ -28,8 +24,6 @@ export default function AdminDashboardScreen({ navigation }: any) {
     { label: 'Categories', value: d.categories ?? d.totalCategories ?? 0 },
     { label: 'Orders', value: d.orders?.total ?? d.totalOrders ?? 0 },
     { label: 'Pending orders', value: d.orders?.pending ?? d.pendingOrders ?? 0 },
-    { label: 'Revenue (month)', value: money(d.revenue?.thisMonth ?? d.totalRevenue) },
-    { label: 'Growth %', value: d.revenue?.growth ?? 0 },
   ];
 
   return (

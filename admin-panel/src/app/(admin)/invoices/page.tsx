@@ -98,7 +98,6 @@ export default function InvoicesPage() {
     { field: 'invoiceNumber', headerName: 'Invoice No', width: 170, valueGetter: (p) => p.row.invoice?.invoiceNumber || '-' },
     { field: 'customer', headerName: 'Customer', flex: 1, minWidth: 180, valueGetter: (p) => p.row.user?.name || '-' },
     { field: 'status', headerName: 'Status', width: 130, renderCell: (p) => <Chip size='small' label={p.value} color='success' /> },
-    { field: 'total', headerName: 'Total', width: 130, valueGetter: (p) => `₹${Number(p.row.grandTotal).toLocaleString()}` },
     {
       field: 'pdf',
       headerName: 'PDF',

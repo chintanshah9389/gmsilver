@@ -311,7 +311,6 @@ export default function ProductsPage() {
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Product', flex: 1.2, minWidth: 200 },
     { field: 'category', headerName: 'Category', width: 150, valueGetter: (p) => p.row.category?.name || '-' },
-    { field: 'price', headerName: 'Price', width: 120, valueGetter: (p) => `₹${Number(p.row.price).toLocaleString()}` },
     { field: 'purity', headerName: 'Purity', width: 100 },
     {
       field: 'origin',
@@ -398,7 +397,6 @@ export default function ProductsPage() {
           <Box sx={{ display:'grid', gap:2, gridTemplateColumns:'repeat(2,minmax(0,1fr))', mt:1 }}>
             <TextField label='Name' value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <TextField required label='SKU' value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} helperText='Any value; must be unique' />
-            <TextField label='Price' value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} helperText='Optional — leave blank for 0' />
             <TextField label='Weight (g)' value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
             <TextField label='Purity' value={form.purity} onChange={(e) => setForm({ ...form, purity: e.target.value })} />
             <TextField

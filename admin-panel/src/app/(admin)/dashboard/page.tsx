@@ -16,7 +16,6 @@ import {
   People,
   ShoppingCart,
   Pending,
-  CurrencyRupee,
   TrendingUp,
 } from '@mui/icons-material';
 import { analyticsApi } from '@/lib/api';
@@ -160,9 +159,6 @@ export default function DashboardPage() {
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={3}>
           <StatCard title="Total Users" value={data.users.total} subtitle={`${data.users.pending} pending`} icon={<People />} color="#64B5F6" />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} lg={3}>
-          <StatCard title="This Month Revenue" value={`₹${data.revenue.thisMonth.toLocaleString()}`} subtitle={`vs ₹${data.revenue.lastMonth.toLocaleString()} last month`} icon={<CurrencyRupee />} color={data.revenue.growth >= 0 ? '#4CAF50' : '#FF4C4C'} />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={3}>
           <StatCard title="Total Orders" value={data.orders.total} icon={<ShoppingCart />} color="#4CAF50" />

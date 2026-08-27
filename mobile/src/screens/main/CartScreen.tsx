@@ -43,11 +43,6 @@ export default function CartScreen({ navigation }: any) {
     if (isError && error) showSnack(getErrorMessage(error, 'Failed to load cart.'));
   }, [error, isError]);
 
-  const total = items.reduce(
-    (sum, item) => sum + Number(item.product?.price || 0) * Number(item.quantity || 0),
-    0,
-  );
-
   return (
     <View style={s.root}>
       <PremiumBackground />
@@ -95,9 +90,6 @@ export default function CartScreen({ navigation }: any) {
               <View style={s.itemInfo}>
                 <Text style={s.itemName} numberOfLines={2}>
                   {item.product?.name}
-                </Text>
-                <Text style={s.itemPrice}>
-                  ₹{Number(item.product?.price || 0).toLocaleString()}
                 </Text>
                 <View style={s.qtyRow}>
                   <ScalePressable
@@ -155,10 +147,6 @@ export default function CartScreen({ navigation }: any) {
 
       {items.length > 0 ? (
         <View style={[s.footer, { bottom: Math.max(insets.bottom, 16) }]}>
-          <View>
-            <Text style={s.totalLabel}>Estimated total</Text>
-            <Text style={s.totalVal}>?{total.toLocaleString()}</Text>
-          </View>
           <ScalePressable
             style={s.checkoutBtn}
             scaleTo={0.97}
@@ -200,7 +188,6 @@ const s = StyleSheet.create({
   thumbInitial: { color: C.textMuted, fontSize: 28, fontWeight: '700' },
   itemInfo: { flex: 1, padding: 14 },
   itemName: { color: C.text, fontSize: 14, fontWeight: '700', lineHeight: 19 },
-  itemPrice: { color: C.ruby, fontSize: 15, fontWeight: '600', marginTop: 6 },
   qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 },
   qtyBtn: {
     width: 30,
@@ -226,9 +213,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'stretch',
     backgroundColor: C.surface,
     borderRadius: R.xl,
     borderWidth: 1,
@@ -236,13 +221,12 @@ const s = StyleSheet.create({
     padding: 14,
     ...E.floatShadow,
   },
-  totalLabel: { color: C.textMuted, fontSize: 11, fontWeight: '600' },
-  totalVal: { color: C.text, fontSize: 18, fontWeight: '800', marginTop: 2 },
   checkoutBtn: {
     backgroundColor: C.primary,
     paddingHorizontal: 22,
     paddingVertical: 14,
     borderRadius: 0,
+    alignItems: 'center',
   },
   checkoutText: { color: '#fff', fontWeight: '700', fontSize: 12, letterSpacing: 1.6, textTransform: 'uppercase' },
 });

@@ -8,10 +8,6 @@ import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import { adminStyles as s } from './adminStyles';
 
-function money(v: unknown) {
-  return `Rs. ${Number(v || 0).toLocaleString()}`;
-}
-
 export default function AdminOrderDetailScreen({ navigation, route }: any) {
   const { orderId } = route.params;
   const { data, error, isError, isLoading } = useOrderByIdQuery(orderId);
@@ -33,7 +29,6 @@ export default function AdminOrderDetailScreen({ navigation, route }: any) {
           <View style={s.card}>
             <Text style={s.title}>#{order.orderNumber || order.id.slice(0, 8)}</Text>
             <Text style={s.meta}>Status: {order.status}</Text>
-            <Text style={s.meta}>Total: {money(order.grandTotal ?? order.totalAmount ?? order.total)}</Text>
             <Text style={s.meta}>
               Customer: {order.user?.name || order.user?.email || '-'}
             </Text>
@@ -43,9 +38,7 @@ export default function AdminOrderDetailScreen({ navigation, route }: any) {
           {(order.items || []).map((item: any) => (
             <View key={item.id} style={s.card}>
               <Text style={s.title}>{item.product?.name || item.name || 'Item'}</Text>
-              <Text style={s.meta}>
-                Qty {item.quantity} · {money(item.price ?? item.unitPrice)}
-              </Text>
+              <Text style={s.meta}>Qty {item.quantity}</Text>
             </View>
           ))}
         </ScrollView>

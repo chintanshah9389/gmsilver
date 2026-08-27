@@ -30,10 +30,6 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: C.error,
 };
 
-function formatMoney(value: unknown) {
-  return `Rs. ${Number(value || 0).toLocaleString()}`;
-}
-
 export default function OrderDetailScreen({ route, navigation }: any) {
   const { orderId } = route.params;
   const { data, error, isError, isLoading } = useOrderByIdQuery(orderId);
@@ -115,9 +111,8 @@ export default function OrderDetailScreen({ route, navigation }: any) {
                   )}
                   <View style={s.itemCopy}>
                     <Text style={s.itemName} numberOfLines={2}>{item.product?.name}</Text>
-                    <Text style={s.itemMeta}>Qty {item.quantity}  ·  {formatMoney(item.rate)}</Text>
+                    <Text style={s.itemMeta}>Qty {item.quantity}</Text>
                   </View>
-                  <Text style={s.itemAmount}>{formatMoney(item.amount ?? Number(item.rate) * Number(item.quantity))}</Text>
                 </View>
               );
             })}
@@ -126,22 +121,12 @@ export default function OrderDetailScreen({ route, navigation }: any) {
 
         <MotionReveal delay={90} duration={320} distance={10}>
           <View style={s.card}>
-            <Text style={s.sectionTitle}>Summary</Text>
-            <View style={s.summaryRow}>
-              <Text style={s.summaryLabel}>Subtotal</Text>
-              <Text style={s.summaryValue}>{formatMoney(order.totalAmount)}</Text>
-            </View>
-            <View style={s.summaryRow}>
-              <Text style={s.summaryLabel}>GST</Text>
-              <Text style={s.summaryValue}>{formatMoney(order.gstAmount)}</Text>
-            </View>
-            <View style={[s.summaryRow, s.summaryTotal]}>
-              <Text style={s.totalLabel}>Grand total</Text>
-              <Text style={s.totalValue}>{formatMoney(order.grandTotal)}</Text>
-            </View>
+            <Text style={s.sectionTitle}>Notes</Text>
             {order.notes ? (
-              <Text style={s.notes}>Notes: {order.notes}</Text>
-            ) : null}
+              <Text style={s.notes}>{order.notes}</Text>
+            ) : (
+              <Text style={s.notes}>No notes for this order.</Text>
+            )}
           </View>
         </MotionReveal>
 

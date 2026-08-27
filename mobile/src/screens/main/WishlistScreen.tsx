@@ -64,7 +64,6 @@ export default function WishlistScreen({ navigation }: any) {
               item={{
                 id: item.productId,
                 name: item.product?.name,
-                price: item.product?.price,
                 image1Url: item.product?.image1Url,
               }}
               wished

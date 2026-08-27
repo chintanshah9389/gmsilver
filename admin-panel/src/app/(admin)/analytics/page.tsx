@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
             <Typography variant='h6' gutterBottom>Most Viewed Products</Typography>
             <List dense>
               {mostViewed.map((p: any) => (
-                <ListItem key={p.id}><ListItemText primary={p.name} secondary={`₹${Number(p.price).toLocaleString()}`} /></ListItem>
+                <ListItem key={p.id}><ListItemText primary={p.name} /></ListItem>
               ))}
             </List>
           </CardContent></Card>

@@ -24,10 +24,6 @@ import { useAppSelector } from '@/hooks/redux';
 import { C } from '@/theme/colors';
 import { adminStyles as s } from './adminStyles';
 
-function money(v: unknown) {
-  return `Rs. ${Number(v || 0).toLocaleString()}`;
-}
-
 export default function AdminProductsScreen({ navigation }: any) {
   const role = useAppSelector((st) => st.auth.user?.role);
   const canDelete = isAdmin(role);
@@ -182,8 +178,7 @@ export default function AdminProductsScreen({ navigation }: any) {
                   <View style={{ flex: 1 }}>
                     <Text style={s.title}>{item.name}</Text>
                     <Text style={s.meta}>
-                      {item.sku} · {item.origin === 'IMPORTED' ? 'Imported' : 'Indian'} ·{' '}
-                      {money(item.price)}
+                      {item.sku} · {item.origin === 'IMPORTED' ? 'Imported' : 'Indian'}
                     </Text>
                   </View>
                 </View>

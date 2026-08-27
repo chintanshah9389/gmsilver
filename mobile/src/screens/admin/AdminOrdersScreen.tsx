@@ -31,10 +31,6 @@ const NEXT: Record<string, string[]> = {
   CANCELLED: [],
 };
 
-function money(v: unknown) {
-  return `Rs. ${Number(v || 0).toLocaleString()}`;
-}
-
 export default function AdminOrdersScreen({ navigation }: any) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL');
   const { data, error, isError, isFetching, refetch, isLoading } = useAdminOrdersQuery({
@@ -137,8 +133,7 @@ export default function AdminOrdersScreen({ navigation }: any) {
                 </View>
               </View>
               <Text style={s.meta}>
-                {item.user?.name || item.user?.email || 'Customer'} ·{' '}
-                {money(item.grandTotal ?? item.totalAmount ?? item.total)}
+                {item.user?.name || item.user?.email || 'Customer'}
               </Text>
               <View style={s.actions}>
                 {(NEXT[item.status] || []).map((st) => (

@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Icon, Snackbar } from 'react-native-paper';
 import { useProductByIdQuery } from '@/store/services/productsApi';
-import { useAddToCartMutation } from '@/store/services/cartApi';
+import { useAddToCartMutation, useCartQuery, useUpdateCartItemMutation, useRemoveCartItemMutation } from '@/store/services/cartApi';
 import {
   useWishlistQuery,
   useAddWishlistMutation,
@@ -45,7 +45,10 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
   const tabClearance = getTabBarClearance(insets.bottom);
   const { data, error, isError, isLoading } = useProductByIdQuery(productId);
+  const { data: cartData } = useCartQuery();
   const [addToCart, { isLoading: addingCart }] = useAddToCartMutation();
+  const [updateCartItem, { isLoading: updatingCart }] = useUpdateCartItemMutation();
+  const [removeCartItem, { isLoading: removingCart }] = useRemoveCartItemMutation();
   const { data: wishlistData } = useWishlistQuery();
   const [addWishlist, { isLoading: addingWish }] = useAddWishlistMutation();
   const [removeWishlist, { isLoading: removingWish }] = useRemoveWishlistMutation();
@@ -60,6 +63,13 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const wishlistItems: any[] = wishlistData?.data || [];
   const wished = wishlistItems.some((item) => item.productId === productId);
   const wishBusy = addingWish || removingWish;
+  const cartBusy = addingCart || updatingCart || removingCart;
+
+  const cartLineQty = useMemo(() => {
+    const items: any[] = cartData?.data?.items || [];
+    const line = items.find((item) => item.productId === productId);
+    return Number(line?.quantity || 0);
+  }, [cartData, productId]);
 
   const weightGrams = Number(product?.weight || 0);
   const hasWeight = weightGrams > 0;
@@ -74,7 +84,6 @@ export default function ProductDetailScreen({ route, navigation }: any) {
       return Math.max(0, Math.floor(parsedAmount));
     }
     if (!hasWeight) return 0;
-    // weight is stored per piece in grams
     return Math.max(0, Math.round((parsedAmount * 1000) / weightGrams));
   }, [cartUnit, parsedAmount, hasWeight, weightGrams]);
 
@@ -110,7 +119,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
       showSnack(
         cartUnit === 'KG' && !hasWeight
           ? 'Product weight is missing, use Pieces.'
-          : 'Enter a valid amount.',
+          : 'Enter a valid quantity.',
       );
       return;
     }
@@ -139,6 +148,19 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     setCartAmount(String(next));
   };
 
+  const changeCartQty = async (nextQty: number) => {
+    try {
+      if (nextQty < 1) {
+        await removeCartItem(productId).unwrap();
+        showSnack('Removed from cart');
+        return;
+      }
+      await updateCartItem({ productId, quantity: nextQty }).unwrap();
+    } catch (e) {
+      showSnack(getErrorMessage(e, 'Failed to update cart.'));
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={s.loader}>
@@ -160,7 +182,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
 
   const onShare = async () => {
     await Share.share({
-      message: `${product.name} - Rs. ${Number(product.price).toLocaleString()}\nGM Silver Catalog`,
+      message: `${product.name}\nGM Silver Catalog`,
     });
   };
 
@@ -225,10 +247,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         </View>
 
         <MotionReveal delay={50} duration={440} distance={18} style={s.content}>
-          <View style={s.namePriceRow}>
-            <Text style={s.productName}>{product.name}</Text>
-            <Text style={s.productPrice}>?{Number(product.price).toLocaleString()}</Text>
-          </View>
+          <Text style={s.productName}>{product.name}</Text>
 
           {product.sku ? (
             <View style={s.skuBadge}>
@@ -302,12 +321,38 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         </ScalePressable>
 
         {inStock ? (
-          <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
-            <View style={s.cartBtnInner}>
-              <Icon source="cart-outline" size={18} color="#fff" />
-              <Text style={s.cartBtnText}>Add to Bag</Text>
+          cartLineQty > 0 ? (
+            <View style={s.qtyStepper}>
+              <ScalePressable
+                style={s.stepperBtn}
+                scaleTo={0.92}
+                disabled={cartBusy}
+                onPress={() => changeCartQty(cartLineQty - 1)}
+              >
+                <Icon
+                  source={cartLineQty <= 1 ? 'delete-outline' : 'minus'}
+                  size={20}
+                  color={C.text}
+                />
+              </ScalePressable>
+              <Text style={s.stepperQty}>{cartLineQty}</Text>
+              <ScalePressable
+                style={s.stepperBtn}
+                scaleTo={0.92}
+                disabled={cartBusy}
+                onPress={() => changeCartQty(cartLineQty + 1)}
+              >
+                <Icon source="plus" size={20} color={C.text} />
+              </ScalePressable>
             </View>
-          </ScalePressable>
+          ) : (
+            <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
+              <View style={s.cartBtnInner}>
+                <Icon source="cart-outline" size={18} color="#fff" />
+                <Text style={s.cartBtnText}>Add to Bag</Text>
+              </View>
+            </ScalePressable>
+          )
         ) : (
           <View style={[s.cartBtn, s.outOfStockBtn]}>
             <View style={s.cartBtnInner}>
@@ -407,11 +452,13 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             {cartUnit === 'KG' ? (
               <Text style={s.convertHint}>
                 {hasWeight
-                  ? `? ${pieceQuantity} pcs  ?  ${weightGrams}g each`
+                  ? `≈ ${pieceQuantity} pcs · ${weightGrams}g each`
                   : 'Weight not set for this product. Switch to Pieces.'}
               </Text>
             ) : (
-              <Text style={s.convertHint}>{pieceQuantity} piece{pieceQuantity === 1 ? '' : 's'}</Text>
+              <Text style={s.convertHint}>
+                {pieceQuantity} piece{pieceQuantity === 1 ? '' : 's'}
+              </Text>
             )}
 
             <ScalePressable
@@ -424,7 +471,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={s.confirmBtnText}>
-                  Confirm ? {pieceQuantity > 0 ? `${pieceQuantity} pcs` : '?'}
+                  Confirm · {pieceQuantity > 0 ? `${pieceQuantity} pcs` : '—'}
                 </Text>
               )}
             </ScalePressable>
@@ -509,22 +556,14 @@ const s = StyleSheet.create({
     borderColor: C.border,
     ...E.softShadow,
   },
-  namePriceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
   productName: {
     color: C.text,
     fontSize: 26,
     fontFamily: 'serif',
     fontWeight: '500',
-    flex: 1,
     lineHeight: 32,
     letterSpacing: -0.2,
   },
-  productPrice: { color: C.ruby, fontSize: 20, fontWeight: '600', letterSpacing: 0.2 },
   skuBadge: {
     alignSelf: 'flex-start',
     backgroundColor: C.surface2,
@@ -593,6 +632,30 @@ const s = StyleSheet.create({
     backgroundColor: C.ruby,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  qtyStepper: {
+    width: CART_BTN_W,
+    height: CART_BTN_H,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: C.surface,
+    borderWidth: 1.5,
+    borderColor: C.ruby,
+    paddingHorizontal: 6,
+  },
+  stepperBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperQty: {
+    color: C.text,
+    fontSize: 16,
+    fontWeight: '800',
+    minWidth: 36,
+    textAlign: 'center',
   },
   outOfStockBtn: {
     backgroundColor: C.bg3,
