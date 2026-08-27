@@ -26,10 +26,9 @@ export class ProductsService {
   async findAll(filters: ProductFiltersDto) {
     const { page, limit, skip } = getPaginationParams(filters);
 
-    const where: any = {
-      deletedAt: null,
-      isActive: true,
-    };
+    const where: any = {};
+
+    this.applyActiveFilter(where, filters);
 
     if (filters.categoryId) {
       where.categoryId = filters.categoryId;
@@ -43,6 +42,16 @@ export class ProductsService {
       where.price = {};
       if (filters.minPrice) where.price.gte = parseFloat(filters.minPrice);
       if (filters.maxPrice) where.price.lte = parseFloat(filters.maxPrice);
+    }
+
+    const searchQuery = filters.search?.trim();
+    if (searchQuery) {
+      where.OR = [
+        { name: { contains: searchQuery, mode: 'insensitive' } },
+        { description: { contains: searchQuery, mode: 'insensitive' } },
+        { sku: { contains: searchQuery, mode: 'insensitive' } },
+        { purity: { contains: searchQuery, mode: 'insensitive' } },
+      ];
     }
 
     const orderBy: any = {};
@@ -73,8 +82,6 @@ export class ProductsService {
     const { page, limit, skip } = getPaginationParams(filters);
 
     const where: any = {
-      deletedAt: null,
-      isActive: true,
       OR: [
         { name: { contains: query, mode: 'insensitive' } },
         { description: { contains: query, mode: 'insensitive' } },
@@ -82,6 +89,8 @@ export class ProductsService {
         { purity: { contains: query, mode: 'insensitive' } },
       ],
     };
+
+    this.applyActiveFilter(where, filters);
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
@@ -103,7 +112,7 @@ export class ProductsService {
 
   async findById(id: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id, deletedAt: null },
+      where: { id },
       include: {
         category: { select: { id: true, name: true, imageUrl: true } },
       },
@@ -198,7 +207,7 @@ export class ProductsService {
     pdf?: Express.Multer.File,
   ) {
     const product = await this.prisma.product.findFirst({
-      where: { id, deletedAt: null },
+      where: { id },
     });
 
     if (!product) {
@@ -422,6 +431,23 @@ export class ProductsService {
       .replace(/^-|-$/g, '');
   }
 
+  private applyActiveFilter(where: any, filters: ProductFiltersDto) {
+    // Public catalog defaults to active-only. Admin can pass includeInactive=true.
+    if (filters.includeInactive === 'true') {
+      if (filters.isActive === 'true' || filters.isActive === 'false') {
+        where.isActive = filters.isActive === 'true';
+      }
+      return;
+    }
+
+    if (filters.isActive === 'true' || filters.isActive === 'false') {
+      where.isActive = filters.isActive === 'true';
+      return;
+    }
+
+    where.isActive = true;
+  }
+
   private parsePrice(price?: string): number {
     if (price === undefined || price === null || String(price).trim() === '') {
       return 0;
@@ -452,11 +478,14 @@ export class ProductsService {
         sku: { equals: sku, mode: 'insensitive' },
         ...(excludeProductId ? { NOT: { id: excludeProductId } } : {}),
       },
-      select: { id: true },
+      select: { id: true, name: true, isActive: true },
     });
 
     if (existingProduct) {
-      throw new BadRequestException(`SKU "${sku}" already exists`);
+      const statusHint = existingProduct.isActive ? '' : ' (inactive — set Active to find it in the list)';
+      throw new BadRequestException(
+        `SKU "${sku}" already exists on product "${existingProduct.name}"${statusHint}`,
+      );
     }
   }
 

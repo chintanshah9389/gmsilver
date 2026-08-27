@@ -32,7 +32,6 @@ export class WishlistService {
             categoryId: true,
             createdAt: true,
             updatedAt: true,
-            deletedAt: true,
             category: { select: { id: true, name: true } },
           },
         },
@@ -79,7 +78,7 @@ export class WishlistService {
 
   async addToWishlist(userId: string, productId: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, deletedAt: null, isActive: true },
+      where: { id: productId, isActive: true },
     });
 
     if (!product) {

@@ -221,7 +221,6 @@ export class OrdersService {
                 categoryId: true,
                 createdAt: true,
                 updatedAt: true,
-                deletedAt: true,
               },
             },
           },

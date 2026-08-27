@@ -47,7 +47,12 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       const [prodRes, catRes] = await Promise.all([
-        productsApi.getAll({ page: 1, limit: 200, search: search || undefined }),
+        productsApi.getAll({
+          page: 1,
+          limit: 200,
+          search: search || undefined,
+          includeInactive: 'true',
+        }),
         categoriesApi.getAll({ page: 1, limit: 200 }),
       ]);
       setRows(prodRes.data.data);
@@ -295,6 +300,7 @@ export default function ProductsPage() {
     { field: 'price', headerName: 'Price', width: 120, valueGetter: (p) => `₹${Number(p.row.price).toLocaleString()}` },
     { field: 'purity', headerName: 'Purity', width: 100 },
     { field: 'sku', headerName: 'SKU', width: 130 },
+    { field: 'isActive', headerName: 'Active', width: 100, renderCell: (p) => <Chip size='small' label={p.value ? 'Yes' : 'No'} color={p.value ? 'success' : 'default'} /> },
     { field: 'isAvailable', headerName: 'Availability', width: 140, renderCell: (p) => <Chip size='small' label={p.value ? 'In Stock' : 'Out of Stock'} color={p.value ? 'success' : 'warning'} /> },
     { field: 'pdfUrl', headerName: 'PDF', width: 70, sortable: false, renderCell: (p) => p.row.pdfUrl ? (
       <IconButton size='small' color='error' title='View PDF' onClick={() => window.open(p.row.pdfUrl, '_blank')}>

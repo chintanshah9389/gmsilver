@@ -9,7 +9,6 @@ export class ExcelService {
   // ─── EXPORT PRODUCTS ──────────────────────────────────────────────
   async exportProducts(): Promise<Buffer> {
     const products = await this.prisma.product.findMany({
-      where: { deletedAt: null },
       include: {
         category: { select: { name: true } },
       },

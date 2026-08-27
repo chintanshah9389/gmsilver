@@ -26,8 +26,8 @@ export class AnalyticsService {
     ] = await Promise.all([
       this.prisma.user.count({ where: { deletedAt: null, role: 'CUSTOMER' } }),
       this.prisma.user.count({ where: { status: 'PENDING', deletedAt: null } }),
-      this.prisma.product.count({ where: { deletedAt: null } }),
-      this.prisma.product.count({ where: { deletedAt: null, isActive: true, isAvailable: true } }),
+      this.prisma.product.count(),
+      this.prisma.product.count({ where: { isActive: true, isAvailable: true } }),
       this.prisma.category.count({ where: { deletedAt: null } }),
       this.prisma.order.count({ where: { deletedAt: null } }),
       this.prisma.order.count({ where: { status: 'PENDING', deletedAt: null } }),

@@ -42,7 +42,6 @@ export class CartService {
                 categoryId: true,
                 createdAt: true,
                 updatedAt: true,
-                deletedAt: true,
                 category: { select: { id: true, name: true } },
               },
             },
@@ -105,7 +104,7 @@ export class CartService {
 
   async addItem(userId: string, dto: AddToCartDto) {
     const product = await this.prisma.product.findFirst({
-      where: { id: dto.productId, deletedAt: null, isActive: true, isAvailable: true },
+      where: { id: dto.productId, isActive: true, isAvailable: true },
     });
 
     if (!product) {

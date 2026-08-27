@@ -151,9 +151,8 @@ model Product {
   cartItems     CartItem[]
   orderItems    OrderItem[]
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([categoryId])
   @@index([isAvailable, isActive])

@@ -38,7 +38,7 @@ export class CategoriesService {
         include: {
           _count: { select: { products: true } },
           products: {
-            where: { deletedAt: null, image1Url: { not: null } },
+            where: { image1Url: { not: null } },
             take: 1,
             orderBy: { updatedAt: 'desc' },
             select: { image1Url: true },
