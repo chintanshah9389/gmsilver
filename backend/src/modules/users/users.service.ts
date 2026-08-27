@@ -16,12 +16,14 @@ import {
   createPaginatedResponse,
 } from '../../common/utils/pagination.util';
 import { NotificationsService } from '../notifications/notifications.service';
+import { GoogleContactsService } from '../google-contacts/google-contacts.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly googleContactsService: GoogleContactsService,
   ) {}
 
   async create(dto: CreateUserDto) {
@@ -65,6 +67,17 @@ export class UsersService {
         createdAt: true,
       },
     });
+
+    this.googleContactsService
+      .syncUserContact({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      })
+      .catch((err) =>
+        console.error('Google Contacts sync failed on admin create:', err),
+      );
 
     return {
       message: 'User created successfully',
@@ -201,17 +214,52 @@ export class UsersService {
           .catch((err) =>
             console.error(`User-approved push failed for ${userId}:`, err),
           );
+
+        // Only approved users are stored in Google Contacts
+        this.googleContactsService
+          .syncUserContact({
+            userId: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            companyName: user.companyName,
+            city: user.city,
+          })
+          .catch((err) =>
+            console.error(
+              `Google Contacts sync failed on approve for ${userId}:`,
+              err,
+            ),
+          );
       } else if (dto.status === UserStatus.REJECTED) {
         this.notificationsService
           .notifyUserRejected(userId)
           .catch((err) =>
             console.error(`User-rejected push failed for ${userId}:`, err),
           );
+
+        this.googleContactsService
+          .deleteUserContact(userId, user.googleContactResourceName)
+          .catch((err) =>
+            console.error(
+              `Google Contacts delete failed on reject for ${userId}:`,
+              err,
+            ),
+          );
       } else if (dto.status === UserStatus.BLOCKED) {
         this.notificationsService
           .notifyUserBlocked(userId)
           .catch((err) =>
             console.error(`User-blocked push failed for ${userId}:`, err),
+          );
+
+        this.googleContactsService
+          .deleteUserContact(userId, user.googleContactResourceName)
+          .catch((err) =>
+            console.error(
+              `Google Contacts delete failed on block for ${userId}:`,
+              err,
+            ),
           );
       }
     }
@@ -276,6 +324,12 @@ export class UsersService {
       where: { id: userId },
       data: { deletedAt: new Date() },
     });
+
+    this.googleContactsService
+      .deleteUserContact(userId, user.googleContactResourceName)
+      .catch((err) =>
+        console.error('Google Contacts delete failed on user delete:', err),
+      );
 
     return { message: 'User deleted successfully' };
   }

@@ -53,6 +53,10 @@ backend/firebase-service-account.json
 backend/*firebase-adminsdk*.json
 **/firebase-adminsdk*.json
 
+# Google OAuth client secrets (never commit)
+client_secret*.json
+**/client_secret*.json
+
 # OS
 .DS_Store
 Thumbs.db

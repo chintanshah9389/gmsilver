@@ -88,6 +88,7 @@ model User {
   deviceDetails     Json?      @map("device_details")
   securityQuestion  String?    @map("security_question")
   securityAnswer    String?    @map("security_answer")
+  googleContactResourceName String? @map("google_contact_resource_name")
 
   wishlist          Wishlist[]
   cart              Cart?

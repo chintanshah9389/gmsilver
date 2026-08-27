@@ -29,6 +29,13 @@ export default () => ({
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   },
 
+  googleContacts: {
+    clientId: process.env.GOOGLE_CONTACTS_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CONTACTS_CLIENT_SECRET,
+    refreshToken: process.env.GOOGLE_CONTACTS_REFRESH_TOKEN,
+    enabled: process.env.GOOGLE_CONTACTS_ENABLED === 'true',
+  },
+
   company: {
     name: process.env.COMPANY_NAME || 'GM Silver',
     address: process.env.COMPANY_ADDRESS || '',

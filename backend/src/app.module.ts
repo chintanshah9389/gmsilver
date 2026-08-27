@@ -22,6 +22,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExcelModule } from './modules/excel/excel.module';
 import { BannersModule } from './modules/banners/banners.module';
 import { HomeWidgetsModule } from './modules/home-widgets/home-widgets.module';
+import { GoogleContactsModule } from './modules/google-contacts/google-contacts.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { HomeWidgetsModule } from './modules/home-widgets/home-widgets.module';
     ExcelModule,
     BannersModule,
     HomeWidgetsModule,
+    GoogleContactsModule,
   ],
   providers: [
     {
