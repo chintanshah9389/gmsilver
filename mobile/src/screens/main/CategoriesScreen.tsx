@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -7,6 +7,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Snackbar } from 'react-native-paper';
@@ -30,9 +31,15 @@ const CARD_H = CARD_W * 1.2;
 
 export default function CategoriesScreen({ navigation }: any) {
   const { data, error, isError, isLoading } = useCategoriesQuery({ page: 1, limit: 100 });
+  const [search, setSearch] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
-  const categories: any[] = (data?.data || []).filter((c: any) => c.isActive !== false);
+  const allCategories: any[] = (data?.data || []).filter((c: any) => c.isActive !== false);
+  const categories = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allCategories;
+    return allCategories.filter((c) => c.name?.toLowerCase().includes(q));
+  }, [allCategories, search]);
 
   useEffect(() => {
     if (isError && error) {
@@ -45,7 +52,26 @@ export default function CategoriesScreen({ navigation }: any) {
     <View style={styles.root}>
       <PremiumBackground />
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-      <ScreenHeader title="Collections" subtitle="Browse by category" />
+      <ScreenHeader
+        title="Collections"
+        subtitle={search.trim() ? `${categories.length} matches` : 'Browse by category'}
+      />
+
+      <MotionReveal delay={40} duration={300} distance={8}>
+        <View style={styles.searchWrap}>
+          <Text style={styles.searchIcon}>⌕</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search collections…"
+            placeholderTextColor={C.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            selectionColor={C.gold}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+        </View>
+      </MotionReveal>
 
       {isLoading ? (
         <View style={styles.loader}>
@@ -57,10 +83,18 @@ export default function CategoriesScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           numColumns={COLS}
           contentContainerStyle={styles.list}
-          columnWrapperStyle={styles.row}
+          columnWrapperStyle={categories.length > 0 ? styles.row : undefined}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <EmptyState title="No categories yet" subtitle="Collections will appear here" />
+            <EmptyState
+              icon="magnify"
+              title={search.trim() ? 'No collections found' : 'No categories yet'}
+              subtitle={
+                search.trim()
+                  ? 'Try another search'
+                  : 'Collections will appear here'
+              }
+            />
           }
           renderItem={({ item, index }) => {
             const count = item._count?.products ?? 0;
@@ -105,6 +139,19 @@ export default function CategoriesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: PAD,
+    marginBottom: 14,
+    backgroundColor: C.surface,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 14,
+  },
+  searchIcon: { color: C.textMuted, fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, color: C.text, fontSize: 14, paddingVertical: 12 },
   list: { paddingHorizontal: PAD, paddingBottom: 110 },
   row: { gap: GAP, marginBottom: GAP },
   card: {

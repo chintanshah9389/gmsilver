@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,19 +17,45 @@ import MotionReveal from '@/components/MotionReveal';
 import ProductCard, { PRODUCT_GRID } from '@/components/ProductCard';
 import EmptyState from '@/components/EmptyState';
 import ScreenHeader from '@/components/ScreenHeader';
+import CategoryChipRow, { CategoryChipItem } from '@/components/CategoryChip';
 
 const { PAD } = PRODUCT_GRID;
+
+type ProductFilterId = 'all' | 'indian' | 'imported' | 'in_stock';
+
+const PRODUCT_FILTERS: CategoryChipItem[] = [
+  { id: 'all', name: 'All' },
+  { id: 'indian', name: 'Indian' },
+  { id: 'imported', name: 'Imported' },
+  { id: 'in_stock', name: 'In stock' },
+];
 
 export default function ProductListScreen({ route, navigation }: any) {
   const categoryId = route.params?.categoryId;
   const categoryName = route.params?.categoryName ?? 'Products';
   const showInlineHeader = !!categoryId && navigation.canGoBack?.();
   const [search, setSearch] = useState('');
-  const { data, error, isError, isLoading } = useProductsQuery({
-    page: 1,
-    limit: 100,
-    categoryId,
-  });
+  const [filter, setFilter] = useState<ProductFilterId>('all');
+
+  const queryParams = useMemo(() => {
+    const params: Record<string, string | number | undefined> = {
+      page: 1,
+      limit: 100,
+      categoryId,
+    };
+
+    if (filter === 'indian') {
+      params.origin = 'INDIAN';
+    } else if (filter === 'imported') {
+      params.origin = 'IMPORTED';
+    } else if (filter === 'in_stock') {
+      params.isAvailable = 'true';
+    }
+
+    return params;
+  }, [categoryId, filter]);
+
+  const { data, error, isError, isLoading, isFetching, refetch } = useProductsQuery(queryParams);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackVisible, setSnackVisible] = useState(false);
   const allProducts: any[] = data?.data || [];
@@ -51,9 +77,17 @@ export default function ProductListScreen({ route, navigation }: any) {
 
       <ScreenHeader
         title={showInlineHeader ? categoryName : 'The Collection'}
-        subtitle={`${allProducts.length} pieces`}
+        subtitle={`${products.length} pieces`}
         onBack={showInlineHeader ? () => navigation.goBack() : undefined}
       />
+
+      <MotionReveal delay={40} duration={300} distance={8}>
+        <CategoryChipRow
+          items={PRODUCT_FILTERS}
+          selectedId={filter}
+          onSelect={(item) => setFilter(item.id as ProductFilterId)}
+        />
+      </MotionReveal>
 
       <MotionReveal delay={60} duration={320} distance={10}>
         <View style={s.searchWrap}>
@@ -80,6 +114,8 @@ export default function ProductListScreen({ route, navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
+          refreshing={isFetching && !isLoading}
+          onRefresh={refetch}
           renderItem={({ item, index }) => (
             <MotionReveal delay={Math.min(index * 20, 160)} duration={240} distance={8}>
               <ProductCard
@@ -93,7 +129,7 @@ export default function ProductListScreen({ route, navigation }: any) {
             <EmptyState
               icon="magnify"
               title="No products found"
-              subtitle="Try another search or browse categories"
+              subtitle="Try another filter or search"
             />
           }
         />
@@ -114,6 +150,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: PAD,
+    marginTop: 10,
     marginBottom: 14,
     backgroundColor: C.surface,
     borderRadius: 0,
