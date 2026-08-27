@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'GM Silver',
   slug: 'gmsilver-app',
-  version: '1.0.0',
+  version: '1.0.1',
   orientation: 'portrait',
   scheme: 'gmsilver',
   userInterfaceStyle: 'light',
@@ -29,7 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.gmsilver.app',
     googleServicesFile: './google-services.json',
-    versionCode: 1,
+    versionCode: 3,
     permissions: [
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.READ_MEDIA_IMAGES',
@@ -71,6 +71,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
   ],
   extra: {
+    appVersionCode: 3,
+    appVersionName: '1.0.1',
     eas: {
       projectId: '08cb5af3-ae20-4fb5-ba16-f8cf898826cb',
     },

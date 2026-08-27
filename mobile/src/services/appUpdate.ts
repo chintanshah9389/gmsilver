@@ -12,24 +12,43 @@ export type AppUpdateDecision =
       downloadUrl: string | null;
       latestVersionName: string;
       distributionMode: 'DIRECT_APK' | 'PLAY_STORE';
+      installedVersionCode: number;
     };
 
-function parseVersionCode(raw: string | number | null | undefined): number {
-  const n = parseInt(String(raw ?? ''), 10);
-  return Number.isFinite(n) && n > 0 ? n : 1;
+/** Only accept whole-number build codes (never parse "1.0.1" as 1). */
+function parseVersionCode(raw: string | number | null | undefined): number | null {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+    return Math.floor(raw);
+  }
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const n = parseInt(trimmed, 10);
+      return n > 0 ? n : null;
+    }
+  }
+  return null;
 }
 
 /** Installed app version from native build (Android versionCode / iOS build). */
 export function getInstalledAppVersion() {
+  const extra = (Constants.expoConfig?.extra || {}) as {
+    appVersionCode?: number;
+    appVersionName?: string;
+  };
+
   const versionName =
+    extra.appVersionName ||
     Constants.nativeAppVersion ||
     Constants.expoConfig?.version ||
     '1.0.0';
-  const versionCode = parseVersionCode(
-    Constants.nativeBuildVersion ||
-      Constants.expoConfig?.android?.versionCode ||
-      1,
-  );
+
+  const versionCode =
+    parseVersionCode(extra.appVersionCode) ||
+    parseVersionCode(Constants.expoConfig?.android?.versionCode) ||
+    parseVersionCode(Constants.nativeBuildVersion) ||
+    1;
+
   return { versionName, versionCode, platform: Platform.OS };
 }
 
@@ -67,8 +86,8 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
         : 'A new version of GM Silver is available. Please update to continue.';
 
     if (installed.platform === 'android') {
-      const latestCode = parseVersionCode(cfg.android?.latestVersionCode);
-      const minCode = parseVersionCode(cfg.android?.minVersionCode);
+      const latestCode = parseVersionCode(cfg.android?.latestVersionCode) || 1;
+      const minCode = parseVersionCode(cfg.android?.minVersionCode) || 1;
       const mode =
         cfg.android?.distributionMode === 'PLAY_STORE'
           ? 'PLAY_STORE'
@@ -88,6 +107,10 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
       const latestName =
         cfg.android?.latestVersionName || String(latestCode);
 
+      console.log(
+        `[update] installed=${installed.versionCode} latest=${latestCode} force=${forceFlag}`,
+      );
+
       if (installed.versionCode >= latestCode) {
         return { status: 'ok' };
       }
@@ -103,6 +126,7 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
         downloadUrl: downloadUrl || null,
         latestVersionName: latestName,
         distributionMode: mode,
+        installedVersionCode: installed.versionCode,
       };
     }
 
@@ -125,6 +149,7 @@ export async function fetchAppUpdateDecision(): Promise<AppUpdateDecision> {
         downloadUrl: storeUrl,
         latestVersionName: latestName,
         distributionMode: 'DIRECT_APK',
+        installedVersionCode: installed.versionCode,
       };
     }
 
@@ -192,7 +217,7 @@ export async function promptAppUpdateIfNeeded(): Promise<void> {
 
     Alert.alert(
       decision.force ? 'Update Required' : 'Update Available',
-      `${decision.message}\n\nLatest: ${decision.latestVersionName}`,
+      `${decision.message}\n\nInstalled build: ${decision.installedVersionCode}\nLatest: ${decision.latestVersionName} (${decision.distributionMode === 'PLAY_STORE' ? 'Play Store' : 'APK'})`,
       buttons,
       { cancelable: !decision.force },
     );
