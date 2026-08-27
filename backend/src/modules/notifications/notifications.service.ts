@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
 import * as admin from 'firebase-admin';
+import { createPaginatedResponse } from '../../common/utils/pagination.util';
 
 export type FcmDeliveryResult = {
   firebaseReady: boolean;
@@ -371,13 +372,15 @@ export class NotificationsService implements OnModuleInit {
     return { notifications, total, unreadCount };
   }
 
-  async getNotificationHistory(page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+  async getNotificationHistory(page = 1, limit = 100) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 100));
+    const skip = (safePage - 1) * safeLimit;
 
     const [notifications, total] = await Promise.all([
       this.prisma.notification.findMany({
         skip,
-        take: limit,
+        take: safeLimit,
         orderBy: { createdAt: 'desc' },
         include: {
           _count: { select: { logs: true } },
@@ -386,22 +389,21 @@ export class NotificationsService implements OnModuleInit {
       this.prisma.notification.count(),
     ]);
 
-    return {
-      notifications: notifications.map((n) => ({
-        id: n.id,
-        title: n.title,
-        body: n.body,
-        type: n.type,
-        data: n.data,
-        link:
-          n.data && typeof n.data === 'object' && 'link' in (n.data as object)
-            ? String((n.data as Record<string, unknown>).link || '')
-            : '',
-        recipientCount: n._count.logs,
-        createdAt: n.createdAt,
-      })),
-      total,
-    };
+    const rows = notifications.map((n) => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      type: n.type,
+      data: n.data,
+      link:
+        n.data && typeof n.data === 'object' && 'link' in (n.data as object)
+          ? String((n.data as Record<string, unknown>).link || '')
+          : '',
+      recipientCount: n._count.logs,
+      createdAt: n.createdAt,
+    }));
+
+    return createPaginatedResponse(rows, total, safePage, safeLimit);
   }
 
   async markAsRead(userId: string, notificationLogId: string) {

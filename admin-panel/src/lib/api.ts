@@ -153,6 +153,7 @@ export const ordersApi = {
 };
 
 export const invoicesApi = {
+  getAll: (params?: any) => api.get('/invoices/all', { params }),
   generateInvoice: (orderId: string) =>
     api.post(`/invoices/generate/${orderId}`),
   getByOrderId: (orderId: string) =>

@@ -33,6 +33,7 @@ import {
   Delete,
 } from '@mui/icons-material';
 import { usersApi } from '@/lib/api';
+import { ADMIN_PAGE_SIZE, ADMIN_PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 const statusColors: Record<string, any> = {
@@ -47,7 +48,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(ADMIN_PAGE_SIZE);
   const [rowCount, setRowCount] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -393,7 +394,7 @@ export default function UsersPage() {
                 setPage(model.page);
                 setPageSize(model.pageSize);
               }}
-              pageSizeOptions={[10, 25, 50]}
+              pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
               disableRowSelectionOnClick
               getRowId={(row) => row.id}
               sx={{ border: 'none' }}

@@ -2,6 +2,10 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import {
+  getPaginationParams,
+  createPaginatedResponse,
+} from '../../common/utils/pagination.util';
 import * as PDFDocument from 'pdfkit';
 
 @Injectable()
@@ -108,6 +112,47 @@ export class InvoicesService {
     });
 
     return { data: invoices };
+  }
+
+  async findAllAdmin(query: { page?: string | number; limit?: string | number } = {}) {
+    const { page, limit, skip } = getPaginationParams(query);
+
+    const [invoices, total] = await Promise.all([
+      this.prisma.invoice.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+              grandTotal: true,
+              status: true,
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.invoice.count(),
+    ]);
+
+    const rows = invoices.map((invoice) => ({
+      id: invoice.id,
+      orderId: invoice.orderId,
+      orderNumber: invoice.order.orderNumber,
+      grandTotal: invoice.order.grandTotal,
+      status: invoice.order.status,
+      user: invoice.order.user,
+      invoice: {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        pdfUrl: invoice.pdfUrl,
+        createdAt: invoice.createdAt,
+      },
+    }));
+
+    return createPaginatedResponse(rows, total, page, limit);
   }
 
   async remove(id: string) {

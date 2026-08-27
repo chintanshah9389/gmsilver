@@ -56,8 +56,8 @@ export class AuditLogsService {
   }
 
   async findAll(query: any) {
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 100));
     const page = Math.max(1, Number(query.page) || 1);
-    const limit = Math.min(200, Math.max(1, Number(query.limit) || 25));
     const skip = (page - 1) * limit;
     const { userId, action, module: mod, search, startDate, endDate, startTime, endTime } =
       query;

@@ -38,8 +38,8 @@ export default function HomeWidgetsPage() {
       setLoading(true);
       const [widgetRes, productsRes, categoriesRes] = await Promise.all([
         homeWidgetsApi.getTopProducts(),
-        productsApi.getAll({ page: 1, limit: 200 }),
-        categoriesApi.getAll({ page: 1, limit: 200 }),
+        productsApi.getAll({ page: 1, limit: 100 }),
+        categoriesApi.getAll({ page: 1, limit: 100 }),
       ]);
 
       const data = widgetRes.data.data;

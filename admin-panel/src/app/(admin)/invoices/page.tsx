@@ -13,7 +13,12 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { Delete } from '@mui/icons-material';
-import { invoicesApi, ordersApi } from '@/lib/api';
+import { invoicesApi } from '@/lib/api';
+import {
+  ADMIN_PAGE_SIZE_OPTIONS,
+  defaultAdminPaginationModel,
+  toApiPage,
+} from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 export default function InvoicesPage() {
@@ -21,19 +26,15 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  const [paginationModel, setPaginationModel] = useState(defaultAdminPaginationModel);
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const res = await ordersApi.getAll({ page: 1, limit: 200 });
-      const invoiceRows = (res.data.data || [])
-        .filter((o: any) => o.invoice)
-        .map((o: any) => ({
-          ...o,
-          id: o.invoice.id,
-          orderId: o.id,
-        }));
-      setRows(invoiceRows);
+      const res = await invoicesApi.getAll(toApiPage(paginationModel));
+      setRows(res.data.data || []);
+      setTotalRows(Number(res.data.meta?.total || 0));
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to fetch invoices');
     } finally {
@@ -43,7 +44,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     void fetchInvoices();
-  }, []);
+  }, [paginationModel.page, paginationModel.pageSize]);
 
   const onDelete = async (id: string) => {
     if (!confirm('Delete this invoice?')) return;
@@ -163,6 +164,11 @@ export default function InvoicesPage() {
               disableRowSelectionOnClick
               rowSelectionModel={selectedIds}
               onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
+              paginationMode='server'
+              rowCount={totalRows}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
             />
           </Box>
         </CardContent>

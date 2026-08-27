@@ -19,6 +19,7 @@ import {
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { Add, Search, Delete, Edit, PictureAsPdf } from '@mui/icons-material';
 import { productsApi, categoriesApi, excelApi } from '@/lib/api';
+import { ADMIN_PAGE_SIZE_OPTIONS, defaultAdminPaginationModel, toApiPage } from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 const MAX_PRODUCT_IMAGES = 3;
@@ -32,7 +33,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [totalRows, setTotalRows] = useState(0);
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
+  const [paginationModel, setPaginationModel] = useState(defaultAdminPaginationModel);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
@@ -51,12 +52,11 @@ export default function ProductsPage() {
       setLoading(true);
       const [prodRes, catRes] = await Promise.all([
         productsApi.getAll({
-          page: paginationModel.page + 1,
-          limit: paginationModel.pageSize,
+          ...toApiPage(paginationModel),
           search: debouncedSearch || undefined,
           includeInactive: 'true',
         }),
-        categoriesApi.getAll({ page: 1, limit: 200 }),
+        categoriesApi.getAll({ page: 1, limit: 100 }),
       ]);
       setRows(prodRes.data.data || []);
       setTotalRows(Number(prodRes.data.meta?.total || 0));
@@ -386,7 +386,7 @@ export default function ProductsPage() {
               rowCount={totalRows}
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
-              pageSizeOptions={[50, 100]}
+              pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
             />
           </Box>
         </CardContent>

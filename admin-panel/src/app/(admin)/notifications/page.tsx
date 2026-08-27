@@ -18,6 +18,11 @@ import {
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { Delete } from '@mui/icons-material';
 import { categoriesApi, notificationsApi, productsApi } from '@/lib/api';
+import {
+  ADMIN_PAGE_SIZE_OPTIONS,
+  defaultAdminPaginationModel,
+  toApiPage,
+} from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 type DeliveryResult = {
@@ -75,6 +80,8 @@ export default function NotificationsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryResult | null>(null);
   const [apiMessage, setApiMessage] = useState('');
+  const [totalRows, setTotalRows] = useState(0);
+  const [paginationModel, setPaginationModel] = useState(defaultAdminPaginationModel);
 
   const selectedProduct = products.find((product) => product.id === linkId) ?? null;
   const selectedCategory = categories.find((category) => category.id === linkId) ?? null;
@@ -83,22 +90,26 @@ export default function NotificationsPage() {
   const loadHistory = useCallback(async () => {
     try {
       setHistoryLoading(true);
-      const res = await notificationsApi.getHistory({ page: 1, limit: 50 });
+      const res = await notificationsApi.getHistory(toApiPage(paginationModel));
       const payload = res.data?.data ?? res.data;
-      setRows(payload?.notifications || []);
+      const list = Array.isArray(payload)
+        ? payload
+        : payload?.notifications || [];
+      setRows(list);
+      setTotalRows(Number(res.data?.meta?.total || list.length || 0));
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to load notification history');
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  }, [paginationModel.page, paginationModel.pageSize]);
 
   const loadLinkOptions = useCallback(async () => {
     try {
       setOptionsLoading(true);
       const [productsRes, categoriesRes] = await Promise.all([
-        productsApi.getAll({ page: 1, limit: 200 }),
-        categoriesApi.getAll({ page: 1, limit: 200 }),
+        productsApi.getAll({ page: 1, limit: 100 }),
+        categoriesApi.getAll({ page: 1, limit: 100 }),
       ]);
       setProducts(productsRes.data?.data || productsRes.data || []);
       setCategories(categoriesRes.data?.data || categoriesRes.data || []);
@@ -111,8 +122,11 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     void loadHistory();
+  }, [loadHistory]);
+
+  useEffect(() => {
     void loadLinkOptions();
-  }, [loadHistory, loadLinkOptions]);
+  }, [loadLinkOptions]);
 
   const resetForm = () => {
     setTitle('');
@@ -447,10 +461,11 @@ export default function NotificationsPage() {
               disableRowSelectionOnClick
               rowSelectionModel={selectedIds}
               onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
-              pageSizeOptions={[10, 25, 50]}
-              initialState={{
-                pagination: { paginationModel: { pageSize: 10, page: 0 } },
-              }}
+              paginationMode='server'
+              rowCount={totalRows}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
             />
           </Box>
         </CardContent>

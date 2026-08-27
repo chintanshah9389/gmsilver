@@ -26,6 +26,11 @@ import {
   Visibility,
 } from '@mui/icons-material';
 import { ordersApi, invoicesApi } from '@/lib/api';
+import {
+  ADMIN_PAGE_SIZE_OPTIONS,
+  defaultAdminPaginationModel,
+  toApiPage,
+} from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 function formatMoney(value: unknown) {
@@ -53,13 +58,16 @@ export default function OrdersPage() {
   const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [totalRows, setTotalRows] = useState(0);
+  const [paginationModel, setPaginationModel] = useState(defaultAdminPaginationModel);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await ordersApi.getAll({ page: 1, limit: 200 });
+      const res = await ordersApi.getAll(toApiPage(paginationModel));
       const nextRows = res.data.data || [];
       setRows(nextRows);
+      setTotalRows(Number(res.data.meta?.total || 0));
       setSelectedOrder((current: any | null) => {
         if (!current) return current;
         return nextRows.find((row: any) => row.id === current.id) || current;
@@ -71,7 +79,7 @@ export default function OrdersPage() {
     }
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { fetchOrders(); }, [paginationModel.page, paginationModel.pageSize]);
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -252,6 +260,11 @@ export default function OrdersPage() {
               rowSelectionModel={selectedIds}
               onRowSelectionModelChange={(newSelection) => setSelectedIds(newSelection)}
               onRowDoubleClick={(params) => openDetails(params.row)}
+              paginationMode='server'
+              rowCount={totalRows}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
             />
           </Box>
         </CardContent>

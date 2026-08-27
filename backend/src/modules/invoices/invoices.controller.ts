@@ -5,9 +5,10 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -27,6 +28,16 @@ export class InvoicesController {
   @ApiOperation({ summary: 'Get my invoices' })
   getMyInvoices(@CurrentUser('id') userId: string) {
     return this.invoicesService.getUserInvoices(userId);
+  }
+
+  @Get('all')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Get all invoices (Admin/Owner)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getAllInvoices(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.invoicesService.findAllAdmin({ page, limit });
   }
 
   @Get('order/:orderId')

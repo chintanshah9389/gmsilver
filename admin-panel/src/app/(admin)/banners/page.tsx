@@ -22,6 +22,11 @@ import {
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { Add, Delete, Edit, ViewCarousel } from '@mui/icons-material';
 import { bannersApi } from '@/lib/api';
+import {
+  ADMIN_PAGE_SIZE_OPTIONS,
+  defaultAdminPaginationModel,
+  toApiPage,
+} from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 const BANNER_TYPES = ['NEW', 'SALE', 'MARKETING', 'FEATURED'];
@@ -54,13 +59,19 @@ export default function BannersPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  const [paginationModel, setPaginationModel] = useState(defaultAdminPaginationModel);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await bannersApi.getAll({ all: 'true' });
-      setRows(res.data.data);
+      const res = await bannersApi.getAll({
+        all: 'true',
+        ...toApiPage(paginationModel),
+      });
+      setRows(res.data.data || []);
+      setTotalRows(Number(res.data.meta?.total || res.data.data?.length || 0));
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to fetch banners');
     } finally {
@@ -70,7 +81,7 @@ export default function BannersPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [paginationModel.page, paginationModel.pageSize]);
 
   const openCreate = () => {
     setEditing(null);
@@ -235,8 +246,11 @@ export default function BannersPage() {
             columns={columns}
             loading={loading}
             autoHeight
-            pageSizeOptions={[10, 25, 50]}
-            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+            paginationMode='server'
+            rowCount={totalRows}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
             sx={{
               border: 'none',
               color: '#F2F2F2',

@@ -4,10 +4,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Switch, FormControlLabel, IconButton, Chip, Avatar, Grid,
-  Card, CardMedia, CardContent, CardActions, InputAdornment, Skeleton,
+  Card, CardMedia, CardContent, CardActions, InputAdornment, Skeleton, Pagination,
 } from '@mui/material';
 import { Add, Edit, Delete, PhotoCamera, Search, Category } from '@mui/icons-material';
 import { categoriesApi } from '@/lib/api';
+import { ADMIN_PAGE_SIZE, toApiPage } from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 export default function CategoriesPage() {
@@ -16,6 +17,10 @@ export default function CategoriesPage() {
   const [open, setOpen]           = useState(false);
   const [editing, setEditing]     = useState<any>(null);
   const [search, setSearch]       = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage]           = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRows, setTotalRows] = useState(0);
   const [form, setForm]           = useState({ name: '', description: '', isActive: true, sortOrder: 0 });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -24,14 +29,28 @@ export default function CategoriesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await categoriesApi.getAll({ page: 1, limit: 200 });
-      setRows(res.data.data);
+      const res = await categoriesApi.getAll({
+        ...toApiPage({ page: page - 1, pageSize: ADMIN_PAGE_SIZE }),
+        search: debouncedSearch || undefined,
+      });
+      setRows(res.data.data || []);
+      setTotalRows(Number(res.data.meta?.total || 0));
+      setTotalPages(Math.max(1, Number(res.data.meta?.totalPages || 1)));
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to fetch');
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => { fetchData(); }, [page, debouncedSearch]);
 
   const resetForm = () => {
     setForm({ name: '', description: '', isActive: true, sortOrder: 0 });
@@ -71,7 +90,7 @@ export default function CategoriesPage() {
     catch (e: any) { toast.error(e.response?.data?.message || 'Delete failed'); }
   };
 
-  const filtered = rows.filter(r => r.name?.toLowerCase().includes(search.toLowerCase()));
+  const filtered = rows;
 
   return (
     <Box>
@@ -93,7 +112,7 @@ export default function CategoriesPage() {
           </Box>
           <Box>
             <Typography variant="h5" fontWeight={700}>Categories</Typography>
-            <Typography variant="body2" color="text.secondary">{rows.length} categories total</Typography>
+            <Typography variant="body2" color="text.secondary">{totalRows} categories total</Typography>
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -186,6 +205,17 @@ export default function CategoriesPage() {
           </Grid>
         )}
       </Grid>
+
+      {totalPages > 1 ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination
+            color='primary'
+            count={totalPages}
+            page={page}
+            onChange={(_e, value) => setPage(value)}
+          />
+        </Box>
+      ) : null}
 
       {/* Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm"

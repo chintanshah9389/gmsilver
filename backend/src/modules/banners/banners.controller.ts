@@ -33,11 +33,17 @@ export class BannersController {
   constructor(private readonly bannersService: BannersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all active banners (public)' })
-  @ApiQuery({ name: 'all', required: false, type: Boolean, description: 'Include inactive banners (admin only)' })
-  findAll(@Query('all') all?: string) {
+  @ApiOperation({ summary: 'Get banners (public active list, or paginated admin list)' })
+  @ApiQuery({ name: 'all', required: false, type: Boolean, description: 'Include inactive banners (admin)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findAll(
+    @Query('all') all?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const activeOnly = all !== 'true';
-    return this.bannersService.findAll(!activeOnly);
+    return this.bannersService.findAll(activeOnly, { page, limit });
   }
 
   @Get(':id')

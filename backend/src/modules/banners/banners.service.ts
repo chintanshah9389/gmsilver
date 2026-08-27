@@ -4,6 +4,11 @@ import { StorageService } from '../storage/storage.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 
+import {
+  getPaginationParams,
+  createPaginatedResponse,
+} from '../../common/utils/pagination.util';
+
 @Injectable()
 export class BannersService {
   constructor(
@@ -11,18 +16,37 @@ export class BannersService {
     private readonly storageService: StorageService,
   ) {}
 
-  async findAll(activeOnly = false) {
+  async findAll(
+    activeOnly = false,
+    query: { page?: string | number; limit?: string | number } = {},
+  ) {
     const where: any = { deletedAt: null };
     if (activeOnly) {
       where.isActive = true;
     }
 
-    const banners = await this.prisma.banner.findMany({
-      where,
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-    });
+    const wantsPagination = query.page !== undefined || query.limit !== undefined;
 
-    return { data: banners };
+    if (!wantsPagination) {
+      const banners = await this.prisma.banner.findMany({
+        where,
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      });
+      return { data: banners };
+    }
+
+    const { page, limit, skip } = getPaginationParams(query);
+    const [banners, total] = await Promise.all([
+      this.prisma.banner.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      }),
+      this.prisma.banner.count({ where }),
+    ]);
+
+    return createPaginatedResponse(banners, total, page, limit);
   }
 
   async findById(id: string) {

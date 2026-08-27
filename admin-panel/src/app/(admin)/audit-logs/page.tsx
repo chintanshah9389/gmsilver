@@ -20,6 +20,7 @@ import {
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { Delete, FilterAltOff, Search, Visibility } from '@mui/icons-material';
 import { auditLogsApi } from '@/lib/api';
+import { ADMIN_PAGE_SIZE, ADMIN_PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import toast from 'react-hot-toast';
 
 type AuditUser = {
@@ -84,7 +85,7 @@ export default function AuditLogsPage() {
   const [selectedIds, setSelectedIds] = useState<GridRowSelectionModel>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(ADMIN_PAGE_SIZE);
   const [rowCount, setRowCount] = useState(0);
   const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
 
@@ -440,7 +441,7 @@ export default function AuditLogsPage() {
                 setPage(model.page);
                 setPageSize(model.pageSize);
               }}
-              pageSizeOptions={[10, 25, 50, 100]}
+              pageSizeOptions={[...ADMIN_PAGE_SIZE_OPTIONS]}
               rowHeight={64}
             />
           </Box>
