@@ -138,8 +138,6 @@ export const api = createApi({
     'HomeWidget',
     'AdminUser',
     'AdminOrder',
-    'Analytics',
-    'AuditLog',
     'InvoiceAdmin',
     'NotificationAdmin',
   ],

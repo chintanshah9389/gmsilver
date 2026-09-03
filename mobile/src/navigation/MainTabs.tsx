@@ -31,7 +31,6 @@ const HIDE_TAB_ROUTES = new Set([
   'ProductDetail',
   'OrderDetail',
   'Settings',
-  'AdminProductForm',
   'AdminOrderDetail',
 ]);
 
@@ -86,7 +85,6 @@ function tabBarForRoute(route: any, bottomInset: number) {
   return getFloatingTabBarStyle(bottomInset);
 }
 
-/** Reset one tab's nested stack to a single root screen; keep other tabs intact. */
 function resetTabToRoot(tabName: string, rootScreen: string) {
   return (state: any) => {
     const routes = state.routes.map((route: any) =>
@@ -141,13 +139,11 @@ export default function MainTabs() {
         name="Categories"
         component={CategoriesTabStack}
         options={({ route }) => ({
-          // Remount when leaving Browse so returning starts at collections.
           unmountOnBlur: true,
           tabBarStyle: tabBarForRoute(route, insets.bottom),
         })}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Always open collections root — never restore last product/cart/wishlist.
             e.preventDefault();
             navigation.dispatch(resetTabToRoot('Categories', 'Categories'));
           },

@@ -9,6 +9,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'gmsilver',
   userInterfaceStyle: 'light',
   icon: './assets/icon.png',
+  splash: {
+    image: './assets/splash-logo.png',
+    resizeMode: 'contain',
+    backgroundColor: '#FBF9F6',
+  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.gmsilver.app',
@@ -20,21 +25,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
       ITSAppUsesNonExemptEncryption: false,
-      NSPhotoLibraryUsageDescription:
-        'GM Silver needs photo access to upload product, category, and banner images.',
-      NSCameraUsageDescription:
-        'GM Silver needs camera access to capture product images.',
     },
   },
   android: {
     package: 'com.gmsilver.app',
     googleServicesFile: './google-services.json',
     versionCode: 3,
-    permissions: [
-      'android.permission.POST_NOTIFICATIONS',
-      'android.permission.READ_MEDIA_IMAGES',
-      'android.permission.READ_EXTERNAL_STORAGE',
-    ],
+    permissions: ['android.permission.POST_NOTIFICATIONS'],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#FBF9F6',
@@ -53,14 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
       },
     ],
-    [
-      'expo-image-picker',
-      {
-        photosPermission:
-          'GM Silver needs photo access to upload product, category, and banner images.',
-      },
-    ],
-    'expo-document-picker',
+    'expo-av',
     [
       'expo-build-properties',
       {

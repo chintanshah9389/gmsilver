@@ -56,7 +56,6 @@ export const adminOrdersApi = api.injectEndpoints({
         { type: 'AdminOrder', id },
         { type: 'Order', id: 'LIST' },
         { type: 'Order', id },
-        'Analytics',
       ],
     }),
     adminDeleteOrder: builder.mutation<any, string>({
@@ -65,7 +64,6 @@ export const adminOrdersApi = api.injectEndpoints({
         { type: 'AdminOrder', id: 'LIST' },
         { type: 'AdminOrder', id },
         { type: 'Order', id: 'LIST' },
-        'Analytics',
       ],
     }),
     adminBulkDeleteOrders: builder.mutation<any, string[]>({
@@ -74,7 +72,7 @@ export const adminOrdersApi = api.injectEndpoints({
         method: 'DELETE',
         body: { ids },
       }),
-      invalidatesTags: ['AdminOrder', 'Order', 'Analytics'],
+      invalidatesTags: ['AdminOrder', 'Order'],
     }),
   }),
 });

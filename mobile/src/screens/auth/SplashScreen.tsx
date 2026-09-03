@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -11,36 +11,67 @@ import Animated, {
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
 import BrandLogo from '@/components/BrandLogo';
+import {
+  hasSeenSplashIntro,
+  markSplashIntroSeen,
+} from '@/lib/splash-intro';
+import SplashIntroVideo from './SplashIntroVideo';
 
 const { width: SW } = Dimensions.get('window');
 const LOGO_W = Math.min(300, SW * 0.78);
 
 /**
- * Brand splash — original GM Silver logo on pearl field.
+ * First launch: play brand intro video once (native + web).
+ * Later launches: short logo splash, then MPIN login.
  */
 export default function SplashScreen({ navigation }: any) {
+  const [mode, setMode] = useState<'loading' | 'video' | 'logo'>('loading');
+  const finishing = useRef(false);
   const progress = useSharedValue(0);
   const exit = useSharedValue(0);
 
+  const goNext = useCallback(async () => {
+    if (finishing.current) return;
+    finishing.current = true;
+    await markSplashIntroSeen();
+    navigation.replace('MpinLogin');
+  }, [navigation]);
+
+  const showLogo = useCallback(() => setMode('logo'), []);
+
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const seen = await hasSeenSplashIntro();
+      if (cancelled) return;
+      setMode(seen ? 'logo' : 'video');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mode !== 'logo') return;
+
     progress.value = withTiming(1, {
-      duration: 1100,
+      duration: 900,
       easing: Easing.out(Easing.cubic),
     });
 
     const exitTimer = setTimeout(() => {
-      exit.value = withTiming(1, { duration: 420, easing: Easing.in(Easing.cubic) });
-    }, 2400);
+      exit.value = withTiming(1, { duration: 360, easing: Easing.in(Easing.cubic) });
+    }, 1600);
 
     const navTimer = setTimeout(() => {
-      navigation.replace('MpinLogin');
-    }, 2850);
+      void goNext();
+    }, 2000);
 
     return () => {
       clearTimeout(exitTimer);
       clearTimeout(navTimer);
     };
-  }, [navigation, progress, exit]);
+  }, [mode, progress, exit, goNext]);
 
   const logoStyle = useAnimatedStyle(() => {
     const enterOpacity = interpolate(progress.value, [0, 0.55], [0, 1], Extrapolation.CLAMP);
@@ -58,11 +89,23 @@ export default function SplashScreen({ navigation }: any) {
     };
   });
 
+  if (mode === 'loading') {
+    return (
+      <View style={styles.root}>
+        <PremiumBackground variant="auth" />
+        <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+      </View>
+    );
+  }
+
+  if (mode === 'video') {
+    return <SplashIntroVideo onDone={() => void goNext()} onFallback={showLogo} />;
+  }
+
   return (
     <View style={styles.root}>
       <PremiumBackground variant="auth" />
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-
       <View style={styles.center}>
         <Animated.View style={logoStyle}>
           <BrandLogo width={LOGO_W} />

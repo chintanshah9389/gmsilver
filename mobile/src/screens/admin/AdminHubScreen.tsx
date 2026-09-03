@@ -12,42 +12,10 @@ import { useAppSelector } from '@/hooks/redux';
 
 type Nav = NativeStackNavigationProp<AdminStackParamList, 'AdminHub'>;
 
-const GROUPS: {
-  label: string;
-  items: { label: string; icon: string; route: keyof AdminStackParamList }[];
-}[] = [
-  {
-    label: 'Overview',
-    items: [
-      { label: 'Dashboard', icon: 'view-dashboard-outline', route: 'AdminDashboard' },
-      { label: 'Analytics', icon: 'chart-line', route: 'AdminAnalytics' },
-    ],
-  },
-  {
-    label: 'Catalog',
-    items: [
-      { label: 'Categories', icon: 'shape-outline', route: 'AdminCategories' },
-      { label: 'Products', icon: 'diamond-stone', route: 'AdminProducts' },
-      { label: 'Banners', icon: 'image-multiple-outline', route: 'AdminBanners' },
-      { label: 'Home Widgets', icon: 'widgets-outline', route: 'AdminHomeWidgets' },
-    ],
-  },
-  {
-    label: 'Commerce',
-    items: [
-      { label: 'Users', icon: 'account-group-outline', route: 'AdminUsers' },
-      { label: 'Orders', icon: 'package-variant-closed', route: 'AdminOrders' },
-      { label: 'Invoices', icon: 'receipt', route: 'AdminInvoices' },
-      { label: 'Notifications', icon: 'bell-outline', route: 'AdminNotifications' },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { label: 'Audit Logs', icon: 'shield-search', route: 'AdminAuditLogs' },
-      { label: 'Import / Export', icon: 'file-excel-outline', route: 'AdminExcel' },
-    ],
-  },
+const ITEMS: { label: string; icon: string; route: keyof AdminStackParamList }[] = [
+  { label: 'Users', icon: 'account-group-outline', route: 'AdminUsers' },
+  { label: 'Orders', icon: 'package-variant-closed', route: 'AdminOrders' },
+  { label: 'Notifications', icon: 'bell-outline', route: 'AdminNotifications' },
 ];
 
 export default function AdminHubScreen({ navigation }: { navigation: Nav }) {
@@ -58,24 +26,20 @@ export default function AdminHubScreen({ navigation }: { navigation: Nav }) {
       <PremiumBackground />
       <ScreenHeader title="Admin" subtitle={role || 'Staff'} />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        {GROUPS.map((group) => (
-          <View key={group.label} style={s.group}>
-            <Text style={s.groupLabel}>{group.label}</Text>
-            {group.items.map((item) => (
-              <ScalePressable
-                key={item.route}
-                scaleTo={0.98}
-                style={s.row}
-                onPress={() => navigation.navigate(item.route as any)}
-              >
-                <View style={s.iconWrap}>
-                  <Icon source={item.icon} size={20} color={C.ruby} />
-                </View>
-                <Text style={s.rowLabel}>{item.label}</Text>
-                <Icon source="chevron-right" size={20} color={C.textMuted} />
-              </ScalePressable>
-            ))}
-          </View>
+        <Text style={s.groupLabel}>Manage</Text>
+        {ITEMS.map((item) => (
+          <ScalePressable
+            key={item.route}
+            scaleTo={0.98}
+            style={s.row}
+            onPress={() => navigation.navigate(item.route as any)}
+          >
+            <View style={s.iconWrap}>
+              <Icon source={item.icon} size={20} color={C.ruby} />
+            </View>
+            <Text style={s.rowLabel}>{item.label}</Text>
+            <Icon source="chevron-right" size={20} color={C.textMuted} />
+          </ScalePressable>
         ))}
       </ScrollView>
     </View>
@@ -85,7 +49,6 @@ export default function AdminHubScreen({ navigation }: { navigation: Nav }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   content: { padding: 16, paddingBottom: 40 },
-  group: { marginBottom: 18 },
   groupLabel: {
     color: C.textMuted,
     fontSize: 11,

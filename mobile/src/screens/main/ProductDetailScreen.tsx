@@ -361,37 +361,47 @@ export default function ProductDetailScreen({ route, navigation }: any) {
 
         {inStock ? (
           cartLineQty > 0 ? (
-            <View style={s.qtyStepper}>
+            <View style={s.inCartRow}>
+              <View style={s.qtyStepper}>
+                <ScalePressable
+                  style={s.stepperBtn}
+                  scaleTo={0.92}
+                  disabled={cartBusy}
+                  onPress={() => changeCartQty(-1)}
+                >
+                  <Icon
+                    source={
+                      cartLineUnit === 'KG'
+                        ? cartLineUnitAmount <= 0.1
+                          ? 'delete-outline'
+                          : 'minus'
+                        : cartLineQty <= 1
+                          ? 'delete-outline'
+                          : 'minus'
+                    }
+                    size={20}
+                    color={C.text}
+                  />
+                </ScalePressable>
+                <Text style={s.stepperQty}>
+                  {cartLineUnit === 'KG' ? `${cartLineUnitAmount} kg` : cartLineQty}
+                </Text>
+                <ScalePressable
+                  style={s.stepperBtn}
+                  scaleTo={0.92}
+                  disabled={cartBusy}
+                  onPress={() => changeCartQty(1)}
+                >
+                  <Icon source="plus" size={20} color={C.text} />
+                </ScalePressable>
+              </View>
               <ScalePressable
-                style={s.stepperBtn}
-                scaleTo={0.92}
-                disabled={cartBusy}
-                onPress={() => changeCartQty(-1)}
+                style={s.viewCartBtn}
+                scaleTo={0.96}
+                onPress={() => navigation.navigate('Cart')}
               >
-                <Icon
-                  source={
-                    cartLineUnit === 'KG'
-                      ? cartLineUnitAmount <= 0.1
-                        ? 'delete-outline'
-                        : 'minus'
-                      : cartLineQty <= 1
-                        ? 'delete-outline'
-                        : 'minus'
-                  }
-                  size={20}
-                  color={C.text}
-                />
-              </ScalePressable>
-              <Text style={s.stepperQty}>
-                {cartLineUnit === 'KG' ? `${cartLineUnitAmount} kg` : cartLineQty}
-              </Text>
-              <ScalePressable
-                style={s.stepperBtn}
-                scaleTo={0.92}
-                disabled={cartBusy}
-                onPress={() => changeCartQty(1)}
-              >
-                <Icon source="plus" size={20} color={C.text} />
+                <Icon source="cart-outline" size={16} color="#fff" />
+                <Text style={s.viewCartText}>View Cart</Text>
               </ScalePressable>
             </View>
           ) : (
@@ -717,8 +727,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  inCartRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: CART_BTN_H,
+  },
   qtyStepper: {
-    width: CART_BTN_W,
+    flex: 1,
     height: CART_BTN_H,
     flexDirection: 'row',
     alignItems: 'center',
@@ -727,7 +744,24 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.ruby,
     borderRadius: R.md,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
+  },
+  viewCartBtn: {
+    height: CART_BTN_H,
+    paddingHorizontal: 14,
+    borderRadius: R.md,
+    backgroundColor: C.ruby,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  viewCartText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    fontFamily: F.sans,
   },
   stepperBtn: {
     width: 40,

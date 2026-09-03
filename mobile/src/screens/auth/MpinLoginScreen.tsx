@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -154,17 +154,6 @@ export default function MpinLoginScreen({ navigation }: any) {
           onPress={() => navigation.navigate('Login')}
           style={s.btnGap}
         />
-
-        <View style={s.bioBlock}>
-          <View style={s.bioRuleRow}>
-            <View style={s.bioRule} />
-            <Text style={s.bioLabel}>Or access with</Text>
-            <View style={s.bioRule} />
-          </View>
-          <View style={s.bioBtn}>
-            <Icon source="fingerprint" size={26} color={C.goldDim} />
-          </View>
-        </View>
       </AuthShell>
 
       <Snackbar visible={snackVisible} onDismiss={() => setSnackVisible(false)} duration={4000}>
@@ -217,23 +206,4 @@ const s = StyleSheet.create({
   footerLink: { color: C.ruby, fontSize: 13, fontWeight: '700' },
   trust: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   trustText: { color: C.textMuted, fontSize: 11, fontFamily: F.sans },
-  bioBlock: { marginTop: 18, alignItems: 'center' },
-  bioRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', marginBottom: 12 },
-  bioRule: { flex: 1, height: 1, backgroundColor: C.borderHi },
-  bioLabel: {
-    color: C.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    fontFamily: F.sans,
-  },
-  bioBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FAF2EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

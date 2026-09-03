@@ -11,7 +11,7 @@ interface PremiumBackgroundProps {
 }
 
 /**
- * Soft pearl canvas — barely shifts so it blends with white cards & chrome.
+ * Soft pearl blush — one warm wash (not flat white, not patchy layers).
  */
 export default function PremiumBackground({
   variant = 'main',
@@ -23,7 +23,7 @@ export default function PremiumBackground({
       <LinearGradient
         colors={
           isAuth
-            ? ['#FFFBFF', '#FFF8F5', '#FFF5F1']
+            ? ['#FFFBFA', '#FFF4F0', '#FFECE5']
             : [C.gradStart, C.gradMid, C.gradEnd]
         }
         locations={[0, 0.55, 1]}

@@ -32,20 +32,10 @@ export type OrdersStackParamList = {
 
 export type AdminStackParamList = {
   AdminHub: undefined;
-  AdminDashboard: undefined;
-  AdminAnalytics: undefined;
-  AdminCategories: undefined;
-  AdminProducts: undefined;
-  AdminProductForm: { productId?: string } | undefined;
-  AdminBanners: undefined;
-  AdminHomeWidgets: undefined;
   AdminUsers: undefined;
   AdminOrders: undefined;
   AdminOrderDetail: { orderId: string };
-  AdminInvoices: undefined;
   AdminNotifications: undefined;
-  AdminAuditLogs: undefined;
-  AdminExcel: undefined;
 };
 
 export type MainTabParamList = {
