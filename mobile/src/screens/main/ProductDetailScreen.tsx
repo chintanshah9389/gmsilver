@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -28,8 +30,10 @@ import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
 import ScalePressable from '@/components/ScalePressable';
 import LuxCarousel from '@/components/LuxCarousel';
-import { getTabBarClearance } from '@/hooks/useHideTabBarOnFocus';
+import { useHideTabBarOnFocus } from '@/hooks/useHideTabBarOnFocus';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { F } from '@/theme/typography';
+import StatusBanners from '@/components/StatusBanners';
 
 const { width: SW } = Dimensions.get('window');
 const ACTION_PAD = 16;
@@ -43,7 +47,7 @@ type CartUnit = 'PIECES' | 'KG';
 export default function ProductDetailScreen({ route, navigation }: any) {
   const { productId } = route.params;
   const insets = useSafeAreaInsets();
-  const tabClearance = getTabBarClearance(insets.bottom);
+  useHideTabBarOnFocus();
   const { data, error, isError, isLoading } = useProductByIdQuery(productId);
   const { data: cartData } = useCartQuery();
   const [addToCart, { isLoading: addingCart }] = useAddToCartMutation();
@@ -252,18 +256,29 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               }))}
               height={SW * 0.92}
               peek={false}
-              fullBleed
+              fullBleed={false}
               autoPlay={images.length > 1}
               showDots
               activeIndex={activeImg}
               onIndexChange={setActiveImg}
-              borderRadius={0}
+              borderRadius={16}
             />
           ) : (
             <View style={s.imgPlaceholder}>
               <Text style={s.imgInitial}>{product.name?.[0]?.toUpperCase()}</Text>
             </View>
           )}
+          <View style={s.bannerOverlay} pointerEvents="none">
+            <StatusBanners origin={product.origin} inStock={inStock} />
+          </View>
+          {!inStock ? (
+            <View
+              style={[s.oosBar, { bottom: images.length > 1 ? 80 : 16 }]}
+              pointerEvents="none"
+            >
+              <Text style={s.oosBarText}>Out of stock</Text>
+            </View>
+          ) : null}
           {images.length > 1 ? (
             <ScrollView
               horizontal
@@ -285,54 +300,40 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         </View>
 
         <MotionReveal delay={50} duration={440} distance={18} style={s.content}>
+          <View style={s.skuRow}>
+            {product.sku ? (
+              <View style={s.skuBadge}>
+                <Text style={s.skuText}>SKU: {product.sku}</Text>
+              </View>
+            ) : (
+              <View />
+            )}
+          </View>
+
+          {product.category?.name ? (
+            <Text style={s.category}>{product.category.name}</Text>
+          ) : null}
+
           <Text style={s.productName}>{product.name}</Text>
 
-          {product.sku ? (
-            <View style={s.skuBadge}>
-              <Text style={s.skuText}>SKU: {product.sku}</Text>
+          {(product.purity || product.weight) ? (
+            <View style={s.metaList}>
+              {product.purity ? (
+                <Text style={s.metaLine}>{product.purity}</Text>
+              ) : null}
+              {product.weight ? (
+                <Text style={s.metaLine}>{product.weight} g</Text>
+              ) : null}
             </View>
           ) : null}
 
-          <View style={s.divider} />
-
           {product.description ? (
-            <>
-              <Text style={s.sectionLabel}>Description</Text>
-              <Text style={s.description}>{product.description}</Text>
-            </>
+            <Text style={s.description}>{product.description}</Text>
           ) : null}
-
-          <View style={s.specsRow}>
-            {product.weight ? (
-              <View style={s.spec}>
-                <Text style={s.specVal}>{product.weight}g</Text>
-                <Text style={s.specKey}>Weight</Text>
-              </View>
-            ) : null}
-            {product.origin ? (
-              <View style={s.spec}>
-                <Text style={s.specVal}>
-                  {product.origin === 'IMPORTED' ? 'Imported' : 'Indian'}
-                </Text>
-                <Text style={s.specKey}>Origin</Text>
-              </View>
-            ) : null}
-            {product.quantity != null ? (
-              <View style={s.spec}>
-                <Text style={s.specVal}>{inStock ? product.quantity : '—'}</Text>
-                <Text style={s.specKey}>{inStock ? 'In Stock' : 'Out of Stock'}</Text>
-              </View>
-            ) : !inStock ? (
-              <View style={s.spec}>
-                <Text style={s.specVal}>—</Text>
-                <Text style={s.specKey}>Out of Stock</Text>
-              </View>
-            ) : null}
-          </View>
         </MotionReveal>
       </ScrollView>
 
-      <View style={[s.actionBar, { marginBottom: tabClearance }]}>
+      <View style={[s.actionBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <ScalePressable
           style={[s.wishBtn, wished && s.wishBtnActive]}
           scaleTo={0.95}
@@ -394,12 +395,12 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               </ScalePressable>
             </View>
           ) : (
-            <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
-              <View style={s.cartBtnInner}>
+            <Pressable style={s.cartBtn} onPress={openCartSheet}>
+              <View style={s.cartBtnInner} pointerEvents="none">
                 <Icon source="cart-outline" size={18} color="#fff" />
                 <Text style={s.cartBtnText}>Add to Bag</Text>
               </View>
-            </ScalePressable>
+            </Pressable>
           )
         ) : (
           <View style={[s.cartBtn, s.outOfStockBtn]}>
@@ -414,117 +415,122 @@ export default function ProductDetailScreen({ route, navigation }: any) {
       <Modal
         visible={cartSheetOpen}
         transparent
-        animationType="slide"
+        animationType="fade"
+        statusBarTranslucent
         onRequestClose={closeCartSheet}
       >
         <View style={s.sheetRoot}>
-          {/* Flex backdrop (not absoluteFill) so web hits sheet controls, not the dimmer */}
           <Pressable style={s.sheetBackdrop} onPress={closeCartSheet} />
-          <View style={s.sheetCard}>
-            <View style={s.sheetHandle} />
-            <Text style={s.sheetTitle}>Add to Cart</Text>
-            <Text style={s.sheetSub} numberOfLines={1}>
-              {product.name}
-            </Text>
-
-            <Text style={s.sheetLabel}>Choose unit</Text>
-            <View style={s.unitRow}>
-              <View style={s.unitCol}>
-                <ScalePressable
-                  style={[s.unitBtn, cartUnit === 'PIECES' && s.unitBtnActive]}
-                  scaleTo={0.98}
-                  onPress={() => {
-                    setCartUnit('PIECES');
-                    setCartAmount('1');
-                  }}
-                >
-                  <View style={[s.unitIconWrap, cartUnit === 'PIECES' && s.unitIconWrapActive]}>
-                    <Icon
-                      source="cube-outline"
-                      size={20}
-                      color={cartUnit === 'PIECES' ? C.text : C.textSub}
-                    />
-                  </View>
-                  <Text style={[s.unitBtnText, cartUnit === 'PIECES' && s.unitBtnTextActive]}>
-                    Pieces
-                  </Text>
-                  <Text style={[s.unitBtnHint, cartUnit === 'PIECES' && s.unitBtnHintActive]}>
-                    by count
-                  </Text>
-                </ScalePressable>
-              </View>
-              <View style={s.unitCol}>
-                <ScalePressable
-                  style={[s.unitBtn, cartUnit === 'KG' && s.unitBtnActive]}
-                  scaleTo={0.98}
-                  onPress={() => {
-                    setCartUnit('KG');
-                    setCartAmount('0.5');
-                  }}
-                >
-                  <View style={[s.unitIconWrap, cartUnit === 'KG' && s.unitIconWrapActive]}>
-                    <Icon
-                      source="weight-kilogram"
-                      size={20}
-                      color={cartUnit === 'KG' ? C.text : C.textSub}
-                    />
-                  </View>
-                  <Text style={[s.unitBtnText, cartUnit === 'KG' && s.unitBtnTextActive]}>
-                    Kg
-                  </Text>
-                  <Text style={[s.unitBtnHint, cartUnit === 'KG' && s.unitBtnHintActive]}>
-                    by weight
-                  </Text>
-                </ScalePressable>
-              </View>
-            </View>
-
-            <Text style={s.sheetLabel}>
-              {cartUnit === 'PIECES' ? 'Quantity (pcs)' : 'Quantity (kg)'}
-            </Text>
-            <View style={s.qtyRow}>
-              <ScalePressable style={s.qtyBtn} scaleTo={0.95} onPress={() => bumpAmount(-1)}>
-                <Icon source="minus" size={18} color={C.text} />
-              </ScalePressable>
-              <TextInput
-                style={s.qtyInput}
-                value={cartAmount}
-                onChangeText={setCartAmount}
-                keyboardType={cartUnit === 'PIECES' ? 'number-pad' : 'decimal-pad'}
-                selectionColor={C.goldDim}
-              />
-              <ScalePressable style={s.qtyBtn} scaleTo={0.95} onPress={() => bumpAmount(1)}>
-                <Icon source="plus" size={18} color={C.text} />
-              </ScalePressable>
-            </View>
-
-            {cartUnit === 'KG' ? (
-              <Text style={s.convertHint}>
-                {hasWeight
-                  ? `≈ ${pieceQuantity} pcs · ${weightGrams}g each`
-                  : 'Weight not set for this product. Switch to Pieces.'}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            pointerEvents="box-none"
+          >
+            <View style={[s.sheetCard, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+              <View style={s.sheetHandle} />
+              <Text style={s.sheetTitle}>Add to Cart</Text>
+              <Text style={s.sheetSub} numberOfLines={1}>
+                {product.name}
               </Text>
-            ) : (
-              <Text style={s.convertHint}>
-                {pieceQuantity} piece{pieceQuantity === 1 ? '' : 's'}
-              </Text>
-            )}
 
-            <ScalePressable
-              style={[s.confirmBtn, (addingCart || pieceQuantity < 1) && s.confirmBtnDisabled]}
-              scaleTo={0.97}
-              disabled={addingCart || pieceQuantity < 1}
-              onPress={confirmAddToCart}
-            >
-              {addingCart ? (
-                <ActivityIndicator color="#fff" />
+              <Text style={s.sheetLabel}>Choose unit</Text>
+              <View style={s.unitRow}>
+                <View style={s.unitCol}>
+                  <Pressable
+                    style={[s.unitBtn, cartUnit === 'PIECES' && s.unitBtnActive]}
+                    onPress={() => {
+                      setCartUnit('PIECES');
+                      setCartAmount('1');
+                    }}
+                  >
+                    <View style={[s.unitIconWrap, cartUnit === 'PIECES' && s.unitIconWrapActive]}>
+                      <Icon
+                        source="cube-outline"
+                        size={20}
+                        color={cartUnit === 'PIECES' ? C.text : C.textSub}
+                      />
+                    </View>
+                    <Text style={[s.unitBtnText, cartUnit === 'PIECES' && s.unitBtnTextActive]}>
+                      Pieces
+                    </Text>
+                    <Text style={[s.unitBtnHint, cartUnit === 'PIECES' && s.unitBtnHintActive]}>
+                      by count
+                    </Text>
+                  </Pressable>
+                </View>
+                <View style={s.unitCol}>
+                  <Pressable
+                    style={[s.unitBtn, cartUnit === 'KG' && s.unitBtnActive]}
+                    onPress={() => {
+                      setCartUnit('KG');
+                      setCartAmount('0.5');
+                    }}
+                  >
+                    <View style={[s.unitIconWrap, cartUnit === 'KG' && s.unitIconWrapActive]}>
+                      <Icon
+                        source="weight-kilogram"
+                        size={20}
+                        color={cartUnit === 'KG' ? C.text : C.textSub}
+                      />
+                    </View>
+                    <Text style={[s.unitBtnText, cartUnit === 'KG' && s.unitBtnTextActive]}>
+                      Kg
+                    </Text>
+                    <Text style={[s.unitBtnHint, cartUnit === 'KG' && s.unitBtnHintActive]}>
+                      by weight
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <Text style={s.sheetLabel}>
+                {cartUnit === 'PIECES' ? 'Quantity (pcs)' : 'Quantity (kg)'}
+              </Text>
+              <View style={s.qtyRow}>
+                <Pressable style={s.qtyBtn} onPress={() => bumpAmount(-1)}>
+                  <Icon source="minus" size={18} color={C.text} />
+                </Pressable>
+                <TextInput
+                  style={s.qtyInput}
+                  value={cartAmount}
+                  onChangeText={setCartAmount}
+                  keyboardType={cartUnit === 'PIECES' ? 'number-pad' : 'decimal-pad'}
+                  selectionColor={C.goldDim}
+                />
+                <Pressable style={s.qtyBtn} onPress={() => bumpAmount(1)}>
+                  <Icon source="plus" size={18} color={C.text} />
+                </Pressable>
+              </View>
+
+              {cartUnit === 'KG' ? (
+                <Text style={s.convertHint}>
+                  {hasWeight
+                    ? `≈ ${pieceQuantity} pcs · ${weightGrams}g each`
+                    : 'Weight not set for this product. Switch to Pieces.'}
+                </Text>
               ) : (
-                <Text style={s.confirmBtnText}>
-                  Confirm · {pieceQuantity > 0 ? `${pieceQuantity} pcs` : '—'}
+                <Text style={s.convertHint}>
+                  {pieceQuantity} piece{pieceQuantity === 1 ? '' : 's'}
                 </Text>
               )}
-            </ScalePressable>
-          </View>
+
+              <Pressable
+                style={[s.confirmBtn, (addingCart || pieceQuantity < 1) && s.confirmBtnDisabled]}
+                disabled={addingCart || pieceQuantity < 1}
+                onPress={confirmAddToCart}
+              >
+                {addingCart ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <View style={s.confirmInner} pointerEvents="none">
+                    <Icon source="shopping-outline" size={18} color="#fff" />
+                    <Text style={s.confirmBtnText}>
+                      Confirm — {cartUnit === 'KG' ? `${parsedAmount} kg` : `${pieceQuantity} pcs`}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -567,13 +573,46 @@ const s = StyleSheet.create({
     ...E.softShadow,
   },
 
-  imgWrap: { width: SW, backgroundColor: C.surface2 },
-  imgPlaceholder: {
+  imgWrap: {
     width: SW,
+    backgroundColor: C.bg2,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    position: 'relative',
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    left: 26,
+    top: 58,
+    right: 70,
+    zIndex: 4,
+  },
+  oosBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    backgroundColor: '#B91C1C',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    zIndex: 4,
+  },
+  oosBarText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
+  },
+  imgPlaceholder: {
+    width: '100%',
     height: SW * 0.92,
     backgroundColor: C.surface2,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 16,
   },
   imgInitial: { color: C.textMuted, fontSize: SW * 0.18, fontWeight: '700' },
   thumbs: {
@@ -605,47 +644,43 @@ const s = StyleSheet.create({
     borderColor: C.border,
     ...E.softShadow,
   },
+  category: {
+    color: C.goldDim,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    fontFamily: F.sans,
+  },
   productName: {
     color: C.text,
-    fontSize: 26,
-    fontFamily: 'serif',
-    fontWeight: '500',
-    lineHeight: 32,
+    fontSize: 24,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    lineHeight: 30,
     letterSpacing: -0.2,
+  },
+  skuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   skuBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: C.surface2,
-    borderRadius: R.xs,
+    backgroundColor: C.surface3,
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    marginTop: 10,
     borderWidth: 1,
     borderColor: C.border,
   },
-  skuText: { color: C.textMuted, fontSize: 11, letterSpacing: 0.5 },
-  divider: { height: 1, backgroundColor: C.border, marginVertical: 16 },
-  sectionLabel: {
-    color: C.goldDim,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2.1,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  description: { color: C.textSub, fontSize: 13, lineHeight: 20 },
-  specsRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  spec: {
-    flex: 1,
-    backgroundColor: C.surface2,
-    borderRadius: R.md,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  specVal: { color: C.text, fontSize: 17, fontWeight: '800' },
-  specKey: { color: C.textMuted, fontSize: 11, marginTop: 2 },
+  skuText: { color: C.textMuted, fontSize: 11, letterSpacing: 0.5, fontWeight: '700' },
+  metaList: { marginTop: 12, gap: 4 },
+  metaLine: { color: C.textSub, fontSize: 14, lineHeight: 20, fontFamily: F.sans },
+  description: { color: C.textSub, fontSize: 14, lineHeight: 22, marginTop: 14, fontFamily: F.sans },
+  confirmInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   actionBar: {
     flexDirection: 'row',
@@ -663,7 +698,7 @@ const s = StyleSheet.create({
   wishBtn: {
     width: WISH_SIZE,
     height: WISH_SIZE,
-    borderRadius: 0,
+    borderRadius: R.pill,
     borderWidth: 1,
     borderColor: C.borderHi,
     alignItems: 'center',
@@ -677,7 +712,7 @@ const s = StyleSheet.create({
   cartBtn: {
     width: CART_BTN_W,
     height: CART_BTN_H,
-    borderRadius: 0,
+    borderRadius: R.md,
     backgroundColor: C.ruby,
     alignItems: 'center',
     justifyContent: 'center',
@@ -691,6 +726,7 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
     borderWidth: 1.5,
     borderColor: C.ruby,
+    borderRadius: R.md,
     paddingHorizontal: 6,
   },
   stepperBtn: {
@@ -732,20 +768,20 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(31,39,51,0.45)',
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(26,24,25,0.5)',
   },
   sheetCard: {
-    backgroundColor: C.surface,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 28,
     borderTopWidth: 1,
     borderColor: C.borderHi,
-    elevation: 8,
+    zIndex: 2,
     ...E.cardShadow,
+    elevation: 24,
   },
   sheetHandle: {
     alignSelf: 'center',
@@ -874,7 +910,7 @@ const s = StyleSheet.create({
   confirmBtn: {
     height: 50,
     borderRadius: 999,
-    backgroundColor: C.primary,
+    backgroundColor: C.ruby,
     alignItems: 'center',
     justifyContent: 'center',
     ...E.buttonShadow,

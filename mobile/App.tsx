@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StatusBar, StyleSheet, View } from 'react-native';
 import { Provider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -97,6 +97,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <View style={Platform.OS === 'web' ? styles.rootWeb : styles.root}>
+        <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
         <SafeAreaProvider style={styles.root}>
           <PaperProvider theme={theme}>
             <AppProviders />
@@ -110,13 +111,15 @@ export default function App() {
 const styles = StyleSheet.create({
   boot: {
     flex: 1,
-    backgroundColor: C.ivory,
+    backgroundColor: C.bg,
   },
   root: {
     flex: 1,
+    backgroundColor: C.bg,
   },
   rootWeb: {
     flex: 1,
     height: '100%',
+    backgroundColor: C.bg,
   },
 });

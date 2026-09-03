@@ -53,9 +53,9 @@ export default function GradientButton({
 
 const s = StyleSheet.create({
   wrap: {
-    borderRadius: R.xs,
+    borderRadius: R.pill,
     overflow: 'hidden',
-    backgroundColor: C.primary,
+    backgroundColor: C.ruby,
     paddingVertical: 15,
     alignItems: 'center',
     justifyContent: 'center',

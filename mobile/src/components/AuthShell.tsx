@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,10 +8,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { C, R } from '@/theme/colors';
+import { C } from '@/theme/colors';
 import { E } from '@/theme/effects';
 import { F } from '@/theme/typography';
 import PremiumBackground from '@/components/PremiumBackground';
+import BrandLogo from '@/components/BrandLogo';
 
 type AuthShellProps = {
   children: React.ReactNode;
@@ -28,18 +28,14 @@ export default function AuthShell({ children, title, subtitle, footer }: AuthShe
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <PremiumBackground variant="auth" />
-      <StatusBar barStyle="dark-content" backgroundColor={C.ivory} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <ScrollView
         contentContainerStyle={s.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={s.brand}>
-          <Image
-            source={require('@/assets/gm-silver-mark.png')}
-            style={s.mark}
-            resizeMode="contain"
-          />
+          <BrandLogo width={200} />
         </View>
 
         <View style={s.card}>
@@ -55,41 +51,36 @@ export default function AuthShell({ children, title, subtitle, footer }: AuthShe
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.ivory },
+  root: { flex: 1, backgroundColor: C.bg },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 36,
+    paddingHorizontal: 20,
+    paddingTop: 28,
     paddingBottom: 36,
     justifyContent: 'center',
   },
-  brand: { alignItems: 'center', marginBottom: 28 },
-  mark: {
-    width: 220,
-    height: 96,
-  },
+  brand: { alignItems: 'center', marginBottom: 22 },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: R.xs,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 24,
+    borderRadius: 20,
+    padding: 22,
     ...E.cardShadow,
   },
   title: {
     color: C.text,
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: F.serif,
-    fontWeight: '500',
-    letterSpacing: -0.2,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   subtitle: {
     color: C.textSub,
-    fontSize: 14,
+    fontSize: 13,
     marginTop: 8,
-    lineHeight: 22,
+    lineHeight: 20,
+    textAlign: 'center',
     fontFamily: F.sans,
   },
-  body: { marginTop: 22 },
-  footer: { marginTop: 22, alignItems: 'center' },
+  body: { marginTop: 20 },
+  footer: { marginTop: 18, alignItems: 'center' },
 });

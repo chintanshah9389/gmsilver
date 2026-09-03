@@ -16,6 +16,7 @@ import { useResetPasswordMutation } from '@/store/services/authApi';
 import { getErrorMessage } from '@/lib/error-message';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
+import BrandLogo from '@/components/BrandLogo';
 import { toAuthIdentifier } from '@/lib/auth-identifier';
 
 export default function ResetPasswordScreen({ navigation }: any) {
@@ -48,8 +49,7 @@ export default function ResetPasswordScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         <View style={s.logoWrap}>
-          <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
-          <Text style={s.brand}>RESET PASSWORD</Text>
+          <BrandLogo width={180} />
         </View>
 
         <View style={s.card}>
@@ -113,9 +113,6 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
   logoWrap: { alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
-  logoBox: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: C.primary, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  logoText: { color: '#fff', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
-  brand: { color: C.goldDim, fontSize: 13, fontWeight: '800', letterSpacing: 4 },
   card: { backgroundColor: C.surface, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: C.border },
   heading: { color: C.text, fontSize: 22, fontWeight: '700', marginBottom: 4 },
   subheading: { color: C.textSub, fontSize: 13, marginBottom: 24 },

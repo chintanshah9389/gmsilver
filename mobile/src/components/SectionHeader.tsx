@@ -58,13 +58,11 @@ const s = StyleSheet.create({
   actionBtn: {
     alignSelf: 'flex-start',
     marginTop: 12,
-    borderWidth: 1,
-    borderColor: C.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   action: {
-    color: C.primary,
+    color: C.ruby,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.6,

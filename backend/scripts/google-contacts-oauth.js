@@ -11,6 +11,8 @@
  *
  * Then paste the printed refresh token into .env as GOOGLE_CONTACTS_REFRESH_TOKEN
  * and set GOOGLE_CONTACTS_ENABLED=true
+ *
+ * Sign in with: gmsilverllp@gmail.com (contacts are created in that account)
  */
 
 const http = require('http');
@@ -116,7 +118,9 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(3456, () => {
-  console.log('\nOpen this URL in your browser and sign in with the Google account whose Contacts should receive new users:\n');
+  console.log(
+    '\nOpen this URL in your browser and sign in with gmsilverllp@gmail.com:\n',
+  );
   console.log(authUrl);
   console.log('\nWaiting for OAuth callback on http://localhost:3456 ...\n');
 });

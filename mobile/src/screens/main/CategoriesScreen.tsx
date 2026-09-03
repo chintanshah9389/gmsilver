@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     marginHorizontal: PAD,
     marginBottom: 14,
     backgroundColor: C.surface,
-    borderRadius: 0,
+    borderRadius: R.pill,
     borderWidth: 1,
     borderColor: C.border,
     paddingHorizontal: 14,

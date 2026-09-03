@@ -7,26 +7,23 @@ import { C } from '@/theme/colors';
 export function getFloatingTabBarStyle(bottomInset: number) {
   const pad = Math.max(bottomInset, 8);
   return {
-    position: 'absolute' as const,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 58 + pad,
-    borderRadius: 0,
-    backgroundColor: C.ivory,
+    backgroundColor: C.bg,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: C.border,
-    borderWidth: 0,
+    borderTopColor: C.borderHi,
+    height: 62 + pad,
     paddingBottom: pad,
-    paddingTop: 6,
-    elevation: 0,
-    shadowOpacity: 0,
+    paddingTop: 8,
+    elevation: 12,
+    shadowColor: '#1A1819',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
   };
 }
 
 /** Space reserved by the tab bar (for sticky footers above it). */
 export function getTabBarClearance(bottomInset: number, gap = 8) {
-  return 58 + Math.max(bottomInset, 8) + gap;
+  return 62 + Math.max(bottomInset, 8) + gap;
 }
 
 function findTabNavigator(navigation: any) {

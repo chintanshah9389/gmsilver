@@ -11,25 +11,17 @@ import {
 import { Snackbar } from 'react-native-paper';
 import { PAGE_SIZE, useProductsQuery } from '@/store/services/productsApi';
 import { getErrorMessage } from '@/lib/error-message';
-import { C } from '@/theme/colors';
+import { C, R } from '@/theme/colors';
 import { F } from '@/theme/typography';
 import PremiumBackground from '@/components/PremiumBackground';
 import MotionReveal from '@/components/MotionReveal';
 import ProductCard, { PRODUCT_GRID } from '@/components/ProductCard';
 import EmptyState from '@/components/EmptyState';
 import ScreenHeader from '@/components/ScreenHeader';
-import ScalePressable from '@/components/ScalePressable';
+import FilterPills, { ProductFilterId } from '@/components/FilterPills';
+import { E } from '@/theme/effects';
 
 const { PAD } = PRODUCT_GRID;
-
-type ProductFilterId = 'all' | 'indian' | 'imported' | 'in_stock';
-
-const PRODUCT_FILTERS: { id: ProductFilterId; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'indian', label: 'Indian' },
-  { id: 'imported', label: 'Imported' },
-  { id: 'in_stock', label: 'In stock' },
-];
 
 export default function ProductListScreen({ route, navigation }: any) {
   const categoryId = route.params?.categoryId;
@@ -104,8 +96,8 @@ export default function ProductListScreen({ route, navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       <ScreenHeader
-        title={showInlineHeader ? categoryName : 'The Collection'}
-        subtitle={`${total} pieces`}
+        title={showInlineHeader ? categoryName : 'Products'}
+        subtitle={total ? `${total} products` : undefined}
         onBack={showInlineHeader ? () => navigation.goBack() : undefined}
       />
 
@@ -115,7 +107,7 @@ export default function ProductListScreen({ route, navigation }: any) {
             <Text style={s.searchIcon}>⌕</Text>
             <TextInput
               style={s.searchInput}
-              placeholder="Search jewelry…"
+              placeholder="Search"
               placeholderTextColor={C.textMuted}
               value={search}
               onChangeText={setSearch}
@@ -125,23 +117,7 @@ export default function ProductListScreen({ route, navigation }: any) {
             />
           </View>
 
-          <View style={s.filterRow}>
-            {PRODUCT_FILTERS.map((item) => {
-              const active = filter === item.id;
-              return (
-                <ScalePressable
-                  key={item.id}
-                  style={[s.filterChip, active && s.filterChipOn]}
-                  scaleTo={0.97}
-                  onPress={() => setFilter(item.id)}
-                >
-                  <Text style={[s.filterText, active && s.filterTextOn]} numberOfLines={1}>
-                    {item.label}
-                  </Text>
-                </ScalePressable>
-              );
-            })}
-          </View>
+          <FilterPills value={filter} onChange={setFilter} />
         </View>
       </MotionReveal>
 
@@ -199,7 +175,7 @@ export default function ProductListScreen({ route, navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  listFlex: { flex: 1 },
+  listFlex: { flex: 1, backgroundColor: 'transparent' },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   footerLoader: { paddingVertical: 20, alignItems: 'center' },
   toolbar: {
@@ -213,7 +189,9 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
     borderWidth: 1,
     borderColor: C.border,
+    borderRadius: R.pill,
     paddingHorizontal: 14,
+    ...E.softShadow,
   },
   searchIcon: { color: C.textMuted, fontSize: 16, marginRight: 8 },
   searchInput: {
@@ -223,35 +201,5 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     fontFamily: F.sans,
   },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  filterChip: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 38,
-    paddingHorizontal: 6,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.surface,
-  },
-  filterChipOn: {
-    backgroundColor: C.primary,
-    borderColor: C.primary,
-  },
-  filterText: {
-    color: C.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    fontFamily: F.sans,
-  },
-  filterTextOn: {
-    color: '#FFFFFF',
-  },
-  list: { paddingHorizontal: PAD, paddingBottom: 110, gap: 8, flexGrow: 1 },
+  list: { paddingHorizontal: PAD, paddingBottom: 110, gap: 14, flexGrow: 1 },
 });

@@ -2,11 +2,13 @@ import React from 'react';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import { Icon } from 'react-native-paper';
 import { C, R } from '@/theme/colors';
+import { E } from '@/theme/effects';
 import { F } from '@/theme/typography';
 import ScalePressable from '@/components/ScalePressable';
+import StatusBanners from '@/components/StatusBanners';
 
 const { width: SW } = Dimensions.get('window');
-const PAD = 24;
+const PAD = 20;
 const GAP = 16;
 export const PRODUCT_CARD_W = (SW - PAD * 2 - GAP) / 2;
 
@@ -14,16 +16,20 @@ type ProductCardProps = {
   item: {
     id: string;
     name?: string;
-    price?: number | string;
     image1Url?: string | null;
     sku?: string;
+    origin?: string;
+    purity?: string | null;
     isAvailable?: boolean;
+    description?: string;
+    weight?: number | string;
   };
   onPress: () => void;
   onWish?: () => void;
   wished?: boolean;
   width?: number;
   variant?: 'grid' | 'editorial';
+  ctaLabel?: string;
 };
 
 export default function ProductCard({
@@ -36,8 +42,12 @@ export default function ProductCard({
 }: ProductCardProps) {
   const editorial = variant === 'editorial';
   const cardW = width ?? (editorial ? SW - PAD * 2 : PRODUCT_CARD_W);
-  const imgH = editorial ? cardW * 1.05 : cardW * 1.22;
+  const imgH = editorial ? Math.min(208, cardW * 0.68) : cardW * 1.22;
   const outOfStock = item.isAvailable === false;
+  const facts = [
+    item.purity,
+    item.weight ? `${item.weight} g` : null,
+  ].filter(Boolean) as string[];
 
   return (
     <View style={[s.card, { width: cardW }]}>
@@ -54,16 +64,36 @@ export default function ProductCard({
               <Text style={s.imgInitial}>{item.name?.[0]?.toUpperCase() ?? 'G'}</Text>
             </View>
           )}
+          <View style={s.bannerCol}>
+            <StatusBanners origin={item.origin} inStock={!outOfStock} />
+          </View>
           {outOfStock ? (
-            <View style={s.oosBadge}>
-              <Text style={s.oosBadgeText}>Out of Stock</Text>
+            <View style={s.oosBanner}>
+              <Text style={s.oosBannerText}>Out of stock</Text>
             </View>
           ) : null}
         </View>
         <View style={s.body}>
+          {(item.sku) ? (
+            <View style={s.metaRow}>
+              <Text style={s.sku} numberOfLines={1}>
+                {item.sku}
+              </Text>
+            </View>
+          ) : null}
           <Text style={s.name} numberOfLines={2}>
             {item.name}
           </Text>
+          {facts.length ? (
+            <Text style={s.facts} numberOfLines={1}>
+              {facts.join(' · ')}
+            </Text>
+          ) : null}
+          {item.description ? (
+            <Text style={s.desc} numberOfLines={2}>
+              {item.description}
+            </Text>
+          ) : null}
         </View>
       </ScalePressable>
 
@@ -72,7 +102,6 @@ export default function ProductCard({
           style={[s.wishBtn, wished && s.wishBtnActive]}
           scaleTo={0.9}
           onPress={(e) => {
-            // Web: keep heart tap from also opening the product.
             (e as { stopPropagation?: () => void })?.stopPropagation?.();
             onWish();
           }}
@@ -92,31 +121,42 @@ export const PRODUCT_GRID = { PAD, GAP };
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: 'transparent',
+    backgroundColor: C.surface,
+    borderRadius: R.lg,
+    borderWidth: 1,
+    borderColor: C.border,
+    overflow: 'hidden',
     position: 'relative',
+    ...E.cardShadow,
   },
   imgWrap: {
     width: '100%',
-    backgroundColor: C.bg2,
-    borderRadius: R.xs,
+    backgroundColor: C.surface2,
     overflow: 'hidden',
   },
   img: { width: '100%', height: '100%' },
   imgDimmed: { opacity: 0.55 },
-  oosBadge: {
+  bannerCol: {
     position: 'absolute',
     left: 10,
-    bottom: 10,
-    backgroundColor: 'rgba(27,28,26,0.78)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: R.xs,
+    top: 10,
+    right: 48,
+    zIndex: 2,
   },
-  oosBadgeText: {
+  oosBanner: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#B91C1C',
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  oosBannerText: {
     color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
     fontFamily: F.sans,
   },
@@ -124,7 +164,7 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: C.bg2,
+    backgroundColor: C.surface2,
   },
   imgInitial: {
     color: C.textMuted,
@@ -144,14 +184,40 @@ const s = StyleSheet.create({
     zIndex: 2,
   },
   wishBtnActive: { backgroundColor: '#FFF5F5' },
-  body: { paddingTop: 12, paddingBottom: 6 },
+  body: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14 },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  sku: {
+    color: C.textMuted,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    fontFamily: F.sans,
+    flex: 1,
+    textTransform: 'uppercase',
+  },
   name: {
     color: C.text,
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: F.serif,
+    lineHeight: 20,
+  },
+  facts: {
+    color: C.textMuted,
     fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+    marginTop: 4,
     fontFamily: F.sans,
-    lineHeight: 18,
+  },
+  desc: {
+    color: C.textSub,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 6,
+    fontFamily: F.sans,
   },
 });

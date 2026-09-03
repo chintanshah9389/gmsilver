@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '@/theme/colors';
@@ -10,20 +10,22 @@ interface PremiumBackgroundProps {
   shimmer?: boolean;
 }
 
-/** Stitch Prestige field — quiet ivory, no decorative wash. */
+/**
+ * Soft pearl canvas — barely shifts so it blends with white cards & chrome.
+ */
 export default function PremiumBackground({
   variant = 'main',
 }: PremiumBackgroundProps) {
   const isAuth = variant === 'auth';
 
-  useEffect(() => {
-    // shimmer reserved for splash; keep this field still
-  }, []);
-
   return (
     <View pointerEvents="none" style={s.wrap}>
       <LinearGradient
-        colors={isAuth ? [C.ivory, C.bg, C.bg2] : [C.bg, C.bg, C.bg2]}
+        colors={
+          isAuth
+            ? ['#FFFBFF', '#FFF8F5', '#FFF5F1']
+            : [C.gradStart, C.gradMid, C.gradEnd]
+        }
         locations={[0, 0.55, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
@@ -37,6 +39,5 @@ const s = StyleSheet.create({
   wrap: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: C.bg,
-    overflow: 'hidden',
   },
 });

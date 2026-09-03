@@ -50,6 +50,7 @@ const s = StyleSheet.create({
   box: {
     width: 18,
     height: 18,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: C.borderHi,
     backgroundColor: C.surface,
@@ -57,8 +58,8 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   boxOn: {
-    backgroundColor: C.primary,
-    borderColor: C.primary,
+    backgroundColor: C.ruby,
+    borderColor: C.ruby,
   },
   rememberText: {
     color: C.text,
@@ -66,7 +67,7 @@ const s = StyleSheet.create({
     fontFamily: F.sans,
   },
   forgot: {
-    color: C.primaryDim,
+    color: C.ruby,
     fontSize: 12,
     fontWeight: '600',
     fontFamily: F.sans,

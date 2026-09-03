@@ -28,6 +28,7 @@ const HIDE_TAB_ROUTES = new Set([
   'Cart',
   'Checkout',
   'Wishlist',
+  'ProductDetail',
   'OrderDetail',
   'Settings',
   'AdminProductForm',

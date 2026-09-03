@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { logout } from '@/store/slices/authSlice';
 import { clearRememberedSession } from '@/lib/remember-me';
 import { C } from '@/theme/colors';
+import { F } from '@/theme/typography';
 import PremiumBackground from '@/components/PremiumBackground';
 import { E } from '@/theme/effects';
 import MotionReveal from '@/components/MotionReveal';
@@ -59,7 +60,10 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={s.avatarText}>{initial}</Text>
             </View>
             <View style={s.profileCopy}>
-              <Text style={s.userName}>{user?.name ?? 'User'}</Text>
+              <View style={s.nameRow}>
+                <Text style={s.userName}>{user?.name ?? 'User'}</Text>
+                <Text style={s.patron}>Patron</Text>
+              </View>
               <Text style={s.userEmail}>{user?.email}</Text>
               {user?.phone ? <Text style={s.userPhone}>{user.phone}</Text> : null}
             </View>
@@ -114,12 +118,22 @@ export default function ProfileScreen({ navigation }: any) {
               <MenuItem
                 icon="logout"
                 label="Sign Out"
+                sub="End your active salon session"
                 onPress={() => {
                   void clearRememberedSession().finally(() => dispatch(logout()));
                 }}
                 danger
               />
             </View>
+          </View>
+        </MotionReveal>
+        <MotionReveal delay={200} duration={340} distance={10}>
+          <View style={s.concierge}>
+            <Text style={s.sectionLabel}>HAUTE JOAILLERIE CONCIERGE</Text>
+            <Text style={s.conciergeTitle}>Need assistance with your piece?</Text>
+            <Text style={s.conciergeSub}>
+              Our master silversmiths and relationship managers are available 10:00 AM – 08:00 PM.
+            </Text>
           </View>
         </MotionReveal>
       </ScrollView>
@@ -135,7 +149,7 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.glassBorder,
     padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
@@ -146,14 +160,25 @@ const s = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: C.goldSoft,
-    borderWidth: 1.5,
-    borderColor: C.gold,
+    backgroundColor: C.gold,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: C.goldDim, fontSize: 22, fontWeight: '800' },
+  avatarText: { color: '#fff', fontSize: 22, fontWeight: '800' },
   profileCopy: { flex: 1, minWidth: 0 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  patron: {
+    backgroundColor: '#FFE088',
+    color: C.goldDim,
+    overflow: 'hidden',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
   userName: { color: C.text, fontSize: 18, fontWeight: '800', letterSpacing: 0.2 },
   userEmail: { color: C.textSub, fontSize: 13, marginTop: 2 },
   userPhone: { color: C.textMuted, fontSize: 12, marginTop: 2 },
@@ -163,7 +188,7 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.glassBorder,
     overflow: 'hidden',
     ...E.softShadow,
   },
@@ -188,4 +213,14 @@ const s = StyleSheet.create({
   menuLabelDanger: { color: C.error },
   menuSub: { color: C.textMuted, fontSize: 11, marginTop: 1 },
   menuDivider: { height: 1, backgroundColor: C.border, marginLeft: 64 },
+  concierge: {
+    marginHorizontal: 16,
+    marginTop: 22,
+    backgroundColor: C.surface3,
+    borderRadius: 18,
+    padding: 18,
+    alignItems: 'center',
+  },
+  conciergeTitle: { color: C.text, fontSize: 18, fontFamily: F.serif, textAlign: 'center', marginTop: 4 },
+  conciergeSub: { color: C.textMuted, fontSize: 13, textAlign: 'center', marginTop: 6, lineHeight: 18 },
 });

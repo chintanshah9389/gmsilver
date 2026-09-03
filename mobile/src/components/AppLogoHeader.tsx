@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Icon } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '@/theme/colors';
 import { F } from '@/theme/typography';
 import ScalePressable from '@/components/ScalePressable';
+import BrandLogo from '@/components/BrandLogo';
 import { useCartQuery } from '@/store/services/cartApi';
 import { useWishlistQuery } from '@/store/services/wishlistApi';
 import { useAppSelector } from '@/hooks/redux';
@@ -29,7 +30,6 @@ export default function AppLogoHeader() {
   const cartCount = useMemo(() => {
     const cart = cartData?.data;
     const items: any[] = cart?.items || [];
-    // Distinct cart lines (products), not total piece quantity.
     if (items.length) return items.length;
     if (typeof cart?.itemCount === 'number') return cart.itemCount;
     return 0;
@@ -42,21 +42,8 @@ export default function AppLogoHeader() {
 
   return (
     <View style={[s.wrap, { paddingTop: Math.max(insets.top, 8) }]}>
-      <ScalePressable
-        style={s.sideBtn}
-        scaleTo={0.92}
-        onPress={() => navigation.navigate('Order', { screen: 'Profile' })}
-      >
-        <Icon source="account-outline" size={22} color={C.text} />
-      </ScalePressable>
-
-      <View style={s.brandWrap} pointerEvents="none">
-        <Image
-          source={require('@/assets/gm-silver-mark.png')}
-          style={s.logo}
-          resizeMode="contain"
-          accessibilityLabel="GM Silver"
-        />
+      <View style={s.brand}>
+        <BrandLogo width={132} />
       </View>
 
       <View style={s.actions}>
@@ -76,6 +63,13 @@ export default function AppLogoHeader() {
           <Icon source="shopping-outline" size={20} color={C.text} />
           <Badge count={cartCount} />
         </ScalePressable>
+        <ScalePressable
+          style={s.profileBtn}
+          scaleTo={0.92}
+          onPress={() => navigation.navigate('Order', { screen: 'Profile' })}
+        >
+          <Icon source="account" size={18} color="#fff" />
+        </ScalePressable>
       </View>
     </View>
   );
@@ -83,15 +77,21 @@ export default function AppLogoHeader() {
 
 const s = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     paddingBottom: 10,
     minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(251,249,246,0.96)',
+    backgroundColor: C.bg,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: C.border,
+  },
+  brand: {
+    flex: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingRight: 8,
   },
   sideBtn: {
     width: 40,
@@ -99,7 +99,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    zIndex: 2,
+  },
+  profileBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: C.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 2,
   },
   badge: {
     position: 'absolute',
@@ -126,21 +134,8 @@ const s = StyleSheet.create({
     fontFamily: F.sans,
     lineHeight: 11,
   },
-  brandWrap: {
-    position: 'absolute',
-    left: 52,
-    right: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  logo: {
-    width: 168,
-    height: 40,
-  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    zIndex: 2,
   },
 });

@@ -31,6 +31,7 @@ import {
 } from '@/lib/form-validation';
 import { C } from '@/theme/colors';
 import PremiumBackground from '@/components/PremiumBackground';
+import BrandLogo from '@/components/BrandLogo';
 import SecurityQuestionDropdown from '@/components/SecurityQuestionDropdown';
 
 const digitsOnly = (value: string, max = 6) => value.replace(/\D/g, '').slice(0, max);
@@ -182,9 +183,8 @@ export default function SignupScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       <View style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
-        <View style={s.logoBox}><Text style={s.logoText}>GM</Text></View>
+        <BrandLogo width={88} />
         <View style={s.headerCopy}>
-          <Text style={s.brand}>GM SILVER</Text>
           <Text style={s.heading}>Create Account</Text>
         </View>
       </View>
@@ -405,16 +405,8 @@ const s = StyleSheet.create({
     backgroundColor: C.bg,
     gap: 12,
   },
-  logoBox: {
-    width: 44, height: 44, borderRadius: 22,
-    borderWidth: 1.5, borderColor: C.primary,
-    backgroundColor: C.primary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  logoText: { color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 1 },
   headerCopy: { flex: 1 },
-  brand: { color: C.primaryDim, fontSize: 11, fontWeight: '800', letterSpacing: 3 },
-  heading: { color: C.text, fontSize: 20, fontWeight: '800', marginTop: 2 },
+  heading: { color: C.text, fontSize: 20, fontWeight: '800' },
   apiBanner: {
     marginHorizontal: 20,
     marginTop: 12,
