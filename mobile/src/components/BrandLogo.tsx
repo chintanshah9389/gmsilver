@@ -1,8 +1,8 @@
 import React from 'react';
 import { Image, ImageStyle, StyleProp, StyleSheet } from 'react-native';
 
-/** Original GM Silver LLP mark — use this everywhere for brand. */
-export const BRAND_LOGO = require('@/assets/gm-silver-mark.png');
+/** Original GM Silver LLP mark — transparent PNG for pearl / blush backgrounds. */
+export const BRAND_LOGO = require('@/assets/gm-silver-mark-clear.png');
 
 const ASPECT = 286 / 500;
 
