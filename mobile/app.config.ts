@@ -34,7 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     permissions: ['android.permission.POST_NOTIFICATIONS'],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FBF9F6',
+      backgroundColor: '#FFF6F2',
     },
   },
   plugins: [

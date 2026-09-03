@@ -42,9 +42,15 @@ export default function AppLogoHeader() {
 
   return (
     <View style={[s.wrap, { paddingTop: Math.max(insets.top, 8) }]}>
-      <View style={s.brand}>
-        <BrandLogo width={132} />
-      </View>
+      <ScalePressable
+        style={s.brand}
+        scaleTo={0.97}
+        accessibilityRole="button"
+        accessibilityLabel="Go to home"
+        onPress={() => navigation.navigate('Home')}
+      >
+        <BrandLogo width={96} />
+      </ScalePressable>
 
       <View style={s.actions}>
         <ScalePressable

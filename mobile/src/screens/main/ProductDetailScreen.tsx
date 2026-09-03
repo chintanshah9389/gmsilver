@@ -1,13 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated as RNAnimated,
   Dimensions,
+  Easing,
   Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   Share,
   StatusBar,
   StyleSheet,
@@ -16,8 +17,21 @@ import {
   View,
 } from 'react-native';
 import { Icon, Snackbar } from 'react-native-paper';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useProductByIdQuery } from '@/store/services/productsApi';
-import { useAddToCartMutation, useCartQuery, useUpdateCartItemMutation, useRemoveCartItemMutation } from '@/store/services/cartApi';
+import {
+  useAddToCartMutation,
+  useCartQuery,
+  useUpdateCartItemMutation,
+  useRemoveCartItemMutation,
+} from '@/store/services/cartApi';
 import {
   useWishlistQuery,
   useAddWishlistMutation,
@@ -34,13 +48,16 @@ import { useHideTabBarOnFocus } from '@/hooks/useHideTabBarOnFocus';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { F } from '@/theme/typography';
 import StatusBanners from '@/components/StatusBanners';
+import ProductSpecs from '@/components/ProductSpecs';
 
-const { width: SW } = Dimensions.get('window');
+const { width: SW, height: SH } = Dimensions.get('window');
+const HERO_H = Math.min(SW * 1.08, SH * 0.52);
 const ACTION_PAD = 16;
-const WISH_SIZE = 48;
+const WISH_SIZE = 52;
 const CART_GAP = 12;
-const CART_BTN_H = 48;
+const CART_BTN_H = 52;
 const CART_BTN_W = SW - ACTION_PAD * 2 - WISH_SIZE - CART_GAP;
+const DESC_PREVIEW = 140;
 
 type CartUnit = 'PIECES' | 'KG';
 
@@ -62,6 +79,35 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const [cartSheetOpen, setCartSheetOpen] = useState(false);
   const [cartUnit, setCartUnit] = useState<CartUnit>('PIECES');
   const [cartAmount, setCartAmount] = useState('1');
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [skuPulse] = useState(() => new RNAnimated.Value(1));
+  const heartScale = useRef(new RNAnimated.Value(1)).current;
+
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
+
+  const headerBgStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, HERO_H * 0.45], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  const heroParallaxStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [0, HERO_H],
+          [0, HERO_H * 0.22],
+          Extrapolation.CLAMP,
+        ),
+      },
+    ],
+  }));
+
   const product = data?.data;
   const inStock = product?.isAvailable !== false;
   const wishlistItems: any[] = wishlistData?.data || [];
@@ -100,10 +146,10 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     }
   }, [error, isError]);
 
-  const showSnack = (msg: string) => {
+  const showSnack = useCallback((msg: string) => {
     setSnackMsg(msg);
     setSnackbarVisible(true);
-  };
+  }, []);
 
   const openCartSheet = () => {
     if (product?.isAvailable === false) {
@@ -162,14 +208,14 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const changeCartQty = async (delta: number) => {
     try {
       if (cartLineUnit === 'KG') {
-        const weightGrams = Number(product?.weight || 0);
+        const w = Number(product?.weight || 0);
         const nextAmount = Math.max(
           0.1,
           Math.round((cartLineUnitAmount + delta * 0.1) * 10) / 10,
         );
         const nextQty =
-          weightGrams > 0
-            ? Math.max(1, Math.round((nextAmount * 1000) / weightGrams))
+          w > 0
+            ? Math.max(1, Math.round((nextAmount * 1000) / w))
             : Math.max(1, cartLineQty + delta);
 
         if (delta < 0 && cartLineUnitAmount <= 0.1) {
@@ -203,6 +249,53 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     }
   };
 
+  const pulseHeart = () => {
+    heartScale.setValue(0.7);
+    RNAnimated.spring(heartScale, {
+      toValue: 1,
+      friction: 3,
+      tension: 160,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const toggleWish = async () => {
+    try {
+      pulseHeart();
+      if (wished) {
+        await removeWishlist(productId).unwrap();
+        showSnack('Removed from wishlist');
+      } else {
+        await addWishlist(productId).unwrap();
+        showSnack('Saved to wishlist');
+      }
+    } catch (e) {
+      showSnack(getErrorMessage(e, 'Failed.'));
+    }
+  };
+
+  const onSkuPress = () => {
+    const sku = String(product?.sku || '').trim();
+    if (!sku) return;
+    RNAnimated.sequence([
+      RNAnimated.timing(skuPulse, {
+        toValue: 0.94,
+        duration: 80,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      RNAnimated.spring(skuPulse, {
+        toValue: 1,
+        friction: 4,
+        tension: 140,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    Share.share({ message: sku, title: 'Product SKU' }).catch(() => {
+      showSnack(`SKU · ${sku}`);
+    });
+  };
+
   if (isLoading) {
     return (
       <View style={s.loader}>
@@ -220,12 +313,22 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     );
   }
 
-  const images = [product.image1Url, product.image2Url, product.image3Url].filter(Boolean);
+  const images = [product.image1Url, product.image2Url, product.image3Url].filter(Boolean) as string[];
+  const description = String(product.description || '').trim();
+  const descLong = description.length > DESC_PREVIEW;
+  const descShown =
+    aboutOpen || !descLong ? description : `${description.slice(0, DESC_PREVIEW).trim()}…`;
 
   const onShare = async () => {
     await Share.share({
-      message: `${product.name}\nGM Silver Catalog`,
+      message: `${product.name}${product.sku ? `\nSKU: ${product.sku}` : ''}\nGM Silver Catalog`,
     });
+  };
+
+  const openLightbox = (index?: number) => {
+    if (!images.length) return;
+    if (typeof index === 'number') setActiveImg(index);
+    setLightboxOpen(true);
   };
 
   return (
@@ -233,130 +336,213 @@ export default function ProductDetailScreen({ route, navigation }: any) {
       <PremiumBackground />
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
-      <View style={s.headerOverlay}>
-        <ScalePressable style={s.headerBtn} scaleTo={0.95} onPress={() => navigation.goBack()}>
+      {/* Scroll-linked solid header */}
+      <Animated.View
+        pointerEvents="none"
+        style={[s.headerSolid, { height: insets.top + 56 }, headerBgStyle]}
+      />
+
+      <View style={[s.headerOverlay, { paddingTop: insets.top + 8 }]}>
+        <ScalePressable style={s.headerBtn} scaleTo={0.92} onPress={() => navigation.goBack()}>
           <Icon source="chevron-left" size={26} color="#fff" />
         </ScalePressable>
-        <ScalePressable style={s.headerBtn} scaleTo={0.95} onPress={onShare}>
-          <Icon source="share-variant-outline" size={20} color="#fff" />
-        </ScalePressable>
+        <View style={s.headerRight}>
+          <ScalePressable style={s.headerBtn} scaleTo={0.92} onPress={onShare}>
+            <Icon source="share-variant-outline" size={18} color="#fff" />
+          </ScalePressable>
+          <ScalePressable
+            style={[s.headerBtn, wished && s.headerWishActive]}
+            scaleTo={0.9}
+            disabled={wishBusy}
+            onPress={toggleWish}
+          >
+            <RNAnimated.View style={{ transform: [{ scale: heartScale }] }}>
+              <Icon
+                source={wished ? 'heart' : 'heart-outline'}
+                size={18}
+                color={wished ? '#FF6B7A' : '#fff'}
+              />
+            </RNAnimated.View>
+          </ScalePressable>
+        </View>
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
-        bounces={false}
+        bounces
+        scrollEventThrottle={16}
+        onScroll={onScroll}
         contentContainerStyle={{ paddingBottom: 20 }}
       >
-        <View style={s.imgWrap}>
+        <View style={[s.imgWrap, { height: HERO_H }]}>
+          <Animated.View style={[s.heroInner, heroParallaxStyle]}>
+            {images.length > 0 ? (
+              <LuxCarousel
+                items={images.map((img, i) => ({
+                  id: `img-${i}`,
+                  imageUrl: img,
+                  onPress: () => openLightbox(i),
+                }))}
+                height={HERO_H}
+                peek={false}
+                fullBleed
+                autoPlay={images.length > 1}
+                showDots={false}
+                activeIndex={activeImg}
+                onIndexChange={setActiveImg}
+                borderRadius={0}
+              />
+            ) : (
+              <View style={[s.imgPlaceholder, { height: HERO_H }]}>
+                <Text style={s.imgInitial}>{product.name?.[0]?.toUpperCase()}</Text>
+              </View>
+            )}
+          </Animated.View>
+
+          <LinearGradient
+            colors={['transparent', 'rgba(26,24,25,0.35)', 'rgba(26,24,25,0.55)']}
+            style={s.heroFade}
+            pointerEvents="none"
+          />
+
           {images.length > 0 ? (
-            <LuxCarousel
-              items={images.map((img, i) => ({
-                id: `img-${i}`,
-                imageUrl: img,
-              }))}
-              height={SW * 0.92}
-              peek={false}
-              fullBleed={false}
-              autoPlay={images.length > 1}
-              showDots
-              activeIndex={activeImg}
-              onIndexChange={setActiveImg}
-              borderRadius={16}
-            />
-          ) : (
-            <View style={s.imgPlaceholder}>
-              <Text style={s.imgInitial}>{product.name?.[0]?.toUpperCase()}</Text>
+            <View style={s.imgMeta} pointerEvents="box-none">
+              <ScalePressable style={s.zoomChip} scaleTo={0.94} onPress={() => openLightbox()}>
+                <Icon source="magnify-plus-outline" size={16} color="#fff" />
+                <Text style={s.zoomChipText}>View</Text>
+              </ScalePressable>
+              {images.length > 1 ? (
+                <View style={s.counterChip}>
+                  <Text style={s.counterText}>
+                    {activeImg + 1} / {images.length}
+                  </Text>
+                </View>
+              ) : null}
             </View>
-          )}
-          <View style={s.bannerOverlay} pointerEvents="none">
-            <StatusBanners origin={product.origin} inStock={inStock} />
-          </View>
+          ) : null}
+
           {!inStock ? (
-            <View
-              style={[s.oosBar, { bottom: images.length > 1 ? 80 : 16 }]}
-              pointerEvents="none"
-            >
+            <View style={s.oosBar} pointerEvents="none">
               <Text style={s.oosBarText}>Out of stock</Text>
             </View>
           ) : null}
-          {images.length > 1 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={s.thumbs}
-            >
-              {images.map((img, i) => (
-                <ScalePressable
-                  key={`thumb-${i}`}
-                  scaleTo={0.95}
-                  onPress={() => setActiveImg(i)}
-                  style={[s.thumb, i === activeImg && s.thumbActive]}
-                >
-                  <Image source={{ uri: img }} style={s.thumbImg} resizeMode="cover" />
-                </ScalePressable>
-              ))}
-            </ScrollView>
-          ) : null}
         </View>
 
-        <MotionReveal delay={50} duration={440} distance={18} style={s.content}>
-          <View style={s.skuRow}>
-            {product.sku ? (
-              <View style={s.skuBadge}>
-                <Text style={s.skuText}>SKU: {product.sku}</Text>
-              </View>
-            ) : (
-              <View />
-            )}
-          </View>
+        <View style={s.content}>
+          <View style={s.sheetPull} />
 
-          {product.category?.name ? (
-            <Text style={s.category}>{product.category.name}</Text>
-          ) : null}
-
-          <Text style={s.productName}>{product.name}</Text>
-
-          {(product.purity || product.weight) ? (
-            <View style={s.metaList}>
-              {product.purity ? (
-                <Text style={s.metaLine}>{product.purity}</Text>
-              ) : null}
-              {product.weight ? (
-                <Text style={s.metaLine}>{product.weight} g</Text>
-              ) : null}
+          <MotionReveal delay={30} duration={380} distance={14}>
+            <View style={s.statusRow}>
+              <StatusBanners origin={product.origin} inStock={inStock} variant="soft" />
             </View>
+          </MotionReveal>
+
+          <MotionReveal delay={80} duration={400} distance={16}>
+            {product.category?.name ? (
+              <Text style={s.category}>{product.category.name}</Text>
+            ) : null}
+            <Text style={s.productName}>{product.name}</Text>
+          </MotionReveal>
+
+          {product.sku ? (
+            <MotionReveal delay={120} duration={400} distance={12}>
+              <RNAnimated.View style={{ transform: [{ scale: skuPulse }] }}>
+                <ScalePressable style={s.skuBadge} scaleTo={0.97} onPress={onSkuPress}>
+                  <View style={s.skuDot} />
+                  <Text style={s.skuBadgeLabel}>SKU</Text>
+                  <Text style={s.skuBadgeValue}>{String(product.sku).trim()}</Text>
+                  <Icon source="share-outline" size={14} color={C.goldDim} />
+                </ScalePressable>
+              </RNAnimated.View>
+            </MotionReveal>
           ) : null}
 
-          {product.description ? (
-            <Text style={s.description}>{product.description}</Text>
+          {images.length > 1 ? (
+            <MotionReveal delay={150} duration={400} distance={12}>
+              <View style={s.thumbsBlock}>
+                <Text style={s.thumbsLabel}>Gallery</Text>
+                <Animated.ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={s.thumbs}
+                >
+                  {images.map((img, i) => (
+                    <ScalePressable
+                      key={`thumb-${i}`}
+                      scaleTo={0.92}
+                      onPress={() => setActiveImg(i)}
+                      onLongPress={() => openLightbox(i)}
+                      style={[s.thumb, i === activeImg && s.thumbActive]}
+                    >
+                      <Image source={{ uri: img }} style={s.thumbImg} resizeMode="cover" />
+                      {i === activeImg ? <View style={s.thumbGlow} /> : null}
+                    </ScalePressable>
+                  ))}
+                </Animated.ScrollView>
+              </View>
+            </MotionReveal>
           ) : null}
-        </MotionReveal>
-      </ScrollView>
+
+          <MotionReveal delay={180} duration={420} distance={14}>
+            <ProductSpecs purity={product.purity} weight={product.weight} />
+          </MotionReveal>
+
+          {description ? (
+            <MotionReveal delay={220} duration={420} distance={14}>
+              <View style={s.aboutBlock}>
+                <Pressable
+                  style={s.aboutHeader}
+                  onPress={() => descLong && setAboutOpen((v) => !v)}
+                >
+                  <Text style={s.aboutLabel}>About this piece</Text>
+                  {descLong ? (
+                    <Icon
+                      source={aboutOpen ? 'chevron-up' : 'chevron-down'}
+                      size={20}
+                      color={C.textMuted}
+                    />
+                  ) : null}
+                </Pressable>
+                <Text style={s.description}>{descShown}</Text>
+                {descLong ? (
+                  <ScalePressable
+                    scaleTo={0.97}
+                    onPress={() => setAboutOpen((v) => !v)}
+                    style={s.readMoreBtn}
+                  >
+                    <Text style={s.readMoreText}>{aboutOpen ? 'Show less' : 'Read more'}</Text>
+                  </ScalePressable>
+                ) : null}
+              </View>
+            </MotionReveal>
+          ) : null}
+
+          {inStock && cartLineQty === 0 ? (
+            <MotionReveal delay={260} duration={400} distance={12}>
+              <ScalePressable style={s.quickAdd} scaleTo={0.98} onPress={openCartSheet}>
+                <Icon source="lightning-bolt" size={18} color={C.ruby} />
+                <Text style={s.quickAddText}>Quick add to bag</Text>
+                <Icon source="chevron-right" size={18} color={C.textMuted} />
+              </ScalePressable>
+            </MotionReveal>
+          ) : null}
+        </View>
+      </Animated.ScrollView>
 
       <View style={[s.actionBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <ScalePressable
           style={[s.wishBtn, wished && s.wishBtnActive]}
-          scaleTo={0.95}
+          scaleTo={0.92}
           disabled={wishBusy}
-          onPress={async () => {
-            try {
-              if (wished) {
-                await removeWishlist(productId).unwrap();
-                showSnack('Removed from wishlist');
-              } else {
-                await addWishlist(productId).unwrap();
-                showSnack('Added to wishlist');
-              }
-            } catch (e) {
-              showSnack(getErrorMessage(e, 'Failed.'));
-            }
-          }}
+          onPress={toggleWish}
         >
-          <Icon
-            source={wished ? 'heart' : 'heart-outline'}
-            size={22}
-            color={wished ? C.error : C.textSub}
-          />
+          <RNAnimated.View style={{ transform: [{ scale: heartScale }] }}>
+            <Icon
+              source={wished ? 'heart' : 'heart-outline'}
+              size={22}
+              color={wished ? C.error : C.textSub}
+            />
+          </RNAnimated.View>
         </ScalePressable>
 
         {inStock ? (
@@ -365,7 +551,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               <View style={s.qtyStepper}>
                 <ScalePressable
                   style={s.stepperBtn}
-                  scaleTo={0.92}
+                  scaleTo={0.9}
                   disabled={cartBusy}
                   onPress={() => changeCartQty(-1)}
                 >
@@ -388,7 +574,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 </Text>
                 <ScalePressable
                   style={s.stepperBtn}
-                  scaleTo={0.92}
+                  scaleTo={0.9}
                   disabled={cartBusy}
                   onPress={() => changeCartQty(1)}
                 >
@@ -405,12 +591,12 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               </ScalePressable>
             </View>
           ) : (
-            <Pressable style={s.cartBtn} onPress={openCartSheet}>
+            <ScalePressable style={s.cartBtn} scaleTo={0.97} onPress={openCartSheet}>
               <View style={s.cartBtnInner} pointerEvents="none">
                 <Icon source="cart-outline" size={18} color="#fff" />
                 <Text style={s.cartBtnText}>Add to Bag</Text>
               </View>
-            </Pressable>
+            </ScalePressable>
           )
         ) : (
           <View style={[s.cartBtn, s.outOfStockBtn]}>
@@ -422,10 +608,51 @@ export default function ProductDetailScreen({ route, navigation }: any) {
         )}
       </View>
 
+      {/* Fullscreen gallery lightbox */}
+      <Modal
+        visible={lightboxOpen}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setLightboxOpen(false)}
+      >
+        <View style={s.lightboxRoot}>
+          <Pressable style={s.lightboxBackdrop} onPress={() => setLightboxOpen(false)} />
+          <View style={[s.lightboxTop, { paddingTop: insets.top + 8 }]}>
+            <Text style={s.lightboxCount}>
+              {images.length ? `${activeImg + 1} / ${images.length}` : ''}
+            </Text>
+            <ScalePressable
+              style={s.lightboxClose}
+              scaleTo={0.92}
+              onPress={() => setLightboxOpen(false)}
+            >
+              <Icon source="close" size={22} color="#fff" />
+            </ScalePressable>
+          </View>
+          {images.length > 0 ? (
+            <LuxCarousel
+              items={images.map((img, i) => ({
+                id: `lb-${i}`,
+                imageUrl: img,
+              }))}
+              height={SH * 0.62}
+              peek={false}
+              fullBleed
+              autoPlay={false}
+              showDots
+              activeIndex={activeImg}
+              onIndexChange={setActiveImg}
+              borderRadius={0}
+            />
+          ) : null}
+        </View>
+      </Modal>
+
       <Modal
         visible={cartSheetOpen}
         transparent
-        animationType="fade"
+        animationType="slide"
         statusBarTranslucent
         onRequestClose={closeCartSheet}
       >
@@ -437,7 +664,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           >
             <View style={[s.sheetCard, { paddingBottom: Math.max(insets.bottom, 20) }]}>
               <View style={s.sheetHandle} />
-              <Text style={s.sheetTitle}>Add to Cart</Text>
+              <Text style={s.sheetTitle}>Add to Bag</Text>
               <Text style={s.sheetSub} numberOfLines={1}>
                 {product.name}
               </Text>
@@ -445,7 +672,8 @@ export default function ProductDetailScreen({ route, navigation }: any) {
               <Text style={s.sheetLabel}>Choose unit</Text>
               <View style={s.unitRow}>
                 <View style={s.unitCol}>
-                  <Pressable
+                  <ScalePressable
+                    scaleTo={0.97}
                     style={[s.unitBtn, cartUnit === 'PIECES' && s.unitBtnActive]}
                     onPress={() => {
                       setCartUnit('PIECES');
@@ -465,10 +693,11 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                     <Text style={[s.unitBtnHint, cartUnit === 'PIECES' && s.unitBtnHintActive]}>
                       by count
                     </Text>
-                  </Pressable>
+                  </ScalePressable>
                 </View>
                 <View style={s.unitCol}>
-                  <Pressable
+                  <ScalePressable
+                    scaleTo={0.97}
                     style={[s.unitBtn, cartUnit === 'KG' && s.unitBtnActive]}
                     onPress={() => {
                       setCartUnit('KG');
@@ -488,7 +717,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                     <Text style={[s.unitBtnHint, cartUnit === 'KG' && s.unitBtnHintActive]}>
                       by weight
                     </Text>
-                  </Pressable>
+                  </ScalePressable>
                 </View>
               </View>
 
@@ -496,9 +725,9 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 {cartUnit === 'PIECES' ? 'Quantity (pcs)' : 'Quantity (kg)'}
               </Text>
               <View style={s.qtyRow}>
-                <Pressable style={s.qtyBtn} onPress={() => bumpAmount(-1)}>
+                <ScalePressable style={s.qtyBtn} scaleTo={0.9} onPress={() => bumpAmount(-1)}>
                   <Icon source="minus" size={18} color={C.text} />
-                </Pressable>
+                </ScalePressable>
                 <TextInput
                   style={s.qtyInput}
                   value={cartAmount}
@@ -506,9 +735,9 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                   keyboardType={cartUnit === 'PIECES' ? 'number-pad' : 'decimal-pad'}
                   selectionColor={C.goldDim}
                 />
-                <Pressable style={s.qtyBtn} onPress={() => bumpAmount(1)}>
+                <ScalePressable style={s.qtyBtn} scaleTo={0.9} onPress={() => bumpAmount(1)}>
                   <Icon source="plus" size={18} color={C.text} />
-                </Pressable>
+                </ScalePressable>
               </View>
 
               {cartUnit === 'KG' ? (
@@ -523,8 +752,9 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                 </Text>
               )}
 
-              <Pressable
+              <ScalePressable
                 style={[s.confirmBtn, (addingCart || pieceQuantity < 1) && s.confirmBtnDisabled]}
+                scaleTo={0.97}
                 disabled={addingCart || pieceQuantity < 1}
                 onPress={confirmAddToCart}
               >
@@ -538,7 +768,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                     </Text>
                   </View>
                 )}
-              </Pressable>
+              </ScalePressable>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -560,6 +790,16 @@ const s = StyleSheet.create({
   loader: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
   notFound: { color: C.textSub, fontSize: 15 },
 
+  headerSolid: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9,
+    backgroundColor: C.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+  },
   headerOverlay: {
     position: 'absolute',
     top: 0,
@@ -568,9 +808,10 @@ const s = StyleSheet.create({
     zIndex: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 52,
   },
+  headerRight: { flexDirection: 'row', gap: 10 },
   headerBtn: {
     width: 42,
     height: 42,
@@ -579,117 +820,262 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.22)',
     ...E.softShadow,
+  },
+  headerWishActive: {
+    backgroundColor: 'rgba(187,0,39,0.55)',
+    borderColor: 'rgba(255,150,160,0.45)',
   },
 
   imgWrap: {
     width: SW,
     backgroundColor: C.bg2,
-    paddingHorizontal: 16,
-    paddingTop: 8,
     position: 'relative',
+    overflow: 'hidden',
   },
-  bannerOverlay: {
+  heroInner: {
+    width: SW,
+  },
+  heroFade: {
     position: 'absolute',
-    left: 26,
-    top: 58,
-    right: 70,
-    zIndex: 4,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 120,
+    zIndex: 2,
+  },
+  imgMeta: {
+    position: 'absolute',
+    right: 16,
+    bottom: 36,
+    zIndex: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  zoomChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: R.pill,
+    backgroundColor: 'rgba(26,24,25,0.62)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  zoomChipText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: F.sans,
+  },
+  counterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: R.pill,
+    backgroundColor: 'rgba(26,24,25,0.62)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  counterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    fontFamily: F.sans,
   },
   oosBar: {
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 16,
-    backgroundColor: '#B91C1C',
-    borderRadius: 10,
-    paddingVertical: 10,
+    bottom: 28,
+    backgroundColor: 'rgba(185,28,28,0.92)',
+    borderRadius: 12,
+    paddingVertical: 11,
     alignItems: 'center',
     zIndex: 4,
   },
   oosBarText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
     fontFamily: F.sans,
   },
   imgPlaceholder: {
     width: '100%',
-    height: SW * 0.92,
     backgroundColor: C.surface2,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
   },
   imgInitial: { color: C.textMuted, fontSize: SW * 0.18, fontWeight: '700' },
-  thumbs: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-    gap: 10,
-  },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: R.pill,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  thumbActive: {
-    borderColor: C.ruby,
-  },
-  thumbImg: { width: '100%', height: '100%' },
 
   content: {
-    padding: 20,
-    marginTop: 8,
-    marginHorizontal: 12,
-    borderRadius: R.xl,
+    marginTop: -28,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     backgroundColor: C.surface,
     borderWidth: 1,
+    borderBottomWidth: 0,
     borderColor: C.border,
+    minHeight: SH * 0.42,
     ...E.softShadow,
   },
+  sheetPull: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: C.borderHi,
+    marginBottom: 18,
+  },
+  statusRow: { marginBottom: 12 },
   category: {
     color: C.goldDim,
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 1.4,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-    marginBottom: 6,
+    marginBottom: 8,
     fontFamily: F.sans,
   },
   productName: {
     color: C.text,
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: F.serif,
     fontWeight: '700',
-    lineHeight: 30,
-    letterSpacing: -0.2,
-  },
-  skuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    lineHeight: 34,
+    letterSpacing: -0.4,
+    marginBottom: 14,
   },
   skuBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: C.surface3,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    maxWidth: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 18,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: R.pill,
+    backgroundColor: C.goldSoft,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: 'rgba(156,121,72,0.4)',
   },
-  skuText: { color: C.textMuted, fontSize: 11, letterSpacing: 0.5, fontWeight: '700' },
-  metaList: { marginTop: 12, gap: 4 },
-  metaLine: { color: C.textSub, fontSize: 14, lineHeight: 20, fontFamily: F.sans },
-  description: { color: C.textSub, fontSize: 14, lineHeight: 22, marginTop: 14, fontFamily: F.sans },
+  skuDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: C.gold,
+  },
+  skuBadgeLabel: {
+    color: C.goldDim,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    fontFamily: F.sans,
+  },
+  skuBadgeValue: {
+    color: C.text,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.35,
+    fontFamily: F.sans,
+    flexShrink: 1,
+  },
+
+  thumbsBlock: { marginBottom: 18 },
+  thumbsLabel: {
+    color: C.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    fontFamily: F.sans,
+  },
+  thumbs: { gap: 10, paddingRight: 8 },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: C.border,
+    backgroundColor: C.surface2,
+  },
+  thumbActive: { borderColor: C.ruby },
+  thumbImg: { width: '100%', height: '100%' },
+  thumbGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 0,
+    backgroundColor: 'rgba(187,0,39,0.08)',
+  },
+
+  aboutBlock: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  aboutHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  aboutLabel: {
+    color: C.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    fontFamily: F.sans,
+  },
+  description: {
+    color: C.textSub,
+    fontSize: 14,
+    lineHeight: 23,
+    fontFamily: F.sans,
+  },
+  readMoreBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    paddingVertical: 4,
+  },
+  readMoreText: {
+    color: C.ruby,
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: F.sans,
+  },
+
+  quickAdd: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: R.lg,
+    backgroundColor: C.primarySoft,
+    borderWidth: 1,
+    borderColor: 'rgba(187,0,39,0.15)',
+  },
+  quickAddText: {
+    flex: 1,
+    color: C.text,
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: F.sans,
+  },
+
   confirmInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   actionBar: {
@@ -697,13 +1083,12 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: ACTION_PAD,
     paddingTop: 12,
-    paddingBottom: 12,
     gap: CART_GAP,
     borderTopWidth: 1,
     borderTopColor: C.border,
     backgroundColor: 'rgba(255,255,255,0.98)',
     zIndex: 20,
-    elevation: 8,
+    ...E.floatShadow,
   },
   wishBtn: {
     width: WISH_SIZE,
@@ -722,10 +1107,11 @@ const s = StyleSheet.create({
   cartBtn: {
     width: CART_BTN_W,
     height: CART_BTN_H,
-    borderRadius: R.md,
+    borderRadius: R.lg,
     backgroundColor: C.ruby,
     alignItems: 'center',
     justifyContent: 'center',
+    ...E.buttonShadow,
   },
   inCartRow: {
     flex: 1,
@@ -743,13 +1129,13 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
     borderWidth: 1.5,
     borderColor: C.ruby,
-    borderRadius: R.md,
+    borderRadius: R.lg,
     paddingHorizontal: 4,
   },
   viewCartBtn: {
     height: CART_BTN_H,
     paddingHorizontal: 14,
-    borderRadius: R.md,
+    borderRadius: R.lg,
     backgroundColor: C.ruby,
     flexDirection: 'row',
     alignItems: 'center',
@@ -764,8 +1150,8 @@ const s = StyleSheet.create({
     fontFamily: F.sans,
   },
   stepperBtn: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -793,22 +1179,49 @@ const s = StyleSheet.create({
     letterSpacing: 1.8,
     textTransform: 'uppercase',
   },
-  outOfStockText: {
-    color: C.textMuted,
+  outOfStockText: { color: C.textMuted },
+
+  lightboxRoot: {
+    flex: 1,
+    backgroundColor: 'rgba(10,9,9,0.94)',
+    justifyContent: 'center',
+  },
+  lightboxBackdrop: { ...StyleSheet.absoluteFillObject },
+  lightboxTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  lightboxCount: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: F.sans,
+  },
+  lightboxClose: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  sheetRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
+  sheetRoot: { flex: 1, justifyContent: 'flex-end' },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(26,24,25,0.5)',
+    backgroundColor: 'rgba(26,24,25,0.55)',
   },
   sheetCard: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: 20,
     paddingTop: 10,
     borderTopWidth: 1,
@@ -827,9 +1240,10 @@ const s = StyleSheet.create({
   },
   sheetTitle: {
     color: C.text,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
     letterSpacing: 0.2,
+    fontFamily: F.serif,
   },
   sheetSub: {
     color: C.textSub,
@@ -851,9 +1265,7 @@ const s = StyleSheet.create({
     gap: 12,
     marginBottom: 20,
   },
-  unitCol: {
-    flex: 1,
-  },
+  unitCol: { flex: 1 },
   unitBtn: {
     width: '100%',
     minHeight: 108,
@@ -892,9 +1304,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.2,
   },
-  unitBtnTextActive: {
-    color: C.text,
-  },
+  unitBtnTextActive: { color: C.text },
   unitBtnHint: {
     color: C.textMuted,
     fontSize: 11,
@@ -942,16 +1352,14 @@ const s = StyleSheet.create({
     textAlign: 'center',
   },
   confirmBtn: {
-    height: 50,
+    height: 52,
     borderRadius: 999,
     backgroundColor: C.ruby,
     alignItems: 'center',
     justifyContent: 'center',
     ...E.buttonShadow,
   },
-  confirmBtnDisabled: {
-    opacity: 0.55,
-  },
+  confirmBtnDisabled: { opacity: 0.55 },
   confirmBtnText: {
     color: '#fff',
     fontSize: 15,

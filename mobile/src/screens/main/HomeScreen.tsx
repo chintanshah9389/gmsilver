@@ -134,7 +134,7 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.collectionsHead}>
             <View style={{ flex: 1 }}>
               <Text style={styles.collectionsTitle}>Curated Collections</Text>
-              <Text style={styles.collectionsSub}>Artisanal hallmarked 925 selections</Text>
+              <Text style={styles.collectionsSub}>Artisanal hallmarked selections</Text>
             </View>
             <ScalePressable
               onPress={() => navigation.navigate('Categories', { screen: 'Categories' })}

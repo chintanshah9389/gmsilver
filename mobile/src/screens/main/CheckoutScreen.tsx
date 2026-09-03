@@ -60,7 +60,9 @@ export default function CheckoutScreen({ navigation }: any) {
           const facts = [
             product.sku,
             product.purity,
-            product.weight ? `${product.weight} g` : null,
+            product.weight != null && product.weight !== ''
+              ? `${product.weight} g`
+              : null,
             item.unit === 'KG'
               ? `${Number(item.unitAmount || 0)} kg · ${item.quantity} pcs`
               : `${item.quantity} pcs`,

@@ -17,12 +17,8 @@ type ProductCardProps = {
     id: string;
     name?: string;
     image1Url?: string | null;
-    sku?: string;
     origin?: string;
-    purity?: string | null;
     isAvailable?: boolean;
-    description?: string;
-    weight?: number | string;
   };
   onPress: () => void;
   onWish?: () => void;
@@ -32,6 +28,7 @@ type ProductCardProps = {
   ctaLabel?: string;
 };
 
+/** List card: image + title only (details live on product page). */
 export default function ProductCard({
   item,
   onPress,
@@ -44,10 +41,6 @@ export default function ProductCard({
   const cardW = width ?? (editorial ? SW - PAD * 2 : PRODUCT_CARD_W);
   const imgH = editorial ? Math.min(208, cardW * 0.68) : cardW * 1.22;
   const outOfStock = item.isAvailable === false;
-  const facts = [
-    item.purity,
-    item.weight ? `${item.weight} g` : null,
-  ].filter(Boolean) as string[];
 
   return (
     <View style={[s.card, { width: cardW }]}>
@@ -74,26 +67,9 @@ export default function ProductCard({
           ) : null}
         </View>
         <View style={s.body}>
-          {(item.sku) ? (
-            <View style={s.metaRow}>
-              <Text style={s.sku} numberOfLines={1}>
-                {item.sku}
-              </Text>
-            </View>
-          ) : null}
           <Text style={s.name} numberOfLines={2}>
             {item.name}
           </Text>
-          {facts.length ? (
-            <Text style={s.facts} numberOfLines={1}>
-              {facts.join(' · ')}
-            </Text>
-          ) : null}
-          {item.description ? (
-            <Text style={s.desc} numberOfLines={2}>
-              {item.description}
-            </Text>
-          ) : null}
         </View>
       </ScalePressable>
 
@@ -185,39 +161,11 @@ const s = StyleSheet.create({
   },
   wishBtnActive: { backgroundColor: '#FFF5F5' },
   body: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14 },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  sku: {
-    color: C.textMuted,
-    fontSize: 10,
-    letterSpacing: 0.6,
-    fontFamily: F.sans,
-    flex: 1,
-    textTransform: 'uppercase',
-  },
   name: {
     color: C.text,
     fontSize: 15,
     fontWeight: '700',
     fontFamily: F.serif,
     lineHeight: 20,
-  },
-  facts: {
-    color: C.textMuted,
-    fontSize: 12,
-    marginTop: 4,
-    fontFamily: F.sans,
-  },
-  desc: {
-    color: C.textSub,
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 6,
-    fontFamily: F.sans,
   },
 });
