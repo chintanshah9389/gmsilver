@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -21,10 +22,23 @@ async function bootstrap() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  const publicDir = join(process.cwd(), 'public');
+  const privacyHtml = join(publicDir, 'privacy.html');
+
   // Public legal pages (outside /api/v1) for Play Store / App Store links
-  app.useStaticAssets(join(process.cwd(), 'public'), {
-    index: false,
-    prefix: '/',
+  if (existsSync(publicDir)) {
+    app.useStaticAssets(publicDir, {
+      index: false,
+      prefix: '/',
+    });
+  }
+
+  const http = app.getHttpAdapter().getInstance();
+  http.get('/privacy', (_req: unknown, res: any) => {
+    if (!existsSync(privacyHtml)) {
+      return res.status(404).send('Privacy policy not found');
+    }
+    return res.type('html').sendFile(privacyHtml);
   });
 
   // Security
