@@ -9,8 +9,8 @@
     "start": "node scripts/free-port.js 8081 && node ./node_modules/react-native/cli.js start",
     "web": "node scripts/free-port.js 8081 && node ./node_modules/expo/bin/cli start --web --port 8081",
     "prebuild": "expo prebuild",
-    "android:release:apk": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat assembleRelease",
-    "android:release:aab": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat bundleRelease",
+    "android:release:apk": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat assembleRelease --project-cache-dir C:\\g\\gmsilver-project-cache --max-workers=2",
+    "android:release:aab": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.20.8-hotspot&& set GRADLE_USER_HOME=C:\\g&& gradlew.bat bundleRelease --project-cache-dir C:\\g\\gmsilver-project-cache --max-workers=2 --no-daemon",
     "test": "jest",
     "lint": "eslint ."
   },

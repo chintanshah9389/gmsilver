@@ -1,0 +1,13 @@
+# Local caches / build outputs — break EAS upload on Windows junctions
+android/.gradle/
+android/app/build/
+android/build/
+android/.cxx/
+.expo/
+node_modules/
+*.jks
+*.keystore
+!android/app/debug.keystore
+.env
+.env.*
+!.env.example
