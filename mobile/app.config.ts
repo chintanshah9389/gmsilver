@@ -30,7 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.gmsilver.app',
     googleServicesFile: './google-services.json',
-    versionCode: 7,
+    versionCode: 8,
     permissions: ['android.permission.POST_NOTIFICATIONS'],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
@@ -54,6 +54,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-build-properties',
       {
+        android: {
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+          buildToolsVersion: '35.0.0',
+        },
         ios: {
           useFrameworks: 'static',
         },
@@ -61,7 +66,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
   ],
   extra: {
-    appVersionCode: 7,
+    appVersionCode: 8,
     appVersionName: '1.0.1',
     eas: {
       projectId: '08cb5af3-ae20-4fb5-ba16-f8cf898826cb',
