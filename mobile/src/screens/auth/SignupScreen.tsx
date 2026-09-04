@@ -273,7 +273,7 @@ export default function SignupScreen({ navigation }: any) {
           <Field
             label="Password"
             error={errors.password}
-            hint="Min 8 characters with 1 capital, 1 number and 1 special character"
+            hint="At least 6 characters, no spaces"
           >
             <View style={s.pwWrap}>
               <TextInput

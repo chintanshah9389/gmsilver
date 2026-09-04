@@ -8,15 +8,12 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserCredentialsDto {
-  @ApiPropertyOptional({ example: 'SecurePass@123' })
+  @ApiPropertyOptional({ example: 'pass12' })
   @IsOptional()
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   @MaxLength(64)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {
-    message:
-      'Password must contain uppercase, lowercase, number and special character',
-  })
+  @Matches(/^\S+$/, { message: 'Password cannot contain spaces' })
   password?: string;
 
   @ApiPropertyOptional({ example: '123456' })

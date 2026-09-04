@@ -37,13 +37,8 @@ export function identifierError(value: string): string {
 
 export function passwordError(value: string): string {
   if (!value) return 'Password is required';
-  if (value.length < 8) return 'Password must be at least 8 characters';
-  const missing: string[] = [];
-  if (!/[A-Z]/.test(value)) missing.push('1 capital letter');
-  if (!/[a-z]/.test(value)) missing.push('1 lowercase letter');
-  if (!/\d/.test(value)) missing.push('1 number');
-  if (!/[@$!%*?&]/.test(value)) missing.push('1 special character (@$!%*?&)');
-  if (missing.length) return `Must include ${missing.join(', ')}`;
+  if (/\s/.test(value)) return 'Password cannot contain spaces';
+  if (value.length < 6) return 'Password must be at least 6 characters';
   return '';
 }
 

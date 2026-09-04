@@ -126,8 +126,10 @@ export default function UsersPage() {
 
     if (!createForm.password) {
       nextErrors.password = 'Password is required';
-    } else if (createForm.password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters';
+    } else if (/\s/.test(createForm.password)) {
+      nextErrors.password = 'Password cannot contain spaces';
+    } else if (createForm.password.length < 6) {
+      nextErrors.password = 'Password must be at least 6 characters';
     } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(createForm.password)) {
       nextErrors.password = 'Password must include uppercase, lowercase, number and special character';
     }
@@ -230,8 +232,10 @@ export default function UsersPage() {
     }
 
     if (password) {
-      if (password.length < 8) {
-        nextErrors.password = 'Password must be at least 8 characters';
+      if (/\s/.test(password)) {
+        nextErrors.password = 'Password cannot contain spaces';
+      } else if (password.length < 6) {
+        nextErrors.password = 'Password must be at least 6 characters';
       } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) {
         nextErrors.password = 'Password must include uppercase, lowercase, number and special character';
       }
@@ -556,7 +560,7 @@ export default function UsersPage() {
               onChange={(e) => updateCreateField('password', e.target.value)}
               fullWidth
               error={!!createErrors.password}
-              helperText={createErrors.password || 'Must be at least 8 characters'}
+              helperText={createErrors.password || 'At least 6 characters, no spaces'}
             />
             <FormControl fullWidth error={!!createErrors.role}>
               <InputLabel>Role</InputLabel>

@@ -18,13 +18,11 @@ export class ResetWithSecurityQuestionDto {
   @MaxLength(100)
   securityAnswer: string;
 
-  @ApiProperty({ example: 'NewPass@123' })
+  @ApiProperty({ example: 'newpass' })
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   @MaxLength(64)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {
-    message: 'Password must contain uppercase, lowercase, number and special character',
-  })
+  @Matches(/^\S+$/, { message: 'Password cannot contain spaces' })
   newPassword: string;
 
   @ApiProperty({ example: 'NewPass@123' })

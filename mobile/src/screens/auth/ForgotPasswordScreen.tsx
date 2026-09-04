@@ -165,7 +165,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               </View>
               {errors.newPassword
                 ? <Text style={s.errorText}>{errors.newPassword}</Text>
-                : <Text style={s.hint}>Min 8 characters with 1 capital, 1 number and 1 special character</Text>}
+                : <Text style={s.hint}>At least 6 characters, no spaces</Text>}
 
               <Text style={s.fieldLabel}>Confirm Password</Text>
               <TextInput

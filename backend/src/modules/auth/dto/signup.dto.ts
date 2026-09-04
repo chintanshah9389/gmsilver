@@ -38,13 +38,11 @@ export class SignupDto {
   @Matches(/^\+?[\d\s-]{10,15}$/, { message: 'Enter a valid 10-digit mobile number' })
   phone: string;
 
-  @ApiProperty({ example: 'SecurePass@123' })
+  @ApiProperty({ example: 'pass12' })
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   @MaxLength(64)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {
-    message: 'Password must contain uppercase, lowercase, number and special character',
-  })
+  @Matches(/^\S+$/, { message: 'Password cannot contain spaces' })
   password: string;
 
   @ApiProperty({ example: '123456', description: '6-digit MPIN used for app login' })
