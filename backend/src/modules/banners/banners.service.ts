@@ -152,10 +152,7 @@ export class BannersService {
       await this.storageService.deleteFile(banner.imageStorageKey).catch(() => null);
     }
 
-    await this.prisma.banner.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    await this.prisma.banner.delete({ where: { id } });
 
     return { message: 'Banner deleted successfully' };
   }

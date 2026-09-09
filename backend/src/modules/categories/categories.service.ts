@@ -146,16 +146,24 @@ export class CategoriesService {
   async remove(id: string) {
     const category = await this.prisma.category.findFirst({
       where: { id, deletedAt: null },
+      include: { _count: { select: { products: true } } },
     });
 
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
-    await this.prisma.category.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    if (category._count.products > 0) {
+      throw new ConflictException(
+        'Cannot delete category while it still has products. Move or delete products first.',
+      );
+    }
+
+    if (category.storageKey) {
+      await this.storageService.deleteFile(category.storageKey).catch(() => null);
+    }
+
+    await this.prisma.category.delete({ where: { id } });
 
     return { message: 'Category deleted successfully' };
   }

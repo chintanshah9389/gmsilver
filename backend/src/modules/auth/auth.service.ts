@@ -67,13 +67,12 @@ export class AuthService {
       where: { email },
     });
 
-    // Soft-deleted users still occupy unique email/phone until released
-    if (existingUser && !existingUser.deletedAt) {
-      throw new ConflictException('Email already registered');
-    }
-
-    if (existingUser?.deletedAt) {
-      await this.usersService.releaseDeletedUserIdentity(existingUser.id);
+    if (existingUser) {
+      if (existingUser.deletedAt) {
+        await this.usersService.hardDelete(existingUser.id);
+      } else {
+        throw new ConflictException('Email already registered');
+      }
     }
 
     const phone = normalizePhone(dto.phone);
@@ -82,12 +81,12 @@ export class AuthService {
     }
 
     const existingPhone = await this.findUserByIdentifier(phone);
-    if (existingPhone && !existingPhone.deletedAt) {
-      throw new ConflictException('Mobile number already registered');
-    }
-
-    if (existingPhone?.deletedAt) {
-      await this.usersService.releaseDeletedUserIdentity(existingPhone.id);
+    if (existingPhone) {
+      if (existingPhone.deletedAt) {
+        await this.usersService.hardDelete(existingPhone.id);
+      } else {
+        throw new ConflictException('Mobile number already registered');
+      }
     }
 
     if (dto.mpin !== dto.confirmMpin) {

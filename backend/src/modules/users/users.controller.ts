@@ -113,8 +113,8 @@ export class UsersController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Soft delete user (Admin only)' })
+  @ApiOperation({ summary: 'Hard delete user (Admin only)' })
   remove(@Param('id') id: string) {
-    return this.usersService.softDelete(id);
+    return this.usersService.hardDelete(id);
   }
 }

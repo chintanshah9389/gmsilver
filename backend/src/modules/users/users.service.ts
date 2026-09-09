@@ -34,28 +34,26 @@ export class UsersService {
       where: { email },
     });
 
-    if (existingUser && !existingUser.deletedAt) {
-      throw new ConflictException('Email already registered');
-    }
-
-    if (existingUser?.deletedAt) {
-      await this.releaseDeletedUserIdentity(existingUser.id);
+    if (existingUser) {
+      if (existingUser.deletedAt) {
+        await this.hardDelete(existingUser.id);
+      } else {
+        throw new ConflictException('Email already registered');
+      }
     }
 
     if (dto.phone) {
       const existingPhone = await this.prisma.user.findFirst({
-        where: { phone: dto.phone, deletedAt: null },
+        where: { phone: dto.phone },
       });
 
       if (existingPhone) {
-        throw new ConflictException('Phone number already in use');
+        if (existingPhone.deletedAt) {
+          await this.hardDelete(existingPhone.id);
+        } else {
+          throw new ConflictException('Phone number already in use');
+        }
       }
-
-      // Free phone on any soft-deleted row that still holds it
-      await this.prisma.user.updateMany({
-        where: { phone: dto.phone, deletedAt: { not: null } },
-        data: { phone: null },
-      });
     }
 
     const password = await BcryptUtil.hash(dto.password);
@@ -167,7 +165,7 @@ export class UsersService {
       },
     });
 
-    if (!user || (user as any).deletedAt) {
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
@@ -290,7 +288,7 @@ export class UsersService {
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user || user.deletedAt) {
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
@@ -309,7 +307,7 @@ export class UsersService {
   async updateCredentials(userId: string, dto: UpdateUserCredentialsDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    if (!user || user.deletedAt) {
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
@@ -352,48 +350,51 @@ export class UsersService {
     return { message: 'FCM token updated' };
   }
 
-  /**
-   * Soft-delete frees email/phone so the same identifiers can re-register.
-   * Unique constraints stay on the table; deleted rows get sentinel values.
-   */
-  async releaseDeletedUserIdentity(userId: string) {
-    const stamp = Date.now();
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          email: `deleted+${userId}+${stamp}@deleted.local`,
-          phone: null,
-          fcmToken: null,
-          deletedAt: new Date(),
-        },
-      }),
-      this.prisma.refreshToken.updateMany({
-        where: { userId },
-        data: { isRevoked: true },
-      }),
-      this.prisma.mpinToken.updateMany({
-        where: { userId },
-        data: { isActive: false },
-      }),
-    ]);
-  }
-
-  async softDelete(userId: string) {
+  async hardDelete(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    if (user.deletedAt) {
-      return { message: 'User deleted successfully' };
-    }
+    const contactResourceName = user.googleContactResourceName;
 
-    await this.releaseDeletedUserIdentity(userId);
+    await this.prisma.$transaction(async (tx) => {
+      const orders = await tx.order.findMany({
+        where: { userId },
+        select: { id: true },
+      });
+      const orderIds = orders.map((o) => o.id);
+
+      if (orderIds.length > 0) {
+        await tx.invoice.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.order.deleteMany({ where: { id: { in: orderIds } } });
+      }
+
+      await tx.wishlist.deleteMany({ where: { userId } });
+
+      const cart = await tx.cart.findUnique({
+        where: { userId },
+        select: { id: true },
+      });
+      if (cart) {
+        await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+        await tx.cart.delete({ where: { id: cart.id } });
+      }
+
+      await tx.refreshToken.deleteMany({ where: { userId } });
+      await tx.mpinToken.deleteMany({ where: { userId } });
+      await tx.notificationLog.deleteMany({ where: { userId } });
+      await tx.auditLog.updateMany({
+        where: { userId },
+        data: { userId: null },
+      });
+      await tx.user.delete({ where: { id: userId } });
+    });
 
     this.googleContactsService
-      .deleteUserContact(userId, user.googleContactResourceName)
+      .deleteUserContact(userId, contactResourceName)
       .catch((err) =>
         console.error('Google Contacts delete failed on user delete:', err),
       );

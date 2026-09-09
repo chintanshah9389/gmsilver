@@ -417,10 +417,11 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    await this.prisma.order.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    await this.prisma.$transaction([
+      this.prisma.invoice.deleteMany({ where: { orderId: id } }),
+      this.prisma.orderItem.deleteMany({ where: { orderId: id } }),
+      this.prisma.order.delete({ where: { id } }),
+    ]);
 
     return { message: 'Order deleted', data: { id } };
   }
@@ -438,10 +439,17 @@ export class OrdersService {
       .map((id) => ({ id, reason: 'Order not found' }));
 
     if (existingIds.length > 0) {
-      await this.prisma.order.updateMany({
-        where: { id: { in: existingIds } },
-        data: { deletedAt: new Date() },
-      });
+      await this.prisma.$transaction([
+        this.prisma.invoice.deleteMany({
+          where: { orderId: { in: existingIds } },
+        }),
+        this.prisma.orderItem.deleteMany({
+          where: { orderId: { in: existingIds } },
+        }),
+        this.prisma.order.deleteMany({
+          where: { id: { in: existingIds } },
+        }),
+      ]);
     }
 
     return {
