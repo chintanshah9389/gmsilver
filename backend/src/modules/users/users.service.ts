@@ -34,18 +34,28 @@ export class UsersService {
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingUser && !existingUser.deletedAt) {
       throw new ConflictException('Email already registered');
+    }
+
+    if (existingUser?.deletedAt) {
+      await this.releaseDeletedUserIdentity(existingUser.id);
     }
 
     if (dto.phone) {
       const existingPhone = await this.prisma.user.findFirst({
-        where: { phone: dto.phone },
+        where: { phone: dto.phone, deletedAt: null },
       });
 
       if (existingPhone) {
         throw new ConflictException('Phone number already in use');
       }
+
+      // Free phone on any soft-deleted row that still holds it
+      await this.prisma.user.updateMany({
+        where: { phone: dto.phone, deletedAt: { not: null } },
+        data: { phone: null },
+      });
     }
 
     const password = await BcryptUtil.hash(dto.password);
@@ -342,6 +352,33 @@ export class UsersService {
     return { message: 'FCM token updated' };
   }
 
+  /**
+   * Soft-delete frees email/phone so the same identifiers can re-register.
+   * Unique constraints stay on the table; deleted rows get sentinel values.
+   */
+  async releaseDeletedUserIdentity(userId: string) {
+    const stamp = Date.now();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: `deleted+${userId}+${stamp}@deleted.local`,
+          phone: null,
+          fcmToken: null,
+          deletedAt: new Date(),
+        },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId },
+        data: { isRevoked: true },
+      }),
+      this.prisma.mpinToken.updateMany({
+        where: { userId },
+        data: { isActive: false },
+      }),
+    ]);
+  }
+
   async softDelete(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
@@ -349,10 +386,11 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { deletedAt: new Date() },
-    });
+    if (user.deletedAt) {
+      return { message: 'User deleted successfully' };
+    }
+
+    await this.releaseDeletedUserIdentity(userId);
 
     this.googleContactsService
       .deleteUserContact(userId, user.googleContactResourceName)

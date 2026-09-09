@@ -62,12 +62,18 @@ export class AuthService {
 
   // ─── SIGNUP ───────────────────────────────────────────────────────
   async signup(dto: SignupDto) {
+    const email = dto.email.toLowerCase();
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { email },
     });
 
-    if (existingUser) {
+    // Soft-deleted users still occupy unique email/phone until released
+    if (existingUser && !existingUser.deletedAt) {
       throw new ConflictException('Email already registered');
+    }
+
+    if (existingUser?.deletedAt) {
+      await this.usersService.releaseDeletedUserIdentity(existingUser.id);
     }
 
     const phone = normalizePhone(dto.phone);
@@ -76,8 +82,12 @@ export class AuthService {
     }
 
     const existingPhone = await this.findUserByIdentifier(phone);
-    if (existingPhone) {
+    if (existingPhone && !existingPhone.deletedAt) {
       throw new ConflictException('Mobile number already registered');
+    }
+
+    if (existingPhone?.deletedAt) {
+      await this.usersService.releaseDeletedUserIdentity(existingPhone.id);
     }
 
     if (dto.mpin !== dto.confirmMpin) {
@@ -92,7 +102,7 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email,
         name: dto.name.trim(),
         companyName: dto.companyName.trim(),
         city: dto.city.trim(),
