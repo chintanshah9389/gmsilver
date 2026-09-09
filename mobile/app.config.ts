@@ -17,7 +17,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.gmsilver.app',
-    googleServicesFile: './GoogleService-Info.plist',
+    // EAS file env (GOOGLE_SERVICES_PLIST); local fallback for dev machines
+    googleServicesFile:
+      process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist',
     icon: './assets/icon.png',
     entitlements: {
       'aps-environment': 'production',
@@ -61,6 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
         ios: {
           useFrameworks: 'static',
+          deploymentTarget: '15.0',
         },
       },
     ],
