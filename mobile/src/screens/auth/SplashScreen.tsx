@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, StatusBar, StyleSheet, View } from 'react-native';
+import { Dimensions, Platform, StatusBar, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   Extrapolation,
@@ -44,7 +44,8 @@ export default function SplashScreen({ navigation }: any) {
     (async () => {
       const seen = await hasSeenSplashIntro();
       if (cancelled) return;
-      setMode(seen ? 'logo' : 'video');
+      // iOS TestFlight: expo-av intro video can native-crash on open. Use logo splash.
+      setMode(seen || Platform.OS === 'ios' ? 'logo' : 'video');
     })();
     return () => {
       cancelled = true;

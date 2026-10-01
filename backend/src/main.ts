@@ -41,12 +41,29 @@ async function bootstrap() {
     return res.type('html').sendFile(privacyHtml);
   });
 
-  // Security
-  app.use(helmet());
+  // Security — CORP same-origin can block some native/mobile clients.
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
-  // CORS
+  // CORS: allow mobile apps (often no Origin, or localhost/gmsilver scheme).
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (
+        corsOrigins.includes(origin) ||
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('gmsilver:')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

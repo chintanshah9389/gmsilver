@@ -40,6 +40,14 @@ export function getErrorMessage(error: unknown, fallback: string) {
 
   const first = unique[0];
   if (!first) return fallback;
+  if (
+    first === 'FETCH_ERROR' ||
+    /network request failed/i.test(first) ||
+    /failed to fetch/i.test(first) ||
+    /network error/i.test(first)
+  ) {
+    return 'Cannot reach the GM Silver server. Check your internet connection and try again.';
+  }
   if (first === 'Unauthorized' || /unauthorized/i.test(first)) {
     return 'Session expired. Please sign in again.';
   }

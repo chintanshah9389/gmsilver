@@ -253,11 +253,31 @@ export function initPushListeners() {
     return;
   }
 
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const firebaseApp = require('@react-native-firebase/app').default;
+    if (!firebaseApp.apps.length) {
+      console.warn('[push] Firebase not configured; skip listeners');
+      return;
+    }
+  } catch (error) {
+    console.warn('[push] Firebase check failed; skip listeners', error);
+    return;
+  }
+
   initialized = true;
 
+  try {
   // iOS: also allow the OS to present FCM banners while app is open.
   if (Platform.OS === 'ios') {
-    void messaging().setForegroundNotificationPresentationOptions({
+    const fcm = messaging() as unknown as {
+      setForegroundNotificationPresentationOptions: (opts: {
+        alert: boolean;
+        badge: boolean;
+        sound: boolean;
+      }) => Promise<void> | void;
+    };
+    void fcm.setForegroundNotificationPresentationOptions({
       alert: true,
       badge: true,
       sound: true,
@@ -338,6 +358,10 @@ export function initPushListeners() {
     .catch((error) => {
       console.warn('[push] getInitialNotification failed', error);
     });
+  } catch (error) {
+    initialized = false;
+    console.warn('[push] Failed to init listeners', error);
+  }
 }
 
 export function teardownPushListeners() {

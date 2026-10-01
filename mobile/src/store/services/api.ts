@@ -5,6 +5,7 @@ import {
   createApi,
   fetchBaseQuery,
 } from '@reduxjs/toolkit/query/react';
+import Constants from 'expo-constants';
 import type { RootState } from '../index';
 import { logout, setAuth } from '../slices/authSlice';
 import {
@@ -13,10 +14,15 @@ import {
   persistLogin,
 } from '@/lib/remember-me';
 
+const EXTRA_API_URL = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)
+  ?.apiUrl;
+
+const PRODUCTION_API_URL =
+  'https://charming-encouragement-production-dc0c.up.railway.app/api/v1';
+
 // Prefer EXPO_PUBLIC_API_URL; always fall back to Railway for device builds.
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  'https://charming-encouragement-production-dc0c.up.railway.app/api/v1';
+  process.env.EXPO_PUBLIC_API_URL || EXTRA_API_URL || PRODUCTION_API_URL;
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,

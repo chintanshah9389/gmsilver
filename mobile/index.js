@@ -10,12 +10,23 @@ if (Platform.OS === 'web') {
 }
 
 // Must be registered outside React lifecycle for killed/background delivery.
+// Guard native Firebase so a missing plist / failed FIRApp cannot crash launch.
 if (Platform.OS !== 'web') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const messaging = require('@react-native-firebase/messaging').default;
-  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-    console.log('[push] Background message', remoteMessage?.messageId);
-  });
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const firebaseApp = require('@react-native-firebase/app').default;
+    if (firebaseApp.apps.length === 0) {
+      console.warn('[push] Firebase app not configured; skip background handler');
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const messaging = require('@react-native-firebase/messaging').default;
+      messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+        console.log('[push] Background message', remoteMessage?.messageId);
+      });
+    }
+  } catch (error) {
+    console.warn('[push] Failed to register background handler', error);
+  }
 }
 
 registerRootComponent(App);

@@ -27,6 +27,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
       ITSAppUsesNonExemptEncryption: false,
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: false,
+        NSExceptionDomains: {
+          'railway.app': {
+            NSIncludesSubdomains: true,
+            NSExceptionRequiresForwardSecrecy: false,
+            NSExceptionAllowsInsecureHTTPLoads: false,
+          },
+        },
+      },
     },
   },
   android: {
@@ -71,6 +81,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     appVersionCode: 8,
     appVersionName: '1.0.1',
+    apiUrl:
+      process.env.EXPO_PUBLIC_API_URL ||
+      'https://charming-encouragement-production-dc0c.up.railway.app/api/v1',
     eas: {
       projectId: '08cb5af3-ae20-4fb5-ba16-f8cf898826cb',
     },
