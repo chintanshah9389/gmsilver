@@ -21,7 +21,7 @@ npm run start:dev
 
 ## API Docs
 
-https://charming-encouragement-production-dc0c.up.railway.app/api/docs
+https://backend-production-0895.up.railway.app/api/v1
 
 ## Core Modules
 

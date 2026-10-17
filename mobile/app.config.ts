@@ -83,7 +83,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     appVersionName: '1.0.1',
     apiUrl:
       process.env.EXPO_PUBLIC_API_URL ||
-      'https://charming-encouragement-production-dc0c.up.railway.app/api/v1',
+      'https://backend-production-0895.up.railway.app/api/v1',
     eas: {
       projectId: '08cb5af3-ae20-4fb5-ba16-f8cf898826cb',
     },

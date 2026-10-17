@@ -1,8 +1,12 @@
 -- CreateEnum
 CREATE TYPE "BannerType" AS ENUM ('NEW', 'SALE', 'MARKETING', 'FEATURED');
 
--- CreateEnum
-CREATE TYPE "BannerLinkType" AS ENUM ('PRODUCT', 'CATEGORY', 'NONE');
+-- CreateEnum (may already exist from 20260731153000_add_home_widgets)
+DO $$ BEGIN
+    CREATE TYPE "BannerLinkType" AS ENUM ('PRODUCT', 'CATEGORY', 'NONE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- CreateTable
 CREATE TABLE "banners" (

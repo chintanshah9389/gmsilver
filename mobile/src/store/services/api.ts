@@ -18,7 +18,7 @@ const EXTRA_API_URL = (Constants.expoConfig?.extra as { apiUrl?: string } | unde
   ?.apiUrl;
 
 const PRODUCTION_API_URL =
-  'https://charming-encouragement-production-dc0c.up.railway.app/api/v1';
+  'https://backend-production-0895.up.railway.app/api/v1';
 
 // Prefer EXPO_PUBLIC_API_URL; always fall back to Railway for device builds.
 export const API_BASE_URL =

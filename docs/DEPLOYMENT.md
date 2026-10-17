@@ -9,7 +9,7 @@
 ## 2. Backend Deployment (Railway)
 
 **Single production API URL (use everywhere):**
-`https://charming-encouragement-production-dc0c.up.railway.app/api/v1`
+`https://backend-production-0895.up.railway.app/api/v1`
 
 Admin panel (local + Railway) and the mobile app must all use this same URL so they share one database.
 
@@ -46,7 +46,7 @@ npm run railway:start
 
 1. Root directory: `admin-panel`
 2. Set build-time variable:
-   `NEXT_PUBLIC_API_URL=https://charming-encouragement-production-dc0c.up.railway.app/api/v1`
+   `NEXT_PUBLIC_API_URL=https://backend-production-0895.up.railway.app/api/v1`
 3. Redeploy after changing `NEXT_PUBLIC_*` (restart alone is not enough).
 4. Local admin `.env` must use the **same** `NEXT_PUBLIC_API_URL`.
 

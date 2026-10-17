@@ -19,7 +19,7 @@
         "image": "macos-sequoia-15.6-xcode-26.2"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://charming-encouragement-production-dc0c.up.railway.app/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://backend-production-0895.up.railway.app/api/v1"
       }
     },
     "production": {
@@ -28,7 +28,7 @@
         "image": "macos-sequoia-15.6-xcode-26.2"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://charming-encouragement-production-dc0c.up.railway.app/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://backend-production-0895.up.railway.app/api/v1"
       }
     }
   },

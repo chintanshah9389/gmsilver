@@ -60,7 +60,10 @@ export class GoogleContactsService {
         return;
       }
 
-      const displayName = `${input.name.trim()} _gmsliverApp`;
+      const businessName = input.companyName?.trim();
+      const displayName = businessName
+        ? `${input.name.trim()} ${businessName} _gmsliverApp`
+        : `${input.name.trim()} _gmsliverApp`;
       const people = this.getPeopleClient();
       const contact: people_v1.Schema$Person = {
         names: [{ givenName: displayName }],

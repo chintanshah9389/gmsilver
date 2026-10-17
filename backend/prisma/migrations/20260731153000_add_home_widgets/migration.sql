@@ -1,3 +1,11 @@
+-- BannerLinkType is also created in 20260731200000_add_banners.
+-- On a fresh database this migration runs first, so create the enum here.
+DO $$ BEGIN
+    CREATE TYPE "BannerLinkType" AS ENUM ('PRODUCT', 'CATEGORY', 'NONE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 CREATE TABLE "home_widgets" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL,
